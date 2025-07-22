@@ -42,7 +42,7 @@ export function Navigation({ userImage }: { userImage?: string }) {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4 relative">
+          <div className="md:flex items-center space-x-4 relative">
             {status === "loading" ? (
               <div className="flex items-center space-x-4">
                 <div className="animate-pulse bg-gray-200 h-4 w-20 rounded"></div>

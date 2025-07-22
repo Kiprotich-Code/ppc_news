@@ -6,7 +6,6 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
     "db:seed": "npx prisma db seed",
     "db:reset": "npx prisma migrate reset",
     "db:push": "npx prisma db push",

@@ -94,7 +94,7 @@ export default function ArticleDetailPage() {
       <div className="flex-1 flex flex-col">
         <Navigation />
         <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
-          <div className="max-w-3xl mx-auto px-4 py-10">
+          <div className="ml-24 py-10">
             <h1 className="text-3xl font-bold mb-4">{article.title}</h1>
             <div className="mb-2 text-sm text-gray-500">Status: {article.status}</div>
             <div className="mb-2 text-sm text-gray-500">Views: {article.views} | Earnings: {article.earnings}</div>

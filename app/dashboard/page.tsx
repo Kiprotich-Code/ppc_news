@@ -33,6 +33,7 @@ interface Article {
   createdAt: string
   views: number
   earnings: number
+  authorName: string
 }
 
 export default function Dashboard() {
@@ -94,7 +95,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation onMenuClick={() => setSidebarOpen((v) => !v)} />
+      <Navigation />
       <div className="flex">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-16`}>
@@ -232,6 +233,11 @@ export default function Dashboard() {
                                 : "bg-red-100 text-red-800"
                             }`}>
                               {article.status}
+                            </span>
+                            <span className="mx-2">•</span>
+                            <span className="flex items-center">
+                              <User className="h-4 w-4 mr-1" />
+                              {article.authorName}
                             </span>
                           </div>
                         </div>

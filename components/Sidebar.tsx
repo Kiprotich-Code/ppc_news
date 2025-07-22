@@ -31,8 +31,8 @@ export function Sidebar({ open, setOpen, onMenuClick, userImage, userName }: { o
         </button>
         {open && (
           <>
-            <span className="text-2xl font-bold text-red-600 mr-2">N</span>
-            <span className="text-xl font-bold text-gray-900">Studio</span>
+            <span className="text-2xl font-bold text-blue-600 mr-2">PPC</span>
+            <span className="text-xl font-bold text-gray-900">News</span>
           </>
         )}
       </div>
