@@ -88,7 +88,11 @@ export default function ContentPage() {
                 {articles.map(article => (
                   <div key={article.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        <Link href={`/dashboard/content/${article.id}`} className="hover:underline">
+                          {article.title}
+                        </Link>
+                      </h3>
                       <div className="text-sm text-gray-500 mt-1">{article.status}</div>
                     </div>
                     <div className="flex gap-4 mt-2 md:mt-0">
