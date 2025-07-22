@@ -1,5 +1,9 @@
-import React from 'react';
-import { FileText, User, Eye, Clock } from 'lucide-react';
+"use client"
+
+import React from "react";
+import Link from "next/link";
+import { FileText, User, Eye, Clock } from "lucide-react";
+import { Navigation } from "@/components/Navigation";
 
 export default function Home() {
   const mockArticles = [
@@ -129,30 +133,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <FileText className="h-8 w-8 text-blue-600 transform hover:scale-110 transition-transform duration-300" />
-              </div>
-              <span className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors duration-300">
-                PPC News
-              </span>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <button className="px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-300 font-medium">
-                Sign In
-              </button>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-300 font-medium hover:shadow-lg transform hover:scale-105">
-                Sign Up
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+      {/* Use Navigation component */}
+      <Navigation />
 
       {/* Articles List */}
       <main className="max-w-4xl mx-auto px-4 py-8">
@@ -165,11 +147,11 @@ export default function Home() {
                 animation: `fadeInUp 0.5s ease-out forwards`,
                 animationDelay: `${index * 0.05}s`,
                 opacity: 0,
-                transform: 'translateY(20px)'
+                transform: "translateY(20px)"
               }}
             >
               <div className="flex items-start justify-between mb-3">
-                <span className={`text-xs font-semibold px-2 py-1 bg-gray-100 rounded-full ${categoryColors[article.category] || 'text-gray-600'} group-hover:bg-blue-50 transition-colors duration-300`}>
+                <span className={`text-xs font-semibold px-2 py-1 bg-gray-100 rounded-full ${categoryColors[article.category as keyof typeof categoryColors] || "text-gray-600"} group-hover:bg-blue-50 transition-colors duration-300`}>
                   {article.category}
                 </span>
                 <div className="flex items-center space-x-3 text-xs text-gray-500">
@@ -198,9 +180,12 @@ export default function Home() {
                   <span className="font-medium">{article.author}</span>
                 </div>
                 
-                <button className="text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:underline">
+                <Link
+                  href="#"
+                  className="text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:underline"
+                >
                   Read More →
-                </button>
+                </Link>
               </div>
             </article>
           ))}
@@ -215,7 +200,7 @@ export default function Home() {
       </main>
 
       {/* Call to Action */}
-      <section className="border-2 border-dashed border-gray-300 py-16 mx-4 my-16">
+      <section className="border-2 border-dashed border-gray-300 py-16 mx-auto my-16 max-w-4xl">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-gray-900 mb-6">
             Got something to say?
@@ -233,9 +218,11 @@ export default function Home() {
           </div>
 
           <div className="space-y-4">
-            <button className="w-full max-w-sm bg-blue-600 text-white px-8 py-3 rounded font-medium hover:bg-blue-700 transition-colors">
-              Start Writing
-            </button>
+            <Link href="/auth/register">
+              <button className="w-full max-w-sm bg-blue-600 text-white px-8 py-3 rounded font-medium hover:bg-blue-700 transition-colors">
+                Start Writing
+              </button>
+            </Link>
             <p className="text-sm text-gray-500">
               Takes 2 minutes to set up. No credit card needed.
             </p>

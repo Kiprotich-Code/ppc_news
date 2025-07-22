@@ -5,7 +5,7 @@ import { signIn, getSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Navigation } from "@/components/Navigation"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, ArrowRight, LogIn } from "lucide-react"
 import toast from "react-hot-toast"
 
 export default function SignIn() {
@@ -13,6 +13,7 @@ export default function SignIn() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,96 +48,215 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="flex min-h-screen items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full max-w-md space-y-8">
-          <div>
-            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-              Sign in to your account
-            </h2>
-            <p className="mt-2 text-center text-sm text-gray-600">
-              Or{" "}
-              <Link
-                href="/auth/register"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                create a new account
-              </Link>
-            </p>
-          </div>
-          
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email address
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Enter your email"
-                  />
-                </div>
+    <div className="min-h-screen bg-gray-50">      
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="w-full max-w-lg">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in-up">
+            {/* Header */}
+            <div className="text-center space-y-4 mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl animate-bounce-subtle">
+                <LogIn className="w-8 h-8 text-white" />
               </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                  Password
-                </label>
-                <div className="mt-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="appearance-none relative block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                    placeholder="Enter your password"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" />
-                    )}
-                  </button>
-                </div>
-              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent animate-gradient">
+                Welcome Back
+              </h2>
+              <p className="text-gray-600">
+                Don't have an account?{" "}
+                <Link
+                  href="/auth/register"
+                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-300 hover:underline"
+                >
+                  Sign up here
+                </Link>
+              </p>
             </div>
+            
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Form Fields */}
+              <div className="space-y-5">
+                {/* Email Field */}
+                <div className="group animate-slide-in-up" style={{ animationDelay: '100ms' }}>
+                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300 ${
+                      focusedField === 'email' ? 'text-blue-600' : 'text-gray-400'
+                    }`}>
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField(null)}
+                      className="block w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-300"
+                      placeholder="Enter your email"
+                    />
+                  </div>
+                </div>
+                
+                {/* Password Field */}
+                <div className="group animate-slide-in-up" style={{ animationDelay: '200ms' }}>
+                  <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300 ${
+                      focusedField === 'password' ? 'text-blue-600' : 'text-gray-400'
+                    }`}>
+                      <Lock className="h-5 w-5" />
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField(null)}
+                      className="block w-full pl-12 pr-12 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-300"
+                      placeholder="Enter your password"
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center hover:text-blue-600 transition-colors duration-300"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? "Signing in..." : "Sign in"}
-              </button>
-            </div>
-          </form>
+              {/* Forgot Password Link */}
+              <div className="flex justify-end animate-slide-in-up" style={{ animationDelay: '300ms' }}>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-300 hover:underline"
+                >
+                  Forgot your password?
+                </Link>
+              </div>
+
+              {/* Submit Button */}
+              <div className="animate-slide-in-up" style={{ animationDelay: '400ms' }}>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="group relative w-full flex justify-center items-center py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  <span className="flex items-center space-x-2">
+                    {isLoading ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        <span>Signing in...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Sign In</span>
+                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+                      </>
+                    )}
+                  </span>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="relative animate-slide-in-up" style={{ animationDelay: '500ms' }}>
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white text-gray-500">New to our platform?</span>
+                </div>
+              </div>
+
+              {/* Sign Up Link */}
+              <div className="text-center animate-slide-in-up" style={{ animationDelay: '600ms' }}>
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-500 font-semibold transition-colors duration-300 group"
+                >
+                  <span>Create your account</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fade-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes slide-in-up {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes bounce-subtle {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-5px);
+          }
+        }
+        
+        @keyframes gradient {
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fade-in-up 0.8s ease-out;
+        }
+        
+        .animate-slide-in-up {
+          animation: slide-in-up 0.6s ease-out;
+          animation-fill-mode: both;
+        }
+        
+        .animate-bounce-subtle {
+          animation: bounce-subtle 2s ease-in-out infinite;
+        }
+        
+        .animate-gradient {
+          background-size: 400% 400%;
+          animation: gradient 3s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   )
-} 
+}
