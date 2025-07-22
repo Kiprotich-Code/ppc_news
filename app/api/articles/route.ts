@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
 
-    const where: any = { authorId: userId }
+    const where: Record<string, unknown> = { authorId: userId }
     if (status) {
       where.status = status
     }
@@ -82,7 +82,17 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const formattedArticles = articles.map(article => ({
+    const formattedArticles = articles.map((article: {
+      id: string;
+      title: string;
+      content: string;
+      status: string;
+      images?: string;
+      createdAt: Date;
+      publishedAt?: Date;
+      views: { id: string }[];
+      earnings: { amount: number }[];
+    }) => ({
       id: article.id,
       title: article.title,
       content: article.content,
@@ -91,7 +101,7 @@ export async function GET(request: NextRequest) {
       createdAt: article.createdAt.toISOString(),
       publishedAt: article.publishedAt?.toISOString(),
       views: article.views.length,
-      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0)
+      earnings: article.earnings.reduce((sum: number, earning: { amount: number }) => sum + earning.amount, 0)
     }))
 
     return NextResponse.json({ articles: formattedArticles })

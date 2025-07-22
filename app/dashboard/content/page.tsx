@@ -28,14 +28,8 @@ export default function ContentPage() {
     if (status === "loading") return;
     if (!session) {
       router.push("/auth/signin");
+      return;
     }
-  }, [session, status, router]);
-
-  if (status === "loading" || !session) {
-    return null;
-  }
-
-  useEffect(() => {
     const fetchArticles = async () => {
       setIsLoading(true)
       try {
@@ -49,9 +43,9 @@ export default function ContentPage() {
       }
     }
     fetchArticles()
-  }, [])
+  }, [session, status, router])
 
-  if (isLoading) {
+  if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />

@@ -30,14 +30,8 @@ export default function MonetizationPage() {
     if (status === "loading") return;
     if (!session) {
       router.push("/auth/signin");
+      return;
     }
-  }, [session, status, router]);
-
-  if (status === "loading" || !session) {
-    return null;
-  }
-
-  useEffect(() => {
     const fetchStats = async () => {
       setIsLoading(true)
       try {
@@ -56,9 +50,9 @@ export default function MonetizationPage() {
       }
     }
     fetchStats()
-  }, [])
+  }, [session, status, router])
 
-  if (isLoading) {
+  if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />

@@ -62,9 +62,15 @@ export default function ArticleDetailPage() {
       } else {
         setArticle(found)
       }
-    } catch (e: any) {
-      setError(e.message || "Unknown error")
-      setArticle(null)
+    } catch (e: unknown) {
+      let errorMsg = "Unknown error";
+      if (typeof e === 'object' && e && 'message' in e && typeof (e as { message?: unknown }).message === 'string') {
+        errorMsg = (e as { message: string }).message;
+      } else if (typeof e === 'string') {
+        errorMsg = e;
+      }
+      setError(errorMsg);
+      setArticle(null);
     } finally {
       setIsLoading(false)
     }
