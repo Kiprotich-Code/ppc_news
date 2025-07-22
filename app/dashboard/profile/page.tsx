@@ -1,87 +1,188 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
-import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { useEffect } from "react"
+import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Tag, Image as ImageIcon, IdCard, Home, CreditCard, Sparkles } from "lucide-react"
 
-const initialProfile = {
-  photo: "/public/vercel.svg", // Replace with actual user photo path
-  wemediaName: "fleek",
-  category: "",
-  description: "Passionate sports writer, committed to making an impact one article at a time.",
-  referAFriend: "https://hub.opera.com/login?refer=JWDAYAQ",
-  contact: {
-    legalName: "",
-    location: "",
-    idType: "",
-    idNumber: "",
-    email: "",
-    phoneNumber: "",
-    minipayAccount: "",
-    kraPin: "",
-  },
-  payment: {
-    minipayAccount: "",
-    bankName: "",
-    bankAccount: "",
-    bankBranch: "",
-    bankCode: "",
-    mobileMoney: "",
-  },
+type Profile = {
+  username: string
+  email: string
+  name: string
+  bio: string
+  location: string
+  tags: string[]
+  profileImage: string
+  idType: string
+  idNumber: string
+  kraPin: string
+  address: string
+  phone: string
+  withdrawalAccount: string
+  referralCode: string
+  role: string
+}
+
+const emptyProfile: Profile = {
+  username: "",
+  email: "",
+  name: "",
+  bio: "",
+  location: "",
+  tags: [],
+  profileImage: "",
+  idType: "",
+  idNumber: "",
+  kraPin: "",
+  address: "",
+  phone: "",
+  withdrawalAccount: "",
+  referralCode: "",
+  role: "",
 }
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState<'personal' | 'payment'>("personal")
-  const [profile, setProfile] = useState(initialProfile)
+  const [step, setStep] = useState(1)
+  const [profile, setProfile] = useState(emptyProfile)
+  const [form, setForm] = useState(emptyProfile)
   const [editMode, setEditMode] = useState(false)
-  const [form, setForm] = useState(profile)
+  const [isLoading, setIsLoading] = useState(false)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
+  const [tagInput, setTagInput] = useState("")
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const { data: session, status } = useSession()
-  const router = useRouter();
+  const router = useRouter()
 
+  // Fetch user profile from API
   useEffect(() => {
     if (status === "loading") return;
     if (!session) {
       router.push("/auth/signin");
+      return;
     }
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.user;
+          setProfile({
+            username: user?.username || "",
+            email: user?.email || "",
+            name: user?.name || "",
+            bio: user?.bio || "",
+            location: user?.location || "",
+            tags: user?.tags ? (typeof user.tags === "string" ? JSON.parse(user.tags) : user.tags) : [],
+            profileImage: user?.profileImage || "",
+            idType: user?.idType || "",
+            idNumber: user?.idNumber || "",
+            kraPin: user?.kraPin || "",
+            address: user?.address || "",
+            phone: user?.phone || "",
+            withdrawalAccount: user?.withdrawalAccount || "",
+            referralCode: user?.referralCode || "",
+            role: user?.role || "",
+          });
+          setForm({
+            username: user?.username || "",
+            email: user?.email || "",
+            name: user?.name || "",
+            bio: user?.bio || "",
+            location: user?.location || "",
+            tags: user?.tags ? (typeof user.tags === "string" ? JSON.parse(user.tags) : user.tags) : [],
+            profileImage: user?.profileImage || "",
+            idType: user?.idType || "",
+            idNumber: user?.idNumber || "",
+            kraPin: user?.kraPin || "",
+            address: user?.address || "",
+            phone: user?.phone || "",
+            withdrawalAccount: user?.withdrawalAccount || "",
+            referralCode: user?.referralCode || "",
+            role: user?.role || "",
+          });
+        }
+      } catch (e) {
+        // Optionally handle error
+      }
+    };
+    fetchProfile();
   }, [session, status, router]);
 
-  if (status === "loading" || !session) {
-    return null;
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="bg-white p-8 rounded shadow text-center">
+          <h2 className="text-xl font-bold text-red-600 mb-2">Not Authenticated</h2>
+          <p className="text-gray-700">Please sign in to view your profile.</p>
+        </div>
+      </div>
+    );
   }
 
-  const handleTab = (tab: 'personal' | 'payment') => {
-    setActiveTab(tab)
-    setEditMode(false)
-  }
-
+  // Handlers
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    if (name.startsWith("contact.")) {
-      setForm({
-        ...form,
-        contact: { ...form.contact, [name.replace("contact.", "")]: value },
-      })
-    } else if (name.startsWith("payment.")) {
-      setForm({
-        ...form,
-        payment: { ...form.payment, [name.replace("payment.", "")]: value },
-      })
-    } else {
-      setForm({ ...form, [name]: value })
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+  const handleAddTag = () => {
+    if (tagInput.trim() && !form.tags.includes(tagInput.trim())) {
+      setForm({ ...form, tags: [...form.tags, tagInput.trim()] })
+      setTagInput("")
     }
   }
-
-  const handleSave = () => {
-    setProfile(form)
-    setEditMode(false)
-    // TODO: Add API call to persist changes
+  const handleRemoveTag = (tag: string) => {
+    setForm({ ...form, tags: form.tags.filter((t: string) => t !== tag) })
   }
-
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setProfileImageFile(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setForm({ ...form, profileImage: reader.result as string })
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+  const handleSave = async () => {
+    setIsLoading(true)
+    try {
+      const payload = {
+        name: form.name,
+        bio: form.bio,
+        location: form.location,
+        tags: JSON.stringify(form.tags),
+        profileImage: form.profileImage,
+        address: form.address,
+        withdrawalAccount: form.withdrawalAccount
+      };
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        setProfile(prev => ({
+          ...prev,
+          ...payload,
+          tags: payload.tags ? JSON.parse(payload.tags) : [],
+        }));
+        setEditMode(false);
+      }
+    } catch (e) {}
+    setIsLoading(false);
+  }
   const handleCancel = () => {
     setForm(profile)
     setEditMode(false)
@@ -93,225 +194,149 @@ export default function ProfilePage() {
       <div className="flex">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         <main className={`flex-1 transition-all duration-200 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
-          <div className="w-full mx-auto px-10 py-10">
-            {/* Tabs */}
-            <div className="flex mb-8">
-              <button
-                className={`px-6 py-2 font-semibold focus:outline-none border-b-2 ${activeTab === 'personal' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400'}`}
-                onClick={() => handleTab('personal')}
-              >
-                Personal Info
-              </button>
-              <button
-                className={`px-6 py-2 font-semibold focus:outline-none border-b-2 ${activeTab === 'payment' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-400'}`}
-                onClick={() => handleTab('payment')}
-              >
-                Payment method
-              </button>
-            </div>
-
-            {/* Personal Info Tab */}
-            {activeTab === 'personal' && (
-              <div className="bg-white rounded-lg shadow p-8 mb-8">
-                <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-lg font-semibold">Account information</h2>
-                  {!editMode && (
-                    <button className="border px-4 py-2 rounded text-sm text-gray-700 hover:bg-gray-100" onClick={() => setEditMode(true)}>
-                      Edit Profile
-                    </button>
-                  )}
-                </div>
-                {editMode ? (
-                  <form className="space-y-8" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="flex flex-col items-center md:items-start">
-                        <span className="text-xs text-gray-400 uppercase mb-2">Photo</span>
-                        <Image src={form.photo} alt="Profile photo" width={60} height={60} className="rounded-full" />
-                        {/* TODO: Add photo upload */}
-                      </div>
-                      <div className="space-y-6 w-full">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Wemedia Name</span>
-                          <input name="wemediaName" value={form.wemediaName} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Category</span>
-                          <input name="category" value={form.category} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Description</span>
-                          <textarea name="description" value={form.description} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Refer-a-friend</span>
-                          <input name="referAFriend" value={form.referAFriend} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 mt-8">
-                      <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-                      <button type="button" className="px-6 py-2 border rounded" onClick={handleCancel}>Cancel</button>
-                    </div>
-                  </form>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="flex flex-col items-center md:items-start">
-                        <span className="text-xs text-gray-400 uppercase mb-2">Photo</span>
-                        <Image src={profile.photo} alt="Profile photo" width={60} height={60} className="rounded-full" />
-                      </div>
-                      <div className="space-y-6">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Wemedia Name</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.wemediaName}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Category</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.category}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Description</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.description}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Refer-a-friend</span>
-                          <div className="text-base mt-1">
-                            <a href={profile.referAFriend} className="text-red-400 hover:underline" target="_blank" rel="noopener noreferrer">
-                              {profile.referAFriend}
-                            </a>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Contact Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-                      <div className="space-y-6">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Legal Name</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.legalName}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Location</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.location}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">ID Type</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.idType}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">ID Number</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.idNumber}</div>
-                        </div>
-                      </div>
-                      <div className="space-y-6">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Email</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.email}</div>
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Phone Number</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.phoneNumber}</div>
-                        </div>
-              <div>
-                          <span className="text-xs text-gray-400 uppercase">Minipay Account</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.minipayAccount}</div>
-              </div>
-              <div>
-                          <span className="text-xs text-gray-400 uppercase">KRA Pin</span>
-                          <div className="text-base text-gray-800 mt-1">{profile.contact.kraPin}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </>
+          <div className="w-full max-w-2xl mx-auto px-4 py-10">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in-up">
+              <div className="flex justify-between items-center mb-8">
+                <h2 className="text-lg font-semibold">Profile</h2>
+                {!editMode && (
+                  <button className="border px-4 py-2 rounded text-sm text-gray-700 hover:bg-gray-100" onClick={() => setEditMode(true)}>
+                    Edit Profile
+                  </button>
                 )}
               </div>
-            )}
-
-            {/* Payment Info Tab */}
-            {activeTab === 'payment' && (
-              <div className="bg-white rounded-lg shadow p-8">
-                <div className="flex justify-between items-center mb-8">
-                  <h2 className="text-lg font-semibold">Payment Information</h2>
-                  {!editMode && (
-                    <button className="border px-4 py-2 rounded text-sm text-gray-700 hover:bg-gray-100" onClick={() => setEditMode(true)}>
-                      Edit Payment Info
-                    </button>
-                  )}
-                </div>
-                {editMode ? (
-                  <form className="space-y-8" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-6">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Minipay Account</span>
-                          <input name="payment.minipayAccount" value={form.payment.minipayAccount} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Bank Name</span>
-                          <input name="payment.bankName" value={form.payment.bankName} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Bank Account</span>
-                          <input name="payment.bankAccount" value={form.payment.bankAccount} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                      </div>
-                      <div className="space-y-6">
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Bank Branch</span>
-                          <input name="payment.bankBranch" value={form.payment.bankBranch} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Bank Code</span>
-                          <input name="payment.bankCode" value={form.payment.bankCode} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                        <div>
-                          <span className="text-xs text-gray-400 uppercase">Mobile Money</span>
-                          <input name="payment.mobileMoney" value={form.payment.mobileMoney} onChange={handleChange} className="w-full mt-1 px-2 py-1 border rounded" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 mt-8">
-                      <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
-                      <button type="button" className="px-6 py-2 border rounded" onClick={handleCancel}>Cancel</button>
-                    </div>
-                  </form>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase">Minipay Account</span>
-                        <div className="text-base text-gray-800 mt-1">{profile.payment.minipayAccount}</div>
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase">Bank Name</span>
-                        <div className="text-base text-gray-800 mt-1">{profile.payment.bankName}</div>
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase">Bank Account</span>
-                        <div className="text-base text-gray-800 mt-1">{profile.payment.bankAccount}</div>
-                      </div>
-                    </div>
-                    <div className="space-y-6">
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase">Bank Branch</span>
-                        <div className="text-base text-gray-800 mt-1">{profile.payment.bankBranch}</div>
-                      </div>
-                      <div>
-                        <span className="text-xs text-gray-400 uppercase">Bank Code</span>
-                        <div className="text-base text-gray-800 mt-1">{profile.payment.bankCode}</div>
+              {/* Stepper */}
+              <div className="flex justify-between items-center mb-8">
+                {[1, 2, 3, 4].map((s) => (
+                  <div key={s} className="flex-1 flex flex-col items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm ${step >= s ? 'bg-indigo-600' : 'bg-gray-300'}`}>{s}</div>
+                    <div className={`text-xs mt-2 ${step === s ? 'text-indigo-700 font-semibold' : 'text-gray-400'}`}>{
+                      s === 1 ? 'Account' : s === 2 ? 'Personal' : s === 3 ? 'Contact' : 'Payment'
+                    }</div>
+                  </div>
+                ))}
               </div>
-              <div>
-                        <span className="text-xs text-gray-400 uppercase">Mobile Money</span>
-                        <div className="text-base text-gray-800 mt-1">{profile.payment.mobileMoney}</div>
+              <form className="space-y-6" onSubmit={e => { e.preventDefault(); handleSave(); }}>
+                {/* Step 1: Account Info (non-editable) */}
+                {step === 1 && (
+                  <div className="space-y-5">
+                    <div className="flex flex-col items-center">
+                      <span className="text-xs text-gray-400 uppercase mb-2">Profile Picture</span>
+                      {form.profileImage && <img src={form.profileImage} alt="Profile" className="w-20 h-20 rounded-full object-cover border-2 border-indigo-200" />}
+                      {editMode && <>
+                        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+                        <button type="button" className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 flex items-center gap-2" onClick={() => fileInputRef.current?.click()}><ImageIcon className="w-4 h-4" />Upload</button>
+                      </>}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-xs text-gray-400 uppercase">Username</label>
+                        <input name="username" value={form.username} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 uppercase">Email</label>
+                        <input name="email" value={form.email} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 uppercase">ID Number</label>
+                        <input name="idNumber" value={form.idNumber} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 uppercase">Referral Code</label>
+                        <input name="referralCode" value={form.referralCode} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100 font-mono" />
                       </div>
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+                {/* Step 2: Personal Info (editable) */}
+                {step === 2 && (
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Full Name</label>
+                      <input name="name" value={form.name} onChange={handleChange} disabled={!editMode} className={`w-full mt-1 px-2 py-1 border rounded ${!editMode ? 'bg-gray-100' : ''}`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Bio</label>
+                      <textarea name="bio" value={form.bio} onChange={handleChange} disabled={!editMode} className={`w-full mt-1 px-2 py-1 border rounded ${!editMode ? 'bg-gray-100' : ''}`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Location</label>
+                      <input name="location" value={form.location} onChange={handleChange} disabled={!editMode} className={`w-full mt-1 px-2 py-1 border rounded ${!editMode ? 'bg-gray-100' : ''}`} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Tags / Categories</label>
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {form.tags.map((tag: string) => (
+                          <span key={tag} className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full flex items-center text-xs">
+                            <Tag className="w-3 h-3 mr-1" />{tag}
+                            {editMode && <button type="button" className="ml-1 text-gray-400 hover:text-red-500" onClick={() => handleRemoveTag(tag)}>&times;</button>}
+                          </span>
+                        ))}
+                      </div>
+                      {editMode && <div className="flex gap-2">
+                        <input type="text" value={tagInput} onChange={e => setTagInput(e.target.value)} className="flex-1 pl-4 pr-4 py-2 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500" placeholder="Add a tag/category" onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }} />
+                        <button type="button" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700" onClick={handleAddTag}>Add</button>
+                      </div>}
+                    </div>
+                  </div>
+                )}
+                {/* Step 3: Contact Info (address editable) */}
+                {step === 3 && (
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">ID Type</label>
+                      <input name="idType" value={form.idType} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">ID Number</label>
+                      <input name="idNumber" value={form.idNumber} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Phone Number</label>
+                      <input name="phone" value={form.phone} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">KRA PIN</label>
+                      <input name="kraPin" value={form.kraPin} disabled className="w-full mt-1 px-2 py-1 border rounded bg-gray-100" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Address</label>
+                      <input name="address" value={form.address} onChange={handleChange} disabled={!editMode} className={`w-full mt-1 px-2 py-1 border rounded ${!editMode ? 'bg-gray-100' : ''}`} />
+                    </div>
+                  </div>
+                )}
+                {/* Step 4: Payment Info (editable) */}
+                {step === 4 && (
+                  <div className="space-y-5">
+                    <div>
+                      <label className="block text-xs text-gray-400 uppercase">Minipay Account</label>
+                      <input name="withdrawalAccount" value={form.withdrawalAccount} onChange={handleChange} disabled={!editMode} className={`w-full mt-1 px-2 py-1 border rounded ${!editMode ? 'bg-gray-100' : ''}`} />
+                    </div>
+                  </div>
+                )}
+                {/* Stepper Navigation */}
+                <div className="flex justify-between mt-8">
+                  {step > 1 && (
+                    <button type="button" className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300" onClick={() => setStep(step - 1)} disabled={isLoading}>Back</button>
+                  )}
+                  {step < 4 && (
+                    <button type="button" className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 ml-auto" onClick={() => setStep(step + 1)} disabled={isLoading}>Next</button>
+                  )}
+                  {step === 4 && editMode && (
+                    <button type="submit" disabled={isLoading} className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none ml-auto">
+                      {isLoading ? (<span className="flex items-center gap-2"><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>Saving...</span>) : (<span>Save Changes</span>)}
+                    </button>
+                  )}
+                </div>
+                {editMode && (
+                  <div className="flex gap-4 mt-4">
+                    <button type="button" className="px-6 py-2 border rounded" onClick={handleCancel}>Cancel</button>
+                  </div>
+                )}
+              </form>
+            </div>
           </div>
         </main>
       </div>
     </div>
-  )
+  );
 } 

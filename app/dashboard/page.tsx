@@ -19,11 +19,17 @@ import {
 import Link from "next/link"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
+
 interface DashboardStats {
   totalArticles: number
   totalViews: number
   totalEarnings: number
   pendingArticles: number
+}
+
+interface ReferralStats {
+  referralCode: string
+  referralCount: number
 }
 
 interface Article {
@@ -48,6 +54,8 @@ export default function Dashboard() {
   const [recentArticles, setRecentArticles] = useState<Article[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [referral, setReferral] = useState<ReferralStats | null>(null);
+
 
   useEffect(() => {
     if (status === "loading") return
@@ -57,8 +65,21 @@ export default function Dashboard() {
       return
     }
 
-    fetchDashboardData()
+    fetchDashboardData();
+    fetchReferralData();
   }, [session, status, router])
+
+  const fetchReferralData = async () => {
+    try {
+      const response = await fetch("/api/user/referrals");
+      if (response.ok) {
+        const data = await response.json();
+        setReferral(data);
+      }
+    } catch (error) {
+      console.error("Error fetching referral data:", error);
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -109,6 +130,20 @@ export default function Dashboard() {
                 Here's what's happening with your content today.
               </p>
             </div>
+
+            {/* Referral Info */}
+            {referral && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+                <div className="mb-2 md:mb-0">
+                  <span className="font-semibold text-blue-800">Your Referral Code:</span>
+                  <span className="ml-2 font-mono text-blue-700 bg-blue-100 px-2 py-1 rounded">{referral.referralCode}</span>
+                </div>
+                <div>
+                  <span className="font-semibold text-blue-800">Successful Referrals:</span>
+                  <span className="ml-2 text-blue-700">{referral.referralCount}</span>
+                </div>
+              </div>
+            )}
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -39,6 +39,15 @@ export default function ArticleDetailPage() {
     // eslint-disable-next-line
   }, [session, status, id])
 
+  // Call view/earnings API after article is loaded and not loading
+  useEffect(() => {
+    if (!article || isLoading || error) return;
+    // Only count view if article is approved
+    if (article.status === "APPROVED") {
+      fetch(`/api/articles/${article.id}/view`, { method: "POST" });
+    }
+  }, [article, isLoading, error]);
+
   const fetchArticle = async () => {
     setIsLoading(true)
     setError(null)
