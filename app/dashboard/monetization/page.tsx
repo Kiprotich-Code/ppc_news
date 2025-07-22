@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/Sidebar"
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { useRouter } from "next/navigation"
 
 interface DashboardStats {
   totalArticles: number
@@ -22,7 +23,19 @@ export default function MonetizationPage() {
     totalEarnings: 0,
     pendingArticles: 0
   })
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) {
+      router.push("/auth/signin");
+    }
+  }, [session, status, router]);
+
+  if (status === "loading" || !session) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchStats = async () => {

@@ -7,6 +7,7 @@ import Link from "next/link"
 import { FileText, Plus } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { useRouter } from "next/navigation"
 
 interface Article {
   id: string;
@@ -20,7 +21,19 @@ export default function ContentPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isLoading, setIsLoading] = useState(true);
   const [articles, setArticles] = useState<Article[]>([])
-  const { data: session } = useSession()
+  const { data: session, status } = useSession()
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) {
+      router.push("/auth/signin");
+    }
+  }, [session, status, router]);
+
+  if (status === "loading" || !session) {
+    return null;
+  }
 
   useEffect(() => {
     const fetchArticles = async () => {

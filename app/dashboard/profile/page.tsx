@@ -4,6 +4,9 @@ import { useState } from "react"
 import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
+import { useEffect } from "react"
 
 const initialProfile = {
   photo: "/public/vercel.svg", // Replace with actual user photo path
@@ -37,6 +40,19 @@ export default function ProfilePage() {
   const [editMode, setEditMode] = useState(false)
   const [form, setForm] = useState(profile)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const { data: session, status } = useSession()
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) {
+      router.push("/auth/signin");
+    }
+  }, [session, status, router]);
+
+  if (status === "loading" || !session) {
+    return null;
+  }
 
   const handleTab = (tab: 'personal' | 'payment') => {
     setActiveTab(tab)
@@ -73,7 +89,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navigation onMenuClick={() => setSidebarOpen((v) => !v)} userImage={profile.photo} />
+      <Navigation />
       <div className="flex">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
         <main className={`flex-1 transition-all duration-200 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
