@@ -1,39 +1,62 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import Link from "next/link"
 import { FileText, Plus } from "lucide-react"
+import { useSession } from "next-auth/react"
+import { LoadingSpinner } from "@/components/LoadingSpinner"
 
-const mockArticles = [] // Replace with real data fetch if available
+interface Article {
+  id: string;
+  title: string;
+  status: string;
+  views: number;
+  earnings: number;
+}
 
 export default function ContentPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isLoading, setIsLoading] = useState(true);
+  const [articles, setArticles] = useState<Article[]>([])
+  const { data: session } = useSession()
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      setIsLoading(true)
+      try {
+        const res = await fetch("/api/articles")
+        const data = await res.json()
+        setArticles(data.articles || [])
+      } catch (e) {
+        setArticles([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchArticles()
+  }, [])
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation onMenuClick={() => setSidebarOpen((v) => !v)} />
-        <div className="flex">
-          <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-          <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
-            {/* Loading spinner or content */}
-          </main>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
+        <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
+          <LoadingSpinner />
+        </main>
       </div>
     )
   }
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation onMenuClick={() => setSidebarOpen((v) => !v)} />
-      <div className="flex">
-        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
+    <div className="min-h-screen bg-gray-50 flex">
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
+      <div className="flex-1 flex flex-col">
+        <Navigation />
         <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
           <div className="w-full mx-auto px-4 py-10">
             <h1 className="text-2xl font-bold mb-6">Content Library</h1>
-            {mockArticles.length === 0 ? (
+            {articles.length === 0 ? (
               <div className="bg-white rounded-lg shadow p-8 text-center">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h2 className="text-lg font-medium text-gray-900 mb-2">No articles yet</h2>
@@ -49,6 +72,18 @@ export default function ContentPage() {
             ) : (
               <div className="bg-white rounded-lg shadow divide-y">
                 {/* Map articles here */}
+                {articles.map(article => (
+                  <div key={article.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{article.title}</h3>
+                      <div className="text-sm text-gray-500 mt-1">{article.status}</div>
+                    </div>
+                    <div className="flex gap-4 mt-2 md:mt-0">
+                      <span className="text-gray-500 text-sm">Views: {article.views}</span>
+                      <span className="text-gray-500 text-sm">Earnings: {article.earnings}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

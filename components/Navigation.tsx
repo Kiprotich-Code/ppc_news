@@ -6,29 +6,14 @@ import { Menu, User, LogOut } from "lucide-react"
 import Image from "next/image"
 import { useState } from "react"
 
-export function Navigation({ onMenuClick, userImage }: { onMenuClick?: () => void, userImage?: string }) {
+export function Navigation({ userImage }: { userImage?: string }) {
   const { data: session, status } = useSession()
   const [dropdownOpen, setDropdownOpen] = useState(false)
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-40 w-full">
+    <nav className="bg-white shadow-sm sticky top-0 z-30 w-full">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16 items-center">
-          {/* Left: Menu + Logo/Brand */}
-          <div className="flex items-center gap-2">
-            <button
-              className="p-2 rounded hover:bg-gray-100 focus:outline-none mr-2"
-              aria-label="Toggle sidebar"
-              onClick={onMenuClick}
-            >
-              <Menu className="h-6 w-6 text-gray-700" />
-            </button>
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-2xl font-bold text-red-600">N</span>
-              <span className="text-xl font-bold text-gray-900">Studio</span>
-            </Link>
-          </div>
-
+        <div className="flex justify-end h-16 items-center">
           {/* User Info/Sign Out */}
           <div className="flex items-center space-x-4 relative">
             {status === "loading" ? (
