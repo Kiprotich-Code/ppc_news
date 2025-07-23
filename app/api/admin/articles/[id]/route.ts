@@ -5,10 +5,10 @@ import { prisma } from "@/lib/db"
 
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = context.params;
+    const { id } = params;
     const session = await getServerSession()
 
     if (!session?.user) {
