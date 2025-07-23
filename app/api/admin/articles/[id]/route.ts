@@ -1,12 +1,14 @@
+// Solution 1: Awaited params (Next.js 15+)
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/db"
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
+    const { id } = context.params;
     const session = await getServerSession()
 
     if (!session?.user) {
@@ -24,7 +26,7 @@ export async function PATCH(
     }
 
     const { action } = await request.json()
-    const articleId = params.id
+    const articleId = id
 
     if (!action || !["approve", "reject"].includes(action)) {
       return NextResponse.json(
@@ -69,4 +71,4 @@ export async function PATCH(
       { status: 500 }
     )
   }
-} 
+}

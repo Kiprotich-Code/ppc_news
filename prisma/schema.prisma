@@ -11,51 +11,57 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String
-  username      String    @unique
-  name          String
-  bio           String?
-  location      String?
-  tags          String?   // JSON array of tags/categories
-  profileImage  String?
-  idType        String?
-  idNumber      String?
-  kraPin        String?
-  address       String?
-  phone         String?
-  role          String    @default("WRITER") // ADMIN or WRITER
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String
+  username          String   @unique
+  name              String
+  bio               String?
+  location          String?
+  tags              String? // JSON array of tags/categories
+  profileImage      String?
+  idType            String?
+  idNumber          String?
+  kraPin            String?
+  address           String?
+  phone             String?
+  role              String   @default("WRITER") // ADMIN or WRITER
   withdrawalAccount String?
-  referralCode  String    @unique
-  referredById  String?
-  referredBy    User?     @relation("UserReferrals", fields: [referredById], references: [id])
-  referrals     User[]    @relation("UserReferrals")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
+  referralCode      String   @unique
+  referredById      String?
+  referredBy        User?    @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals         User[]   @relation("UserReferrals")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
   // Relations
-  articles      Article[]
-  views         View[]
-  earnings      Earning[]
-  withdrawals   Withdrawal[]
+  articles    Article[]
+  views       View[]
+  earnings    Earning[]
+  withdrawals Withdrawal[]
+  auditLogs    AuditLog[]
 }
 
 model Article {
-  id          String    @id @default(cuid())
-  title       String
-  content     String
-  images      String?   // JSON array of image URLs
-  status      String    @default("PENDING") // PENDING, APPROVED, REJECTED
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
+  id             String           @id @default(cuid())
+  title          String
+  content        String
+  images         String? // JSON array of image URLs
+  status         ModerationStatus @default(PENDING)
+  moderationNote String?
+  isBoosted      Boolean          @default(false)
+  boostLevel     BoostLevel?
+  boostExpiry    DateTime?
+  clickValue     Float?
+  publishedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
   // Relations
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
-  views       View[]
-  earnings    Earning[]
+  authorId String
+  author   User      @relation(fields: [authorId], references: [id])
+  views    View[]
+  earnings Earning[]
 }
 
 model View {
@@ -63,38 +69,50 @@ model View {
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())
-  
+
   // Relations
   articleId String
-  article   Article  @relation(fields: [articleId], references: [id])
+  article   Article @relation(fields: [articleId], references: [id])
   userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
+  user      User?   @relation(fields: [userId], references: [id])
 }
 
 model Earning {
   id        String   @id @default(cuid())
   amount    Float
-  rate      Float    // Rate per view
+  rate      Float // Rate per view
   createdAt DateTime @default(now())
-  
+
   // Relations
   articleId String
-  article   Article  @relation(fields: [articleId], references: [id])
+  article   Article @relation(fields: [articleId], references: [id])
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 model Withdrawal {
-  id        String   @id @default(cuid())
-  amount    Float
-  status    String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  id             String           @id @default(cuid())
+  amount         Float
+  status         WithdrawalStatus @default(PENDING)
+  flagged        Boolean          @default(false)
+  note           String?
+  paidAt         DateTime?
   accountDetails String
-  createdAt DateTime @default(now())
-  processedAt DateTime?
-  
+  createdAt      DateTime         @default(now())
+  processedAt    DateTime?
+
   // Relations
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
 }
 
 model Settings {
@@ -102,4 +120,24 @@ model Settings {
   key   String @unique
   value String
   // For dynamic CPC, you can add keys like 'defaultCPC', 'dynamicCPC', etc.
+}
+
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BoostLevel {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
 }

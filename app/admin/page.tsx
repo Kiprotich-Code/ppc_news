@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Navigation } from "@/components/Navigation"
+import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { 
   Users, 
@@ -25,42 +25,46 @@ interface AdminStats {
   totalViews: number
   totalEarnings: number
   pendingWithdrawals: number
+  // ...existing code...
 }
 
 interface PendingArticle {
-  id: string
-  title: string
-  authorName: string
-  createdAt: string
+  id: string;
+  title: string;
+  authorName: string;
+  createdAt: string;
 }
 
-export default function AdminDashboard() {
-  const { data: session, status } = useSession()
+const AdminPage = () => {
+  interface SessionUser {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    image?: string;
+  }
+  
+  interface SessionData {
+    user: SessionUser;
+    // add other session properties if needed
+  }
+  
+  const { data: session, status } = useSession() as { data: SessionData | null, status: string };
   const router = useRouter()
-  const [stats, setStats] = useState<AdminStats>({
-    totalUsers: 0,
-    totalArticles: 0,
-    pendingArticles: 0,
-    totalViews: 0,
-    totalEarnings: 0,
-    pendingWithdrawals: 0
-  })
+  const [stats, setStats] = useState<AdminStats | null>(null)
   const [pendingArticles, setPendingArticles] = useState<PendingArticle[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     if (status === "loading") return
-
     if (!session) {
       router.push("/auth/signin")
       return
     }
-
     if (session.user.role !== "ADMIN") {
       router.push("/dashboard")
       return
     }
-
     fetchAdminData()
   }, [session, status, router])
 
@@ -100,9 +104,16 @@ export default function AdminDashboard() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navigation />
-        <LoadingSpinner />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex">
+        <Sidebar
+          open={false}
+          setOpen={() => {}}
+          userImage={session?.user?.image}
+          userName={session?.user?.name}
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <LoadingSpinner />
+        </div>
       </div>
     )
   }
@@ -112,88 +123,67 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex">
+      <Sidebar userImage={session.user.image} userName={session.user.name} open={false} setOpen={() => {}} />
+      <main className="flex-1 px-6 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your platform and moderate content.
-          </p>
+          <p className="text-gray-600 mt-2">Manage your platform and moderate content.</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Users className="h-8 w-8 text-blue-600" />
-              </div>
+              <Users className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers ?? 0}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FileText className="h-8 w-8 text-green-600" />
-              </div>
+              <FileText className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Articles</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalArticles}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.totalArticles ?? 0}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Clock className="h-8 w-8 text-orange-600" />
-              </div>
+              <Clock className="h-8 w-8 text-orange-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Articles</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingArticles}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.pendingArticles ?? 0}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Eye className="h-8 w-8 text-purple-600" />
-              </div>
+              <Eye className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Views</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.totalViews?.toLocaleString() ?? 0}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <DollarSign className="h-8 w-8 text-yellow-600" />
-              </div>
+              <DollarSign className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalEarnings)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.totalEarnings ?? 0)}</p>
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Settings className="h-8 w-8 text-red-600" />
-              </div>
+              <Settings className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Withdrawals</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.pendingWithdrawals}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats?.pendingWithdrawals ?? 0}</p>
               </div>
             </div>
           </div>
@@ -203,52 +193,44 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Link
             href="/admin/articles"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <FileText className="h-8 w-8 text-blue-600" />
-              </div>
+              <FileText className="h-8 w-8 text-white" />
               <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">Manage Articles</h3>
-                <p className="text-sm text-gray-600">Review and moderate all articles</p>
+                <h3 className="text-lg font-semibold">Manage Articles</h3>
+                <p className="text-sm">Review and moderate all articles</p>
               </div>
             </div>
           </Link>
-
           <Link
-            href="/admin/users"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+            href="/admin/members"
+            className="bg-gradient-to-r from-green-500 to-green-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <Users className="h-8 w-8 text-green-600" />
-              </div>
+              <Users className="h-8 w-8 text-white" />
               <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">Manage Users</h3>
-                <p className="text-sm text-gray-600">View and manage user accounts</p>
+                <h3 className="text-lg font-semibold">Manage Members</h3>
+                <p className="text-sm">View and manage user accounts</p>
               </div>
             </div>
           </Link>
-
           <Link
             href="/admin/withdrawals"
-            className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+            className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <DollarSign className="h-8 w-8 text-yellow-600" />
-              </div>
+              <DollarSign className="h-8 w-8 text-white" />
               <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">Withdrawals</h3>
-                <p className="text-sm text-gray-600">Process withdrawal requests</p>
+                <h3 className="text-lg font-semibold">Withdrawals</h3>
+                <p className="text-sm">Process withdrawal requests</p>
               </div>
             </div>
           </Link>
         </div>
 
         {/* Pending Articles */}
-        <div className="bg-white rounded-lg shadow-sm">
+        <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">Pending Articles</h2>
           </div>
@@ -293,7 +275,9 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   )
-} 
+}
+
+export default AdminPage
