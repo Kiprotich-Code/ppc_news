@@ -38,7 +38,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await prisma.article.update({
       where: { id: articleId },
       data: {
-        views: { increment: 1 },
+        viewsCount: { increment: 1 },
         earnings: { increment: cpc }
       }
     });
