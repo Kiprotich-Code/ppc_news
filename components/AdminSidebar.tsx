@@ -24,18 +24,18 @@ interface NavItem {
   icon: string;
 }
 
-export function Sidebar({ 
+export function AdminSidebar({ 
   open, 
   setOpen, 
   onMenuClick, 
   userImage, 
   userName,
   navItems = [
-    { label: "Home", href: "/dashboard", icon: "home" },
-    { label: "Create", href: "/dashboard/articles/new", icon: "pencil" },
-    { label: "Content Library", href: "/dashboard/content", icon: "book-open" },
-    { label: "Monetization", href: "/dashboard/monetization", icon: "dollar-sign" },
-    { label: "Account", href: "/dashboard/profile", icon: "user" },
+    { label: "Dashboard", href: "/admin", icon: "home" },
+    { label: "Articles", href: "/admin/articles", icon: "file-text" },
+    { label: "Members", href: "/admin/members", icon: "users" },
+    { label: "Settings", href: "/admin/settings", icon: "settings" },
+    { label: "Withdrawals", href: "/admin/withdrawals", icon: "dollar-sign" },
   ]
 }: { 
   open: boolean, 
@@ -62,7 +62,7 @@ export function Sidebar({
         {open && (
           <>
             <span className="text-2xl font-bold text-blue-600 mr-2">PPC</span>
-            <span className="text-xl font-bold text-gray-900">News</span>
+            <span className="text-xl font-bold text-gray-900">Admin</span>
           </>
         )}
       </div>
@@ -104,4 +104,4 @@ export function Sidebar({
       </div>
     </aside>
   )
-} 
+}

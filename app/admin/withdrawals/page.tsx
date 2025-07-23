@@ -1,4 +1,8 @@
+"use client"
+
 import React, { useEffect, useState } from 'react';
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { HardHat } from "lucide-react";
 
 type Withdrawal = {
   id: string;
@@ -19,82 +23,21 @@ type Withdrawal = {
 };
 
 const AdminWithdrawals = () => {
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
-
-  const fetchWithdrawals = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/admin/withdrawals');
-      const data = await res.json();
-      setWithdrawals(data.withdrawals || []);
-    } catch (e) {
-      setError('Failed to fetch withdrawals');
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchWithdrawals();
-  }, []);
-
-  const handleAction = async (id: string, action: string) => {
-    setActionLoading(id + action);
-    try {
-      const res = await fetch('/api/admin/withdrawals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, action }),
-      });
-      await res.json();
-      fetchWithdrawals();
-    } catch (e) {
-      setError('Action failed');
-    }
-    setActionLoading(null);
-  };
-
   return (
-    <div>
-      <h1>Withdrawal Management</h1>
-      {loading ? <p>Loading...</p> : null}
-      {error ? <p style={{ color: 'red' }}>{error}</p> : null}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Flagged</th>
-            <th>Account</th>
-            <th>Note</th>
-            <th>Requested</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {withdrawals.map(w => (
-            <tr key={w.id} style={{ background: w.flagged ? '#ffeaea' : 'inherit' }}>
-              <td>{w.user.name} <br /> <span style={{ fontSize: 12 }}>{w.user.email}</span></td>
-              <td>{w.amount}</td>
-              <td>{w.status}</td>
-              <td>{w.flagged ? 'Yes' : 'No'}</td>
-              <td>{w.accountDetails}</td>
-              <td>{w.note || '-'}</td>
-              <td>{new Date(w.createdAt).toLocaleString()}</td>
-              <td>
-                <button disabled={actionLoading === w.id + 'approve'} onClick={() => handleAction(w.id, 'approve')}>Approve</button>{' '}
-                <button disabled={actionLoading === w.id + 'reject'} onClick={() => handleAction(w.id, 'reject')}>Reject</button>{' '}
-                <button disabled={actionLoading === w.id + 'flag'} onClick={() => handleAction(w.id, 'flag')}>Flag</button>{' '}
-                <button disabled={actionLoading === w.id + 'paid'} onClick={() => handleAction(w.id, 'paid')}>Mark Paid</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="min-h-screen flex bg-gray-50">
+      <div className="fixed md:static z-30">
+        <AdminSidebar open={true} setOpen={() => {}} userImage={undefined} userName={undefined} />
+      </div>
+      <main className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 md:ml-64">
+        <div className="flex flex-col items-center justify-center text-center">
+          <HardHat className="h-20 w-20 text-yellow-400 mb-4" />
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Work in Progress</h1>
+          <p className="text-gray-500 mb-6 max-w-md">The withdrawals management panel is under construction. Check back soon for new features and payout management!</p>
+          <div className="bg-yellow-50 text-yellow-800 px-4 py-2 rounded-full font-medium text-sm flex items-center gap-2">
+            <span>Men at work</span>
+          </div>
+        </div>
+      </main>
     </div>
   );
 };

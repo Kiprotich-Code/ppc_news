@@ -1,4 +1,10 @@
+"use client"
+
 import React, { useEffect, useState } from 'react';
+import { AdminSidebar } from "@/components/AdminSidebar";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { CheckCircle, XCircle, Edit3, Star, DollarSign, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Article = {
   id: string;
@@ -15,12 +21,28 @@ type Article = {
 };
 
 const AdminArticles = () => {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Article | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [note, setNote] = useState('');
+
+  useEffect(() => {
+    if (status === "loading") return;
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+    if (session.user.role !== "ADMIN") {
+      router.push("/dashboard");
+      return;
+    }
+    fetchArticles();
+  }, [session, status, router]);
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -34,10 +56,6 @@ const AdminArticles = () => {
     }
     setLoading(false);
   };
-
-  useEffect(() => {
-    fetchArticles();
-  }, []);
 
   const moderateArticle = async (id: string, status: string) => {
     setActionLoading(id + status);
@@ -72,84 +90,77 @@ const AdminArticles = () => {
   };
 
   return (
-    <div>
-      <h1>Manage Articles</h1>
-      {loading ? <p>Loading...</p> : null}
-      {error ? <p style={{ color: 'red' }}>{error}</p> : null}
-      <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 16 }}>
-        <thead>
-          <tr>
-            <th>Title</th>
-            <th>Status</th>
-            <th>Boosted</th>
-            <th>Author</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {articles.map(a => (
-            <tr key={a.id} style={{ background: a.isBoosted ? '#eaffea' : 'inherit' }}>
-              <td>{a.title}</td>
-              <td>{a.status}</td>
-              <td>{a.isBoosted ? `${a.boostLevel || 'Yes'}${a.boostExpiry ? ' (until ' + new Date(a.boostExpiry).toLocaleDateString() + ')' : ''}` : 'No'}</td>
-              <td>{a.author.name}</td>
-              <td>
-                <button onClick={() => setSelected(a)}>View</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {selected && (
-        <div style={{ border: '1px solid #ccc', padding: 16, marginTop: 24, borderRadius: 8 }}>
-          <h2>{selected.title}</h2>
-          <p><b>Status:</b> {selected.status}</p>
-          <p><b>Author:</b> {selected.author.name} ({selected.author.email})</p>
-          <p><b>Content:</b> {selected.content}</p>
-          <p><b>Moderation Note:</b> {selected.moderationNote || '-'}</p>
-          <div style={{ marginTop: 16 }}>
-            <textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Add moderation note (optional)" rows={2} style={{ width: '100%' }} />
-            <button disabled={actionLoading === selected.id + 'APPROVED'} onClick={() => moderateArticle(selected.id, 'APPROVED')}>Approve</button>{' '}
-            <button disabled={actionLoading === selected.id + 'REJECTED'} onClick={() => moderateArticle(selected.id, 'REJECTED')}>Reject</button>
+    <div className="min-h-screen flex bg-gray-50">
+      {/* Sidebar: responsive overlay on mobile */}
+      <div className="fixed md:static z-30">
+        <AdminSidebar
+          open={true}
+          setOpen={() => {}}
+          userImage={undefined}
+          userName={session?.user?.name}
+        />
+      </div>
+      <main className="flex-1 p-2 md:p-8 md:ml-64 transition-all duration-300">
+        <div className="bg-white rounded-2xl shadow-lg p-2 md:p-4">
+          <h2 className="text-lg font-semibold mb-4 text-red-700">All Articles</h2>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-white border-b border-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 text-sm tracking-wide">Title</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 text-sm tracking-wide">Author</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 text-sm tracking-wide">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 text-sm tracking-wide">Boosted</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 text-sm tracking-wide">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {articles.map(a => (
+                  <tr key={a.id}>
+                    <td className="px-4 py-3 font-medium text-gray-900">{a.title}</td>
+                    <td className="px-4 py-3 text-gray-700">
+                      {a.author?.name || "Unknown"}
+                      <div className="text-xs text-gray-500">{a.author?.email}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${a.status === 'APPROVED' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{a.status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${a.isBoosted ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}`}>{a.isBoosted ? 'YES' : 'NO'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          className="group p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition"
+                          onClick={() => setSelected(a)}
+                          title="View details"
+                        >
+                          <Eye className="h-4 w-4 text-blue-600 group-hover:text-blue-800" />
+                        </button>
+                        <button
+                          className="group p-2 rounded-full bg-gray-100 hover:bg-yellow-100 transition"
+                          onClick={() => moderateArticle(a.id, "APPROVED")}
+                          title="Approve"
+                        >
+                          <CheckCircle className="h-4 w-4 text-yellow-600 group-hover:text-yellow-800" />
+                        </button>
+                        <button
+                          className="group p-2 rounded-full bg-gray-100 hover:bg-red-100 transition"
+                          onClick={() => moderateArticle(a.id, "REJECTED")}
+                          title="Reject"
+                        >
+                          <XCircle className="h-4 w-4 text-red-600 group-hover:text-red-800" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <div style={{ marginTop: 16 }}>
-            <label>
-              <input type="checkbox" checked={selected.isBoosted} onChange={e => boostArticle(selected.id, e.target.checked)} /> Boosted
-            </label>
-            <select value={selected.boostLevel || ''} onChange={e => boostArticle(selected.id, true, e.target.value)}>
-              <option value="">Set Boost Level</option>
-              <option value="LOW">Low</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="HIGH">High</option>
-            </select>
-            <input type="date" onChange={e => boostArticle(selected.id, true, selected.boostLevel, e.target.value)} />
-          </div>
-          <div style={{ marginTop: 16 }}>
-            <form onSubmit={async e => {
-              e.preventDefault();
-              const form = e.target as HTMLFormElement;
-              const value = parseFloat((form.elements.namedItem('clickValue') as HTMLInputElement).value);
-              if (!isNaN(value)) {
-                setActionLoading(selected.id + 'clickValue');
-                await fetch('/api/admin/articles/click-value', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ articleId: selected.id, clickValue: value }),
-                });
-                fetchArticles();
-                setActionLoading(null);
-              }
-            }}>
-              <label>
-                PPC Rate (click value):
-                <input name="clickValue" type="number" step="0.01" defaultValue={selected.clickValue || ''} style={{ marginLeft: 8 }} />
-              </label>
-              <button type="submit" disabled={actionLoading === selected.id + 'clickValue'} style={{ marginLeft: 8 }}>Update</button>
-            </form>
-          </div>
-          <button style={{ marginTop: 16 }} onClick={() => setSelected(null)}>Close</button>
         </div>
-      )}
+        {/* Hide the details card for now to match the screenshot's simplicity */}
+      </main>
     </div>
   );
 };

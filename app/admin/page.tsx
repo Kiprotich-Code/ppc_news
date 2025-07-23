@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Sidebar } from "@/components/Sidebar"
+import { AdminSidebar } from "@/components/AdminSidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { 
   Users, 
@@ -25,7 +25,6 @@ interface AdminStats {
   totalViews: number
   totalEarnings: number
   pendingWithdrawals: number
-  // ...existing code...
 }
 
 interface PendingArticle {
@@ -35,25 +34,13 @@ interface PendingArticle {
   createdAt: string;
 }
 
-const AdminPage = () => {
-  interface SessionUser {
-    id: string;
-    email: string;
-    name: string;
-    role: string;
-    image?: string;
-  }
-  
-  interface SessionData {
-    user: SessionUser;
-    // add other session properties if needed
-  }
-  
-  const { data: session, status } = useSession() as { data: SessionData | null, status: string };
+export default function AdminPage() {
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [pendingArticles, setPendingArticles] = useState<PendingArticle[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     if (status === "loading") return
@@ -85,7 +72,7 @@ const AdminPage = () => {
 
   const handleArticleAction = async (articleId: string, action: "approve" | "reject") => {
     try {
-      const response = await fetch(`/api/admin/articles/${articleId}`, {
+      const response = await fetch(`/api/articles/${articleId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -105,12 +92,7 @@ const AdminPage = () => {
   if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex">
-        <Sidebar
-          open={false}
-          setOpen={() => {}}
-          userImage={session?.user?.image}
-          userName={session?.user?.name}
-        />
+        <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
         </div>
@@ -124,8 +106,8 @@ const AdminPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex">
-      <Sidebar userImage={session.user.image} userName={session.user.name} open={false} setOpen={() => {}} />
-      <main className="flex-1 px-6 py-8">
+      <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session.user.name} />
+      <main className={`flex-1 px-6 py-8 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-2">Manage your platform and moderate content.</p>
@@ -279,5 +261,3 @@ const AdminPage = () => {
     </div>
   )
 }
-
-export default AdminPage
