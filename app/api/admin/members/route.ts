@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
         articles: true,
         withdrawals: true,
         earnings: true,
+        auditLogs: true, // Add this line to include auditLogs
       },
     });
     return NextResponse.json({ user });

@@ -24,6 +24,9 @@ interface NavItem {
   icon: string;
 }
 
+export const SIDEBAR_WIDTH_OPEN = 256; // 64 * 4 = 256px (w-64)
+export const SIDEBAR_WIDTH_CLOSED = 80; // 20 * 4 = 80px (w-20)
+
 export function AdminSidebar({ 
   open, 
   setOpen, 
@@ -55,7 +58,10 @@ export function AdminSidebar({
         <button
           className="p-2 rounded hover:bg-gray-100 focus:outline-none mr-2"
           aria-label="Toggle sidebar"
-          onClick={onMenuClick || (() => setOpen(!open))}
+          onClick={() => {
+            if (onMenuClick) onMenuClick();
+            else setOpen(!open);
+          }}
         >
           <Menu className="h-6 w-6 text-gray-700" />
         </button>
@@ -69,7 +75,8 @@ export function AdminSidebar({
       {/* Navigation */}
       <nav className="flex-1 py-6 flex flex-col gap-1">
         {navItems.map(({ label, href, icon }) => {
-          const active = pathname === href || pathname.startsWith(href)
+          // Only mark as active if pathname exactly matches href (not startsWith)
+          const active = pathname === href
           const Icon = iconMap[icon] || Home
           return (
             <Link

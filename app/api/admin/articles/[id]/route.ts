@@ -2,6 +2,47 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { prisma } from "@/lib/db"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user || session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const article = await prisma.article.findUnique({
+      where: { id: params.id },
+      include: {
+        author: { select: { name: true, email: true } }
+      }
+    });
+
+    if (!article) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      article: {
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        status: article.status,
+        author: article.author,
+        authorId: article.authorId,
+        createdAt: article.createdAt,
+        publishedAt: article.publishedAt,
+      }
+    });
+  } catch (error) {
+    console.error("Admin article detail error:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
