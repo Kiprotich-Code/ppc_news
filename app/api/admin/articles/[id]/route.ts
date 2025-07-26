@@ -3,17 +3,10 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// Define the context type for the route
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
-
 // GET /api/admin/articles/[id] - fetch single article
 export async function GET(
   request: NextRequest,
-  context: RouteContext
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -54,7 +47,7 @@ export async function GET(
 // POST /api/admin/articles/[id] - update article status
 export async function POST(
   request: NextRequest,
-  context: RouteContext
+  context: { params: { id: string } }
 ) {
   try {
     const { id } = context.params;
@@ -110,7 +103,7 @@ export async function POST(
 // PATCH /api/admin/articles/[id] - update article status (duplicate of POST, adjust as needed)
 export async function PATCH(
   request: NextRequest,
-  context: RouteContext
+  context: { params: { id: string } }
 ) {
   try {
     const { id } = context.params;
