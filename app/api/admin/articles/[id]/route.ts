@@ -6,9 +6,10 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 // GET /api/admin/articles/[id] - fetch single article
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: any
 ) {
   try {
+    const { params } = context as { params: { id: string } };
     const session = await getServerSession(authOptions);
 
     if (!session?.user || session.user.role !== "ADMIN") {
@@ -47,10 +48,10 @@ export async function GET(
 // POST /api/admin/articles/[id] - update article status
 export async function POST(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = context.params;
+    const { params } = context as { params: { id: string } };
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -62,7 +63,7 @@ export async function POST(
     }
 
     const { action } = await request.json();
-    const articleId = id;
+    const articleId = context.id;
 
     if (!action || !["approve", "reject"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -103,10 +104,10 @@ export async function POST(
 // PATCH /api/admin/articles/[id] - update article status (duplicate of POST, adjust as needed)
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = context.params;
+    const { params } = context as { params: { id: string } };
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -118,7 +119,7 @@ export async function PATCH(
     }
 
     const { action } = await request.json();
-    const articleId = id;
+    const articleId = context.id;
 
     if (!action || !["approve", "reject"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });

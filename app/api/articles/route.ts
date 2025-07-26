@@ -14,20 +14,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { title, subTitle, content, images, featuredImage, status } = await request.json()
+    const { title, subTitle, content, images, featuredImage, status: inputStatus } = await request.json()
+
+    // Only allow ModerationStatus values
+    let status: 'APPROVED' | 'PENDING' | 'REJECTED' = 'PENDING';
+    if (inputStatus === 'APPROVED' || inputStatus === 'PENDING' || inputStatus === 'REJECTED') {
+      status = inputStatus;
+    }
 
     // Validation
-    if (status === 'PUBLISHED' || status === 'PENDING') {
+    if (status === 'APPROVED' || status === 'PENDING') {
       if (!title || !content || !featuredImage) {
         return NextResponse.json(
-          { error: "Title, content, and featured image are required to publish" },
+          { error: "Title, content, and featured image are required to submit for review or approve" },
           { status: 400 }
         )
       }
-    } else if (status === 'DRAFT') {
+    } else if (status === 'REJECTED') {
       if (!title && !content && !featuredImage) {
         return NextResponse.json(
-          { error: "Please enter at least one field to save a draft." },
+          { error: "Please enter at least one field to save as rejected." },
           { status: 400 }
         )
       }
@@ -42,7 +48,7 @@ export async function POST(request: NextRequest) {
         images: images ? JSON.stringify(images) : null,
         featuredImage: featuredImage || null,
         authorId: userId,
-        status: status || 'DRAFT',
+        status: status || 'PENDING',
       }
     })
 
@@ -93,7 +99,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const formattedArticles = articles.map(article => ({
+    const formattedArticles = articles.map((article: any) => ({
       id: article.id,
       title: article.title,
       content: article.content,
@@ -102,7 +108,7 @@ export async function GET(request: NextRequest) {
       createdAt: article.createdAt.toISOString(),
       publishedAt: article.publishedAt?.toISOString(),
       views: article.views.length,
-      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0)
+      earnings: (article.earnings as Array<{ amount: number }>).reduce((sum, earning) => sum + earning.amount, 0)
     }))
 
     return NextResponse.json({ articles: formattedArticles })
