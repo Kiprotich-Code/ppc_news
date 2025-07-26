@@ -133,85 +133,51 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Use Navigation component */}
-      <Navigation />
+      {/* Header */}
+      <Navigation />S
+
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-white via-gray-50 to-red-50 py-20 border-b border-gray-100">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-6">
+          {/* Left: Text */}
+          <div className="max-w-xl w-full mb-12 md:mb-0">
+            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4">
+              Create. <span className="text-primary-red">Share.</span> Earn
+            </h1>
+            <p className="text-gray-700 text-lg mb-8">
+              Share your stories, opinions and life with over 350 million global active users.
+            </p>
+            <a href="/auth/signin" className="button-red">
+              Login / SignUp
+              <span className="ml-2">&#8594;</span>
+            </a>
+          </div>
+          {/* Right: Illustration/Logo */}
+          <div className="flex-1 flex justify-center md:justify-end">
+            <div className="w-64 h-64 md:w-80 md:h-80 flex items-center justify-center">
+              {/* Placeholder illustration */}
+              <svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="180" height="180" rx="40" fill="#e60012" />
+                <text x="50%" y="54%" textAnchor="middle" fill="white" fontSize="80" fontWeight="bold" dy=".3em">N</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Articles List */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {mockArticles.map((article, index) => (
-            <article
-              key={article.id}
-              className="group border-b border-gray-100 pb-6 hover:bg-gray-50/50 p-4 -mx-4 rounded-lg transition-all duration-300 cursor-pointer"
-              style={{
-                animation: `fadeInUp 0.5s ease-out forwards`,
-                animationDelay: `${index * 0.05}s`,
-                opacity: 0,
-                transform: "translateY(20px)"
-              }}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <span className={`text-xs font-semibold px-2 py-1 bg-gray-100 rounded-full ${categoryColors[article.category as keyof typeof categoryColors] || "text-gray-600"} group-hover:bg-blue-50 transition-colors duration-300`}>
-                  {article.category}
-                </span>
-                <div className="flex items-center space-x-3 text-xs text-gray-500">
-                  <div className="flex items-center space-x-1">
-                    <Eye className="h-3 w-3" />
-                    <span>{article.views}</span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{article.readTime}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <h2 className="text-xl font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition-colors duration-300 leading-tight">
-                {article.title}
-              </h2>
-              
-              <p className="text-gray-600 mb-4 leading-relaxed line-clamp-2">
-                {article.excerpt}
-              </p>
-              
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-sm text-gray-500">
-                  <User className="h-4 w-4" />
-                  <span className="font-medium">{article.author}</span>
-                </div>
-                
-                <Link
-                  href="#"
-                  className="text-blue-600 text-sm font-medium opacity-0 group-hover:opacity-100 transition-all duration-300 hover:underline"
-                >
-                  Read More →
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* Load More */}
-        <div className="text-center mt-12">
-          <button className="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-300 font-medium">
-            Load More Articles
-          </button>
-        </div>
-      </main>
-
-      {/* Call to Action */}
       <section className="border-2 border-dashed border-gray-300 py-16 mx-auto my-16 max-w-4xl">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl font-bold text-red-800 mb-6">
             Got something to say?
           </h2>
           <p className="text-lg text-gray-600 mb-8">
             We pay writers. Simple as that. Write about whatever's on your mind, publish it here, and we'll send you money when people read it.
           </p>
-          
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 mb-8 text-left max-w-md mx-auto">
+
+          <div className="bg-red-50 border-l-4 border-red-400 p-6 mb-8 text-left max-w-md mx-auto">
             <p className="text-sm text-gray-700">
-              <strong>Last month:</strong> Mary from Nakuru earned Ksh 18,400 writing about her neighbor's chicken business. 
+              <strong>Last month:</strong> Mary from Nakuru earned Ksh 18,400 writing about her neighbor's chicken business.
               <br /><br />
               <strong>This week:</strong> John's rant about traffic jams made him Ksh 3,200.
             </p>
@@ -219,7 +185,7 @@ export default function Home() {
 
           <div className="space-y-4">
             <Link href="/auth/register">
-              <button className="w-full max-w-sm bg-blue-600 text-white px-8 py-3 rounded font-medium hover:bg-blue-700 transition-colors">
+              <button className="w-full max-w-sm bg-red-600 text-white px-8 py-3 rounded font-medium hover:bg-red-700 transition-colors">
                 Start Writing
               </button>
             </Link>
@@ -230,16 +196,15 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
       <footer className="bg-gray-50 border-t border-gray-100 mt-16">
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-4">
-              <FileText className="h-6 w-6 text-blue-600" />
-              <span className="text-lg font-bold text-gray-900">PPC News</span>
+              <FileText className="h-6 w-6 text-red-600" />
+              <span className="text-lg font-bold text-red-800">NewsHub</span>
             </div>
             <p className="text-gray-500 text-sm">
-              © 2024 PPC News. All rights reserved.
+              © 2025 PPCNews. All rights reserved.
             </p>
           </div>
         </div>

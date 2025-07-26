@@ -4,6 +4,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Pencil, BookOpen, DollarSign, User, MessageSquare, Menu, Settings, FileText, Users } from "lucide-react"
 import { LucideIcon } from "lucide-react"
+import { useState } from "react"
+import Image from "next/image"
 
 const iconMap: { [key: string]: LucideIcon } = {
   home: Home,
@@ -15,8 +17,6 @@ const iconMap: { [key: string]: LucideIcon } = {
   users: Users,
   settings: Settings
 }
-import { useState } from "react"
-import Image from "next/image"
 
 interface NavItem {
   label: string;
@@ -48,7 +48,7 @@ export function Sidebar({
   const pathname = usePathname()
   return (
     <aside
-      className={`h-screen ${open ? "w-64" : "w-20"} bg-white shadow-lg flex flex-col fixed top-0 left-0 z-40 transition-all duration-200`}
+      className={`h-screen ${open ? "w-64" : "w-20"} bg-white shadow-lg flex flex-col fixed top-0 left-0 z-40 transition-all duration-200 border-r border-gray-200`}
     >
       {/* Top: Menu + Logo/Brand */}
       <div className="flex items-center h-16 px-4 border-b border-gray-200 gap-2">
@@ -61,8 +61,8 @@ export function Sidebar({
         </button>
         {open && (
           <>
-            <span className="text-2xl font-bold text-blue-600 mr-2">PPC</span>
-            <span className="text-xl font-bold text-gray-900">News</span>
+            <span className="text-2xl font-bold text-red-600">N</span>
+            <span className="text-xl font-bold text-gray-900">Studio</span>
           </>
         )}
       </div>
@@ -76,9 +76,9 @@ export function Sidebar({
               key={href}
               href={href}
               className={`flex items-center gap-3 px-4 py-3 rounded-l-full text-base font-medium transition-colors
-                ${active ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100"}`}
+                ${active ? "bg-red-50 text-red-600" : "text-gray-700 hover:bg-gray-100"}`}
             >
-              <Icon className={`h-5 w-5 ${active ? "text-blue-600" : "text-gray-400"}`} />
+              <Icon className={`h-5 w-5 ${active ? "text-red-600" : "text-gray-400"}`} />
               {open && <span>{label}</span>}
             </Link>
           )
@@ -104,4 +104,4 @@ export function Sidebar({
       </div>
     </aside>
   )
-} 
+}

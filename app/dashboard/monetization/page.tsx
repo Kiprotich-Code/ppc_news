@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useRouter } from "next/navigation"
+import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 
 interface DashboardStats {
   totalArticles: number
@@ -54,21 +55,30 @@ export default function MonetizationPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
-        <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
+      <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+        {/* Sidebar for md+ */}
+        <div className="hidden md:block">
+          <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
+        </div>
+        <main className={`flex-1 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'} mt-4 pb-20`}>
           <LoadingSpinner />
         </main>
+        {/* Bottom nav for mobile */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+          <DashboardMobileNav />
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      {/* Sidebar for md+ */}
+      <div className="hidden md:block">
+        <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
+      </div>
       <div className="flex-1 flex flex-col">
-        <Navigation />
-        <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} mt-4`}>
+        <main className={`flex-1 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'} mt-4 pb-20`}>
           <div className="max-w-5xl mx-auto px-4 py-10">
             {/* Tabs */}
             <div className="mb-6">
@@ -106,6 +116,10 @@ export default function MonetizationPage() {
             </div>      
           </div>
         </main>
+      </div>
+      {/* Bottom nav for mobile */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <DashboardMobileNav />
       </div>
     </div>
   )

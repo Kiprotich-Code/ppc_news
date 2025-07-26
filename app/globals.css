@@ -3,6 +3,9 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary-red: #e60012;
+  --primary-red-hover: #b8000e;
+  --header-shadow: 0 2px 8px 0 rgba(0,0,0,0.03);
 }
 
 @theme inline {
@@ -23,4 +26,30 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.button-red {
+  background: var(--primary-red);
+  color: #fff;
+  border-radius: 9999px;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.2s;
+  border: none;
+  cursor: pointer;
+}
+.button-red:hover {
+  background: var(--primary-red-hover);
+}
+
+.header-shadow {
+  box-shadow: var(--header-shadow);
+}
+
+.text-primary-red {
+  color: var(--primary-red);
 }

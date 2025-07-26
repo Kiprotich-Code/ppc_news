@@ -47,6 +47,7 @@ model Article {
   title          String
   content        String
   images         String? // JSON array of image URLs
+  featuredImage  String? // Main featured image URL
   status         ModerationStatus @default(PENDING)
   moderationNote String?
   isBoosted      Boolean          @default(false)

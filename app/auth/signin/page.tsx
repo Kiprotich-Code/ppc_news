@@ -54,17 +54,17 @@ export default function SignIn() {
           <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 animate-fade-in-up">
             {/* Header */}
             <div className="text-center space-y-4 mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl animate-bounce-subtle">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-2xl animate-bounce-subtle">
                 <LogIn className="w-8 h-8 text-white" />
               </div>
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-indigo-800 bg-clip-text text-transparent animate-gradient">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-red-800 to-red-900 bg-clip-text text-transparent animate-gradient">
                 Welcome Back
               </h2>
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <Link
                   href="/auth/register"
-                  className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-300 hover:underline"
+                  className="font-semibold text-red-600 hover:text-red-500 transition-colors duration-300 hover:underline"
                 >
                   Sign up here
                 </Link>
@@ -81,7 +81,7 @@ export default function SignIn() {
                   </label>
                   <div className="relative">
                     <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300 ${
-                      focusedField === 'email' ? 'text-blue-600' : 'text-gray-400'
+                      focusedField === 'email' ? 'text-red-600' : 'text-gray-400'
                     }`}>
                       <Mail className="h-5 w-5" />
                     </div>
@@ -95,7 +95,7 @@ export default function SignIn() {
                       onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField(null)}
-                      className="block w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-300"
+                      className="block w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-300 hover:border-gray-300"
                       placeholder="Enter your email"
                     />
                   </div>
@@ -108,7 +108,7 @@ export default function SignIn() {
                   </label>
                   <div className="relative">
                     <div className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-all duration-300 ${
-                      focusedField === 'password' ? 'text-blue-600' : 'text-gray-400'
+                      focusedField === 'password' ? 'text-red-600' : 'text-gray-400'
                     }`}>
                       <Lock className="h-5 w-5" />
                     </div>
@@ -122,12 +122,12 @@ export default function SignIn() {
                       onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField(null)}
-                      className="block w-full pl-12 pr-12 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all duration-300 hover:border-gray-300"
+                      className="block w-full pl-12 pr-12 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-300 hover:border-gray-300"
                       placeholder="Enter your password"
                     />
                     <button
                       type="button"
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center hover:text-blue-600 transition-colors duration-300"
+                      className="absolute inset-y-0 right-0 pr-4 flex items-center hover:text-red-600 transition-colors duration-300"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? (
@@ -144,7 +144,7 @@ export default function SignIn() {
               <div className="flex justify-end animate-slide-in-up" style={{ animationDelay: '300ms' }}>
                 <Link
                   href="/auth/forgot-password"
-                  className="text-sm text-blue-600 hover:text-blue-500 transition-colors duration-300 hover:underline"
+                  className="text-sm text-red-600 hover:text-red-500 transition-colors duration-300 hover:underline"
                 >
                   Forgot your password?
                 </Link>
@@ -155,7 +155,7 @@ export default function SignIn() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="group relative w-full flex justify-center items-center py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  className="group relative w-full flex justify-center items-center py-4 px-6 bg-gradient-to-r from-red-600 to-red-800 hover:from-red-700 hover:to-red-900 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                 >
                   <span className="flex items-center space-x-2">
                     {isLoading ? (
@@ -187,7 +187,7 @@ export default function SignIn() {
               <div className="text-center animate-slide-in-up" style={{ animationDelay: '600ms' }}>
                 <Link
                   href="/auth/register"
-                  className="inline-flex items-center space-x-2 text-blue-600 hover:text-blue-500 font-semibold transition-colors duration-300 group"
+                  className="inline-flex items-center space-x-2 text-red-600 hover:text-red-500 font-semibold transition-colors duration-300 group"
                 >
                   <span>Create your account</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
