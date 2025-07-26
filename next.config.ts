@@ -1,12 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  // Modern error handling (Next.js 14+)
-  experimental: {
-    suppressHydrationWarnings: true, // Primary solution
-    missingSuspenseWithCSRBailout: false, // Optional: prevents SSR/CSR mismatch errors
-  },
-  
+ 
   // Production optimizations
   compiler: {
     styledComponents: true,
@@ -16,9 +11,6 @@ const nextConfig: NextConfig = {
   // Environment-aware settings
   eslint: {
     ignoreDuringBuilds: !!process.env.SKIP_LINT,
-  },
-  typescript: {
-    ignoreBuildErrors: true,
   },
 }
 

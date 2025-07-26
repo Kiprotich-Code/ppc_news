@@ -4,10 +4,13 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 import { prisma } from "@/lib/db";
 
 // GET /api/articles/[id] - fetch single article
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
-    const articleId = params.id;
+    const articleId = context.params.id;
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,8 +20,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       where: { id: articleId },
       include: {
         views: true,
-        earnings: true
-      }
+        earnings: true,
+      },
     });
 
     if (!article) {
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       createdAt: article.createdAt.toISOString(),
       publishedAt: article.publishedAt?.toISOString(),
       views: article.views.length,
-      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0)
+      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0),
     };
 
     return NextResponse.json({ article: formattedArticle });
@@ -51,15 +54,18 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 }
 
 // POST /api/articles/[id]/view - increment view count and earnings if eligible
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  context: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
-    const articleId = params.id;
+    const articleId = context.params.id;
 
     // Find the article and author
     const article = await prisma.article.findUnique({
       where: { id: articleId },
-      include: { author: true }
+      include: { author: true },
     });
     if (!article) {
       return NextResponse.json({ error: "Article not found" }, { status: 404 });
@@ -87,18 +93,18 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         data: {
           articleId: articleId,
           userId: session?.user?.id || null,
-          ipAddress: request.headers.get('x-forwarded-for') || null,
-          userAgent: request.headers.get('user-agent') || null
-        }
+          ipAddress: request.headers.get("x-forwarded-for") || null,
+          userAgent: request.headers.get("user-agent") || null,
+        },
       }),
       prisma.earning.create({
         data: {
           articleId: articleId,
           userId: article.authorId,
           amount: cpc,
-          rate: cpc
-        }
-      })
+          rate: cpc,
+        },
+      }),
     ]);
 
     return NextResponse.json({ message: "View counted", cpc }, { status: 200 });

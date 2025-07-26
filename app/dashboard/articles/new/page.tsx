@@ -122,12 +122,12 @@ export default function NewArticle() {
 
   // Insert image handler
   const insertImage = useCallback(async (file: File) => {
-    if (!['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'].includes(file.type)) {
-      toast.error("Only PNG, JPG, GIF, and WebP images are allowed.")
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error("Only PNG, JPG, and WebP images are allowed.")
       return
     }
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("Image size must be less than 10MB.")
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB.")
       return
     }
 
@@ -183,7 +183,7 @@ export default function NewArticle() {
 
       const formData = new FormData()
       formData.append("file", file)
-      
+
       try {
         const res = await fetch("/api/upload", {
           method: "POST",
@@ -191,7 +191,7 @@ export default function NewArticle() {
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || "Upload failed")
-        
+
         const caption = prompt("Video caption (optional):") || ''
         editor?.chain().focus().insertContent({
           type: 'video',
@@ -373,26 +373,26 @@ export default function NewArticle() {
                   
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/gif,image/webp"
+                    accept="image/png,image/jpeg,image/webp"
                     ref={featuredImageInputRef}
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition"
                     onChange={async (e) => {
                       const file = e.target.files?.[0]
                       if (!file) return
-                      
-                      if (!['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'].includes(file.type)) {
-                        toast.error("Only PNG, JPG, GIF, and WebP images are allowed.")
+
+                      if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+                        toast.error("Only PNG, JPG, and WebP images are allowed.")
                         return
                       }
-                      if (file.size > 10 * 1024 * 1024) {
-                        toast.error("Image size must be less than 10MB.")
+                      if (file.size > 5 * 1024 * 1024) {
+                        toast.error("Image size must be less than 5MB.")
                         return
                       }
-                      
+
                       setFeaturedImageUploading(true)
                       const formData = new FormData()
                       formData.append("file", file)
-                      
+
                       try {
                         const res = await fetch("/api/upload", {
                           method: "POST",
@@ -400,7 +400,7 @@ export default function NewArticle() {
                         })
                         const data = await res.json()
                         if (!res.ok) throw new Error(data.error || "Upload failed")
-                        
+
                         setFeaturedImage(data.url)
                         setFeaturedImageFile(file)
                         toast.success("Featured image uploaded!")

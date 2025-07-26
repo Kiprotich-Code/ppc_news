@@ -20,6 +20,7 @@
     "@tiptap/extension-text-align": "^3.0.7",
     "@tiptap/react": "^3.0.7",
     "@tiptap/starter-kit": "^3.0.7",
+    "@vercel/blob": "^1.1.1",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
     "lucide-react": "^0.525.0",
