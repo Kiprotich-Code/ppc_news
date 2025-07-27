@@ -1,115 +1,72 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-// GET /api/articles/[id] - fetch single article
-export async function GET(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
+// Define types for the article response
+interface FormattedArticle {
+  id: string;
+  title: string;
+  content: string;
+  status: string;
+  images: any[]; // Adjust type based on JSON.parse result, e.g., string[] or object[]
+  featuredImage: string | null;
+  createdAt: string;
+  publishedAt: string | null;
+  views: number;
+  earnings: number;
+}
+
+// GET /api/articles - fetch all articles for authorized users
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const articleId = context.params.id;
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const article = await prisma.article.findUnique({
-      where: { id: articleId },
+    const articles = await prisma.article.findMany({
+      where: {
+        // Example: Fetch articles based on user role
+        ...(session.user.role !== "ADMIN" ? { authorId: session.user.id } : {}),
+        status: session.user.role === "ADMIN" ? undefined : "APPROVED",
+      },
       include: {
         views: true,
         earnings: true,
       },
     });
 
-    if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
+    type ArticleWithRelations = {
+      id: string;
+      title: string;
+      content: string;
+      status: string;
+      images: string | null;
+      featuredImage: string | null;
+      createdAt: Date;
+      publishedAt: Date | null;
+      views: { id: string }[];
+      earnings: { amount: number }[];
+    };
 
-    // Check if user is the author or admin
-    if (article.authorId !== session.user.id && session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const formattedArticle = {
+    const formattedArticles = articles.map((article: ArticleWithRelations) => ({
       id: article.id,
       title: article.title,
       content: article.content,
       status: article.status,
-      images: article.images ? JSON.parse(article.images as string) : [],
+      images: article.images ? JSON.parse(article.images) : [], // Handle null
       featuredImage: article.featuredImage,
       createdAt: article.createdAt.toISOString(),
-      publishedAt: article.publishedAt?.toISOString(),
+      publishedAt: article.publishedAt?.toISOString() ?? null,
       views: article.views.length,
       earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0),
-    };
+    }));
 
-    return NextResponse.json({ article: formattedArticle });
+    return NextResponse.json({ articles: formattedArticles });
   } catch (error) {
-    console.error("Error fetching article:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
-
-// POST /api/articles/[id]/view - increment view count and earnings if eligible
-export async function POST(
-  request: NextRequest,
-  context: { params: { id: string } }
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    const articleId = context.params.id;
-
-    // Find the article and author
-    const article = await prisma.article.findUnique({
-      where: { id: articleId },
-      include: { author: true },
-    });
-    if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
-    if (article.status !== "APPROVED") {
-      return NextResponse.json({ error: "Article not approved" }, { status: 403 });
-    }
-
-    // Ignore views by author or admin
-    if (session?.user?.id === article.authorId || session?.user?.role === "ADMIN") {
-      return NextResponse.json({ message: "View not counted" }, { status: 200 });
-    }
-
-    // Get CPC from settings or use default
-    let cpc = 0.05;
-    const settings = await prisma.settings.findUnique({ where: { key: "CPC" } });
-    if (settings && settings.value) {
-      const parsed = parseFloat(settings.value);
-      if (!isNaN(parsed)) cpc = parsed;
-    }
-
-    // Create view record and earning record atomically
-    await prisma.$transaction([
-      prisma.view.create({
-        data: {
-          articleId: articleId,
-          userId: session?.user?.id || null,
-          ipAddress: request.headers.get("x-forwarded-for") || null,
-          userAgent: request.headers.get("user-agent") || null,
-        },
-      }),
-      prisma.earning.create({
-        data: {
-          articleId: articleId,
-          userId: article.authorId,
-          amount: cpc,
-          rate: cpc,
-        },
-      }),
-    ]);
-
-    return NextResponse.json({ message: "View counted", cpc }, { status: 200 });
-  } catch (error) {
-    console.error("Error incrementing article view/earnings:", error);
+    console.error("Error fetching articles:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

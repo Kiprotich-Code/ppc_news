@@ -31,20 +31,20 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const totalArticles = articles.length
-    const totalViews = articles.reduce((sum, article) => sum + article.views.length, 0)
-    const totalEarnings = articles.reduce((sum, article) => {
-      return sum + article.earnings.reduce((earnSum, earning) => earnSum + earning.amount, 0)
+    const totalViews = articles.reduce((sum: any, article: { views: string | any[] }) => sum + article.views.length, 0)
+    const totalEarnings = articles.reduce((sum: any, article: { earnings: any[] }) => {
+      return sum + article.earnings.reduce((earnSum: any, earning: { amount: any }) => earnSum + earning.amount, 0)
     }, 0)
-    const pendingArticles = articles.filter(article => article.status === "PENDING").length
+    const pendingArticles = articles.filter((article: { status: string }) => article.status === "PENDING").length
 
     // Get recent articles (last 5)
-    const recentArticles = articles.slice(0, 5).map(article => ({
+    const recentArticles = articles.slice(0, 5).map((article: { id: any; title: any; status: any; createdAt: { toISOString: () => any }; views: string | any[]; earnings: any[] }) => ({
       id: article.id,
       title: article.title,
       status: article.status,
       createdAt: article.createdAt.toISOString(),
       views: article.views.length,
-      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0)
+      earnings: article.earnings.reduce((sum: any, earning: { amount: any }) => sum + earning.amount, 0)
     }))
 
     return NextResponse.json({
@@ -63,4 +63,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-} 
+}

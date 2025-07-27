@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export async function GET(request: NextRequest) {
@@ -24,7 +24,9 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    const formattedArticles = articles.map(article => ({
+    type ArticleWithExtras = typeof articles[number];
+
+    const formattedArticles = articles.map((article: ArticleWithExtras) => ({
       id: article.id,
       title: article.title,
       content: article.content,
@@ -34,7 +36,7 @@ export async function GET(request: NextRequest) {
       publishedAt: article.publishedAt?.toISOString(),
       author: article.author,
       views: article.views.length,
-      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0)
+      earnings: article.earnings.reduce((sum: any, earning: { amount: any; }) => sum + earning.amount, 0)
     }));
 
     return NextResponse.json({ articles: formattedArticles });
