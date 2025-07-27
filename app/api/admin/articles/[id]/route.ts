@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 // GET /api/admin/articles/[id] - fetch single article
 export async function GET(
   request: NextRequest,
-  context: any
+  context: { params: Promise<{ id: string }> } // Updated type
 ) {
   try {
-    const { params } = context as { params: { id: string } };
+    const params = await context.params; // Await params
     const session = await getServerSession(authOptions);
 
     if (!session?.user || session.user.role !== "ADMIN") {
@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const article = await prisma.article.findUnique({
-      where: { id: context.params.id },
+      where: { id: params.id }, // Use params.id
       include: {
         author: { select: { name: true, email: true } },
       },
@@ -48,10 +48,10 @@ export async function GET(
 // POST /api/admin/articles/[id] - update article status
 export async function POST(
   request: NextRequest,
-  context: any
+  context: { params: Promise<{ id: string }> } // Updated type
 ) {
   try {
-    const { params } = context as { params: { id: string } };
+    const params = await context.params; // Await params
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -63,7 +63,7 @@ export async function POST(
     }
 
     const { action } = await request.json();
-    const articleId = context.id;
+    const articleId = params.id; // Use params.id
 
     if (!action || !["approve", "reject"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -101,13 +101,13 @@ export async function POST(
   }
 }
 
-// PATCH /api/admin/articles/[id] - update article status (duplicate of POST, adjust as needed)
+// PATCH /api/admin/articles/[id] - update article status
 export async function PATCH(
   request: NextRequest,
-  context: any
+  context: { params: Promise<{ id: string }> } // Updated type
 ) {
   try {
-    const { params } = context as { params: { id: string } };
+    const params = await context.params; // Await params
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -119,7 +119,7 @@ export async function PATCH(
     }
 
     const { action } = await request.json();
-    const articleId = context.id;
+    const articleId = params.id; // Use params.id
 
     if (!action || !["approve", "reject"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
