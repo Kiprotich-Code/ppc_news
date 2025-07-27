@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         address,
         phone,
         withdrawalAccount,
-        referralCode,
+        referralCode: referralCode || "",
         referredById,
         role: "WRITER"
       }
@@ -106,4 +106,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-} 
+}
