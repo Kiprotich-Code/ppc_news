@@ -2,14 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { generateHTML } from "@tiptap/html/server"; // Use server version
+import defaultExtensions from "@tiptap/starter-kit";
 
-// Define types for the article response
 interface FormattedArticle {
   id: string;
   title: string;
   content: string;
   status: string;
-  images: any[]; // Adjust type based on JSON.parse result, e.g., string[] or object[]
+  images: any[];
   featuredImage: string | null;
   createdAt: string;
   publishedAt: string | null;
@@ -17,20 +18,19 @@ interface FormattedArticle {
   earnings: number;
 }
 
-// GET /api/articles - fetch all articles for authorized users
-export async function GET(request: NextRequest) {
+export async function GET(request: NextRequest, context: { params: { id: string } }) {
   try {
+    const { params } = context;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const articles = await prisma.article.findMany({
+    const article = await prisma.article.findUnique({
       where: {
-        // Example: Fetch articles based on user role
+        id: params.id,
         ...(session.user.role !== "ADMIN" ? { authorId: session.user.id } : {}),
-        status: session.user.role === "ADMIN" ? undefined : "APPROVED",
       },
       include: {
         views: true,
@@ -38,35 +38,32 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    type ArticleWithRelations = {
-      id: string;
-      title: string;
-      content: string;
-      status: string;
-      images: string | null;
-      featuredImage: string | null;
-      createdAt: Date;
-      publishedAt: Date | null;
-      views: { id: string }[];
-      earnings: { amount: number }[];
-    };
+    if (!article) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
 
-    const formattedArticles = articles.map((article: ArticleWithRelations) => ({
+    // Parse the content JSON string into an object
+    const parsedContent = typeof article.content === "string" ? JSON.parse(article.content) : article.content;
+
+    // Generate HTML using TipTap (server version)
+    const htmlContent = generateHTML(parsedContent, [defaultExtensions]);
+
+    const formattedArticle: FormattedArticle = {
       id: article.id,
       title: article.title,
-      content: article.content,
+      content: htmlContent, // Content is now HTML
       status: article.status,
-      images: article.images ? JSON.parse(article.images) : [], // Handle null
+      images: article.images ? JSON.parse(article.images) : [],
       featuredImage: article.featuredImage,
       createdAt: article.createdAt.toISOString(),
       publishedAt: article.publishedAt?.toISOString() ?? null,
       views: article.views.length,
       earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0),
-    }));
+    };
 
-    return NextResponse.json({ articles: formattedArticles });
+    return NextResponse.json({ article: formattedArticle });
   } catch (error) {
-    console.error("Error fetching articles:", error);
+    console.error("Error fetching article:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

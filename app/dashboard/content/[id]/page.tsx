@@ -35,6 +35,7 @@ export default function ArticleDetailPage() {
 
   // Check for mobile viewport
   useEffect(() => {
+    console.log("ID from useParams:", id);
     const checkIfMobile = () => {
       setIsMobile(window.innerWidth < 768)
       setSidebarOpen(window.innerWidth >= 768) // Auto-open sidebar on desktop

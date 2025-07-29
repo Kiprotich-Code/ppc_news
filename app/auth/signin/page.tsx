@@ -29,6 +29,7 @@ export default function SignIn() {
 
       if (result?.error) {
         toast.error("Invalid email or password")
+        console.log(result.error)
       } else {
         toast.success("Signed in successfully!")
         const session = await getSession()

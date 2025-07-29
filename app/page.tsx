@@ -134,7 +134,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
-      <Navigation />S
+      <Navigation />
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-white via-gray-50 to-red-50 py-20 border-b border-gray-100">

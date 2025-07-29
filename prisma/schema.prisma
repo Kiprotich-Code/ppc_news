@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -48,6 +48,7 @@ model Article {
   content        String
   images         String? // JSON array of image URLs
   featuredImage  String? // Main featured image URL
+  publishedStatus PublishedStatus @default(DRAFT)
   status         ModerationStatus @default(PENDING)
   moderationNote String?
   isBoosted      Boolean          @default(false)
@@ -141,4 +142,9 @@ enum WithdrawalStatus {
   APPROVED
   REJECTED
   PAID
+}
+
+enum PublishedStatus {
+  DRAFT 
+  PUBLISHED
 }

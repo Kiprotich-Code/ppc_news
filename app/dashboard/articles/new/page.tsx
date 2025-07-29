@@ -227,9 +227,9 @@ export default function NewArticle() {
     }
   }, [editor])
 
-  // Save handler
-  const handleSave = async (status: 'DRAFT' | 'PUBLISHED') => {
-    if (status === 'PUBLISHED') {
+  // SAVE HANDLER
+  const handleSave = async (publishedStatus: 'DRAFT' | 'PUBLISHED') => {
+    if (publishedStatus === 'PUBLISHED') {
       if (!title.trim()) {
         toast.error("Title is required to publish.")
         return
@@ -251,7 +251,7 @@ export default function NewArticle() {
     }
 
     setIsLoading(true)
-    
+
     try {
       const res = await fetch("/api/articles", {
         method: "POST",
@@ -259,16 +259,16 @@ export default function NewArticle() {
         body: JSON.stringify({
           title,
           subTitle,
-          content: JSON.stringify(editor?.getJSON()), // <-- fix: send as string
-          status,
+          content: JSON.stringify(editor?.getJSON()),
+          publishedStatus, // Updated to use publishedStatus
           authorId: session?.user?.id,
           featuredImage,
-        })
+        }),
       })
 
       if (!res.ok) throw new Error("Failed to save article")
-      
-      toast.success(status === 'DRAFT' ? "Draft saved!" : "Article published!")
+
+      toast.success(publishedStatus === 'DRAFT' ? "Draft saved!" : "Article published!")
       router.push("/dashboard/content")
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to save article")

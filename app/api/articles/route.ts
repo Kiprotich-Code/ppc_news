@@ -3,13 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-// Define types for the formatted article response
 interface FormattedArticle {
   id: string;
   title: string;
   content: string;
-  status: string;
-  images: any[]; // Adjust based on JSON.parse result, e.g., string[] or object[]
+  status: string,
+  publishedStatus: string,
+  images: any[];
   featuredImage: string | null;
   createdAt: string;
   publishedAt: string | null;
@@ -28,9 +28,9 @@ export async function GET(request: NextRequest) {
 
     const articles = await prisma.article.findMany({
       where: {
-        // Fetch articles based on user role
-        ...(session.user.role !== "ADMIN" ? { authorId: session.user.id } : {}),
-        status: session.user.role === "ADMIN" ? undefined : "APPROVED",
+        ...(session.user.role !== 'ADMIN'
+          ? { authorId: session.user.id } // Non-admins see only their own articles
+          : {}),
       },
       include: {
         views: true,
@@ -43,7 +43,8 @@ export async function GET(request: NextRequest) {
       title: article.title,
       content: article.content,
       status: article.status,
-      images: article.images ? JSON.parse(article.images) : [], // Handle string | null
+      publishedStatus: article.publishedStatus,
+      images: article.images ? JSON.parse(article.images) : [],
       featuredImage: article.featuredImage,
       createdAt: article.createdAt.toISOString(),
       publishedAt: article.publishedAt?.toISOString() ?? null,
@@ -55,5 +56,52 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching articles:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+// POST /api/articles - create a new article (draft or published)
+export async function POST(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const { title, content, publishedStatus, authorId, featuredImage, subTitle } = body;
+
+    if (publishedStatus === 'PUBLISHED' && (!title || !content || !featuredImage)) {
+      return NextResponse.json({ error: 'Title, content, and featured image are required to publish' }, { status: 400 });
+    }
+
+    if (publishedStatus === 'DRAFT' && !title && !content && !featuredImage && !subTitle) {
+      return NextResponse.json({ error: 'At least one field is required to save a draft' }, { status: 400 });
+    }
+
+    // Validate publishedStatus
+    if (!['DRAFT', 'PUBLISHED'].includes(publishedStatus)) {
+      return NextResponse.json({ error: 'Invalid publishedStatus' }, { status: 400 });
+    }
+
+    // Only allow authorId to be the current user
+    if (authorId && authorId !== session.user.id) {
+      return NextResponse.json({ error: 'Invalid author' }, { status: 403 });
+    }
+
+    const article = await prisma.article.create({
+      data: {
+        title: title || '', 
+        content: content || '', 
+        publishedStatus, 
+        authorId: session.user.id,
+        featuredImage: featuredImage || null,
+        publishedAt: publishedStatus === 'PUBLISHED' ? new Date() : null,
+      },
+    });
+
+    return NextResponse.json({ article });
+  } catch (error) {
+    console.error('Error creating article:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
