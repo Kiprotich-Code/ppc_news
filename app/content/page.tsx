@@ -9,7 +9,8 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function PublicFeed() {
   const { data, error, isLoading } = useSWR("/api/public-feed", fetcher);
-  const articles = data?.articles || [];
+  // Only show articles with status 'APPROVED'
+  const articles = (data?.articles || []).filter((article: any) => article.status === 'APPROVED');
 
   return (
     <section className="max-w-4xl mx-auto px-4 py-12">
