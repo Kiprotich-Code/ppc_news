@@ -5,117 +5,14 @@ import Link from "next/link";
 import { FileText, User, Eye, Clock } from "lucide-react";
 import { Navigation } from "@/components/Navigation";
 
+
+import useSWR from "swr";
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function Home() {
-  const mockArticles = [
-    {
-      id: 1,
-      title: "New IEBC Chairperson and Commissioners Set for Swearing-In",
-      author: "Faith Mwangi",
-      views: "18.3K",
-      readTime: "6 min",
-      category: "Politics",
-      excerpt: "High Court clears the way for swearing-in of new Electoral Commission leadership as Kenya prepares for future elections."
-    },
-    {
-      id: 2,
-      title: "KRA Surpasses Revenue Target Despite Economic Challenges",
-      author: "Peter Kariuki",
-      views: "14.7K",
-      readTime: "8 min",
-      category: "Economy",
-      excerpt: "Kenya Revenue Authority collects Sh2.571 trillion in 2024/2025, beating target by Sh16 billion amid tough economic conditions."
-    },
-    {
-      id: 3,
-      title: "Kenya Secures CAF Approval for 2024 CHAN Tournament",
-      author: "Samuel Otieno",
-      views: "12.1K",
-      readTime: "5 min",
-      category: "Sports",
-      excerpt: "Final nod from African football body confirms Kenya's readiness to host the continental championship for home-based players."
-    },
-    {
-      id: 4,
-      title: "Digital Financial Services Reach 12 Million Kenyans",
-      author: "Grace Wanjiku",
-      views: "16.8K",
-      readTime: "7 min",
-      category: "Technology",
-      excerpt: "Government initiative expands mobile money and digital banking access to underserved communities across the country."
-    },
-    {
-      id: 5,
-      title: "Nairobi Road Works Project Enters Second Phase",
-      author: "James Mbugua",
-      views: "9.5K",
-      readTime: "4 min",
-      category: "Infrastructure",
-      excerpt: "Sh1.4 billion road improvement project continues through November 2025, affecting major city routes and traffic patterns."
-    },
-    {
-      id: 6,
-      title: "Kenya's Economic Growth Shows Resilience Amid Global Challenges",
-      author: "Dr. Mary Njoroge",
-      views: "13.2K",
-      readTime: "10 min",
-      category: "Economy",
-      excerpt: "Analysis of Kenya's economic performance and recovery strategies in the face of international market pressures."
-    },
-    {
-      id: 7,
-      title: "Youth Entrepreneurship Programs Gain Momentum Nationwide",
-      author: "David Kimani",
-      views: "11.4K",
-      readTime: "6 min",
-      category: "Business",
-      excerpt: "Government and private sector initiatives create new opportunities for young entrepreneurs across various industries."
-    },
-    {
-      id: 8,
-      title: "Climate Action: Kenya's Green Energy Transition Progress",
-      author: "Dr. Elizabeth Waweru",
-      views: "8.9K",
-      readTime: "9 min",
-      category: "Environment",
-      excerpt: "Update on renewable energy projects and environmental conservation efforts as Kenya leads East Africa's green transition."
-    },
-    {
-      id: 9,
-      title: "Education Sector Reforms: New Policies Take Effect",
-      author: "Margaret Akinyi",
-      views: "15.6K",
-      readTime: "8 min",
-      category: "Education",
-      excerpt: "Latest developments in Kenya's education system including curriculum changes and infrastructure improvements."
-    },
-    {
-      id: 10,
-      title: "Healthcare Innovation: Telemedicine Expands to Rural Areas",
-      author: "Dr. Michael Ochieng",
-      views: "10.7K",
-      readTime: "7 min",
-      category: "Health",
-      excerpt: "Digital health platforms bridge the gap between urban medical expertise and rural communities across Kenya."
-    },
-    {
-      id: 11,
-      title: "Tourism Recovery: Visitor Numbers Show Strong Growth",
-      author: "Anne Wairimu",
-      views: "7.3K",
-      readTime: "5 min",
-      category: "Tourism",
-      excerpt: "Kenya's tourism sector bounces back with increased international arrivals and domestic travel initiatives."
-    },
-    {
-      id: 12,
-      title: "Agriculture Modernization: Tech Solutions for Farmers",
-      author: "John Mwangi",
-      views: "12.8K",
-      readTime: "8 min",
-      category: "Agriculture",
-      excerpt: "Smart farming technologies and digital platforms help Kenyan farmers improve productivity and market access."
-    }
-  ];
+  const { data, error, isLoading } = useSWR("/api/public-feed", fetcher);
+  const articles = data?.articles || [];
 
   const categoryColors = {
     Politics: "text-red-600",
@@ -193,6 +90,30 @@ export default function Home() {
               Takes 2 minutes to set up. No credit card needed.
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Public Article Feed */}
+      <section className="max-w-4xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800">Latest Published Articles</h2>
+        {isLoading && <div>Loading articles...</div>}
+        {error && <div className="text-red-600">Failed to load articles.</div>}
+        <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2">
+          {articles.map((article: any) => (
+            <Link key={article.id} href={`/content/${article.id}`} className="block bg-white border border-gray-200 rounded-lg shadow hover:shadow-lg transition p-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-lg font-semibold text-gray-900">{article.title}</span>
+                <span className="text-xs text-gray-500">{article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : "Draft"}</span>
+              </div>
+              <div className="text-gray-700 line-clamp-2 mb-2">{article.content?.slice(0, 120)}...</div>
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span><User className="inline w-4 h-4 mr-1" />{article.authorName || "Unknown"}</span>
+                <span><Eye className="inline w-4 h-4 mr-1" />{article.views}</span>
+                <span><Clock className="inline w-4 h-4 mr-1" />{article.readTime || "-"}</span>
+              </div>
+            </Link>
+          ))}
+          {(!isLoading && articles.length === 0) && <div className="text-gray-500">No published articles yet.</div>}
         </div>
       </section>
 

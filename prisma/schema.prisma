@@ -16,15 +16,6 @@ model User {
   password          String
   username          String   @unique
   name              String
-  bio               String?
-  location          String?
-  tags              String? // JSON array of tags/categories
-  profileImage      String?
-  idType            String?
-  idNumber          String?
-  kraPin            String?
-  address           String?
-  phone             String?
   role              String   @default("WRITER") // ADMIN or WRITER
   withdrawalAccount String?
   referralCode      String   @unique
@@ -35,11 +26,33 @@ model User {
   updatedAt         DateTime @updatedAt
 
   // Relations
-  articles    Article[]
-  views       View[]
-  earnings    Earning[]
-  withdrawals Withdrawal[]
+  profile      Profile?
+  articles     Article[]
+  views        View[]
+  earnings     Earning[]
+  withdrawals  Withdrawal[]
   auditLogs    AuditLog[]
+  wallet       Wallet?
+  transactions Transaction[]
+}
+
+model Profile {
+  id           String   @id @default(cuid())
+  bio          String?
+  location     String?
+  tags         String? // JSON array of tags/categories
+  profileImage String?
+  idType       String?
+  idNumber     String?
+  kraPin       String?
+  address      String?
+  phone        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Article {
@@ -122,6 +135,25 @@ model Settings {
   key   String @unique
   value String
   // For dynamic CPC, you can add keys like 'defaultCPC', 'dynamicCPC', etc.
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String   @unique
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  amount      Float
+  type        String   // deposit, withdrawal, earning, deduction
+  description String
+  createdAt   DateTime @default(now())
 }
 
 enum ModerationStatus {

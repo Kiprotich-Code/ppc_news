@@ -45,12 +45,6 @@ export function Navigation({ userImage }: { userImage?: string }) {
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
             <Link href="#" className="text-[var(--primary-red)]">Home</Link>
             <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">About</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">Revenues</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">Benefits</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">FAQ</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">Contact</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">Privacy</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">Opera News</Link>
             {/* Session logic */}
             {status === "loading" ? (
               <div className="flex items-center space-x-4">

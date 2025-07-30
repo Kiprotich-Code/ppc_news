@@ -99,7 +99,7 @@ export default function NewArticle() {
     ],
     content: '',
     autofocus: 'end',
-    immediatelyRender: false,
+    immediatelyRender: false, // Explicitly set to false for SSR
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',

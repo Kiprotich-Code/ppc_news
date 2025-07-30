@@ -6,11 +6,19 @@ import { v4 as uuidv4 } from "uuid"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // User fields
     const {
       email,
       password,
       username,
       name,
+      withdrawalAccount,
+      ref // referral code from query param
+    } = body;
+
+    // Profile fields
+    const {
       bio,
       location,
       tags,
@@ -19,9 +27,7 @@ export async function POST(request: NextRequest) {
       idNumber,
       kraPin,
       address,
-      phone,
-      withdrawalAccount,
-      ref // referral code from query param
+      phone
     } = body;
 
     if (!email || !password || !name || !username) {
@@ -67,27 +73,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Create user
+
+    // Create user (basic fields only)
     const user = await prisma.user.create({
       data: {
         email,
         password: hashedPassword,
         username,
         name,
-        bio,
-        location,
-        tags,
-        profileImage,
-        idType,
-        idNumber,
-        kraPin,
-        address,
-        phone,
         withdrawalAccount,
         referralCode: referralCode || "",
         referredById,
         role: "WRITER"
       }
     });
+
+    // Create profile (if any profile fields provided)
+    // await prisma.profile.create({
+    //   data: {
+    //     userId: user.id,
+    //     bio,
+    //     location,
+    //     tags,
+    //     profileImage,
+    //     idType,
+    //     idNumber,
+    //     kraPin,
+    //     address,
+    //     phone
+    //   }
+    // });
 
     return NextResponse.json({
       user: {
