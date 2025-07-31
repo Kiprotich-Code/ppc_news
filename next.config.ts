@@ -17,21 +17,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: !!process.env.SKIP_LINT,
   },
-
-  // Webpack config to prevent duplicate React versions
-  webpack: (config) => {
-    config.resolve ??= {}
-    config.resolve.alias ??= {}
-    
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      'react': require.resolve('react'),
-      'react-dom': require.resolve('react-dom'),
-      'react/jsx-runtime': require.resolve('react/jsx-runtime'),
-    }
-
-    return config
-  }
 }
 
 export default nextConfig

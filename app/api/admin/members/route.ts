@@ -13,24 +13,16 @@ export async function GET(req: NextRequest) {
         articles: true,
         withdrawals: true,
         earnings: true,
-        auditLogs: true, // Add this line to include auditLogs
+        auditLogs: true,
+        profile: true, // Include profile to access profileImage
       },
     });
     return NextResponse.json({ user });
   }
-  // List all members (basic info)
+  // List all members (basic info with profile details)
   const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      username: true,
-      role: true,
-      createdAt: true,
-      profileImage: true,
-      phone: true,
-      address: true,
-      withdrawalAccount: true,
+    include: {
+      profile: true, // Include profile to access profileImage, phone, address, etc.
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -46,13 +38,25 @@ export async function POST(req: NextRequest) {
   }
   let updateData: any = {};
   if (action === 'suspend') updateData.role = 'SUSPENDED';
-  if (action === 'flag') updateData.tags = 'FLAGGED';
-  if (!Object.keys(updateData).length) {
+  // Note: 'tags' is in Profile model, not User. Use profile update if needed.
+  if (action === 'flag') {
+    // Update profile tags if flagging should affect profile
+    await prisma.profile.update({
+      where: { userId: id },
+      data: { tags: 'FLAGGED' }, // Assuming tags is a JSON string; adjust if array
+    });
+  }
+  if (!Object.keys(updateData).length && action !== 'flag') {
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }
-  const updated = await prisma.user.update({
-    where: { id },
-    data: updateData,
-  });
-  return NextResponse.json({ user: updated });
+  try {
+    const updated = await prisma.user.update({
+      where: { id },
+      data: updateData,
+    });
+    return NextResponse.json({ user: updated });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json({ error: 'Failed to update user' }, { status: 500 });
+  }
 }
