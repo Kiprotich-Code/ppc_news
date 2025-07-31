@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/Sidebar"
 import Link from "next/link"
-import { FileText, Plus, Eye, MousePointer, DollarSign } from "lucide-react"
+import { FileText, Plus, Eye, MousePointer, DollarSign, Share2, Facebook, Twitter, Linkedin } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useRouter } from "next/navigation"
@@ -29,6 +29,7 @@ export default function ContentPage() {
   const [publishedStatusFilter, setPublishedStatusFilter] = useState("All")
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [showShareOptions, setShowShareOptions] = useState<{[key: string]: boolean}>({})
 
   useEffect(() => {
     if (status === "loading") return
@@ -123,6 +124,32 @@ export default function ContentPage() {
         return "bg-gray-100 text-gray-800"
       default:
         return "bg-gray-100 text-gray-800"
+    }
+  }
+
+  const toggleShareOptions = (articleId: string) => {
+    setShowShareOptions(prev => ({
+      ...prev,
+      [articleId]: !prev[articleId]
+    }))
+  }
+
+  const shareOnSocialMedia = (platform: string, article: Article) => {
+    const articleUrl = `${window.location.origin}/articles/${article.id}`
+    const shareText = `Check out this article: ${article.title}`
+
+    switch (platform) {
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`, '_blank')
+        break
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(articleUrl)}`, '_blank')
+        break
+      case 'linkedin':
+        window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(articleUrl)}&title=${encodeURIComponent(article.title)}`, '_blank')
+        break
+      default:
+        break
     }
   }
 
@@ -221,12 +248,49 @@ export default function ContentPage() {
                             <span>{formatCurrency(article.earnings)}</span>
                           </div>
                         </div>
-                        <Link
-                          href={`/dashboard/content/${article.id}`}
-                          className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
-                        >
-                          Details
-                        </Link>
+                        <div className="flex items-center gap-2">
+                          {article.publishedStatus === "PUBLISHED" && (
+                            <div className="relative">
+                              <button 
+                                onClick={() => toggleShareOptions(article.id)}
+                                className="p-2 text-gray-500 hover:text-red-600"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </button>
+                              {showShareOptions[article.id] && (
+                                <div className="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-md shadow-lg z-10 py-1">
+                                  <button
+                                    onClick={() => shareOnSocialMedia('facebook', article)}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  >
+                                    <Facebook className="h-4 w-4 mr-2 text-blue-600" />
+                                    Facebook
+                                  </button>
+                                  <button
+                                    onClick={() => shareOnSocialMedia('twitter', article)}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  >
+                                    <Twitter className="h-4 w-4 mr-2 text-blue-400" />
+                                    Twitter
+                                  </button>
+                                  <button
+                                    onClick={() => shareOnSocialMedia('linkedin', article)}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                  >
+                                    <Linkedin className="h-4 w-4 mr-2 text-blue-700" />
+                                    LinkedIn
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <Link
+                            href={`/dashboard/content/${article.id}`}
+                            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
+                          >
+                            Details
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   </div>
