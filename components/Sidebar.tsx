@@ -36,6 +36,7 @@ export function Sidebar({
     { label: "Content Library", href: "/dashboard/content", icon: "book-open" },
     { label: "Monetization", href: "/dashboard/monetization", icon: "dollar-sign" },
     { label: "Wallet", href: "/dashboard/wallet", icon: "dollar-sign" },
+    { label: "Content Academy", href: "/dashboard/academy", icon: "book-open" },
     { label: "Account", href: "/dashboard/profile", icon: "user" },
   ]
 }: { 
