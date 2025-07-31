@@ -207,7 +207,7 @@ export default function Transactions() {
           {/* Filters */}
           <div className="flex gap-4 mb-6">
             <select
-              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black focus:outline-none focus:ring-2 focus:ring-red-600"
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
             >
@@ -217,7 +217,7 @@ export default function Transactions() {
               <option>Revenue</option>
             </select>
             <select
-              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-600"
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black focus:outline-none focus:ring-2 focus:ring-red-600"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -349,12 +349,12 @@ export default function Transactions() {
                           User ID: {wallet.userId}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 text-sm">
+                      <div className="flex items-center space-x-4 text-sm text-black">
                         <div className="flex items-center gap-1">
                           <DollarSign className="h-4 w-4 text-red-600" />
                           <span>Balance: {formatCurrency(wallet.balance)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-black">
                           <Clock className="h-4 w-4 text-red-600" />
                           <span>Pending: {formatCurrency(wallet.pendingWithdrawals)}</span>
                         </div>
