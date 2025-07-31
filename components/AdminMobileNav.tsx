@@ -8,7 +8,7 @@ const navItems = [
   { label: "Dashboard", href: "/admin", icon: Home },
   { label: "Articles", href: "/admin/articles", icon: FileText },
   { label: "Members", href: "/admin/members", icon: Users },
-  { label: "Withdrawals", href: "/admin/withdrawals", icon: DollarSign },
+  { label: "Transactions", href: "/admin/transactions", icon: DollarSign },
   { label: "Settings", href: "/admin/settings", icon: Settings },
 ]
 

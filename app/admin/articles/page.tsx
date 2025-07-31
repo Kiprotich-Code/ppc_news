@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import React, { useEffect, useState } from "react";
 import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar";
@@ -119,7 +119,6 @@ const AdminArticles = () => {
       <ChevronDown className="w-4 h-4 ml-1" />;
   };
 
-  // Calculate stats
   const totalArticles = articles.length;
   const approvedArticles = articles.filter(a => a.status === "APPROVED").length;
   const pendingArticles = articles.filter(a => a.status === "PENDING").length;
@@ -133,7 +132,6 @@ const AdminArticles = () => {
   }, []);
 
   useEffect(() => {
-    // Function to check if screen is md or larger
     const checkScreen = () => {
       setIsMdUp(window.matchMedia('(min-width: 768px)').matches);
     };
@@ -143,8 +141,7 @@ const AdminArticles = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
-      {/* Sidebar for md+ */}
+    <div className="min-h-screen flex flex-col md:flex-row bg-white">
       <div className="hidden md:block">
         <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={undefined} />
       </div>
@@ -153,11 +150,10 @@ const AdminArticles = () => {
         className="flex-1 p-4 md:p-8 pb-20 transition-all duration-300"
         style={isMdUp ? { marginLeft: sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED } : {}}
       >
-        {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Articles</h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-600 text-sm mt-1">
               {articles.length} {articles.length === 1 ? "article" : "articles"} total
             </p>
           </div>
@@ -170,13 +166,13 @@ const AdminArticles = () => {
               <input
                 type="text"
                 placeholder="Search articles..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <button 
-              className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+              className="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
               onClick={() => router.push("/admin/articles/new")}
             >
               <FilePlus className="w-5 h-5 mr-2" />
@@ -185,24 +181,23 @@ const AdminArticles = () => {
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Articles</p>
+                <p className="text-sm font-medium text-gray-600">Total Articles</p>
                 <p className="text-2xl font-bold text-gray-900">{totalArticles}</p>
               </div>
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <FileText className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Approved</p>
+                <p className="text-sm font-medium text-gray-600">Approved</p>
                 <p className="text-2xl font-bold text-gray-900">{approvedArticles}</p>
                 <p className="text-sm text-green-600">
                   {totalArticles ? Math.round((approvedArticles / totalArticles) * 100) : 0}%
@@ -214,10 +209,10 @@ const AdminArticles = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Pending Review</p>
+                <p className="text-sm font-medium text-gray-600">Pending Review</p>
                 <p className="text-2xl font-bold text-gray-900">{pendingArticles}</p>
               </div>
               <div className="bg-yellow-100 p-2 rounded-lg">
@@ -226,27 +221,26 @@ const AdminArticles = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Earnings</p>
+                <p className="text-sm font-medium text-gray-600">Total Earnings</p>
                 <p className="text-2xl font-bold text-gray-900">${totalEarnings.toFixed(2)}</p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-600">
                   Avg: ${avgClickValue.toFixed(2)} per click
                 </p>
               </div>
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <DollarSign className="w-6 h-6 text-purple-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <DollarSign className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Articles Table */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <Loader2 className="w-8 h-8 animate-spin text-red-600" />
             </div>
           ) : error ? (
             <div className="p-6 text-red-500 flex flex-col items-center">
@@ -254,7 +248,7 @@ const AdminArticles = () => {
               <p>{error}</p>
               <button 
                 onClick={fetchArticles} 
-                className="mt-4 text-blue-600 hover:text-blue-800 flex items-center"
+                className="mt-4 text-red-600 hover:text-red-800 flex items-center"
               >
                 <RefreshCw className="w-4 h-4 mr-1" />
                 Try Again
@@ -339,7 +333,7 @@ const AdminArticles = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="text-sm font-medium text-blue-600 hover:underline">
+                            <div className="text-sm font-medium text-red-600 hover:underline">
                               <Link href={`/admin/members/${article.author.id}`}>
                                 {article.author.name}
                               </Link>
@@ -369,14 +363,14 @@ const AdminArticles = () => {
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => router.push(`/admin/articles/${article.id}`)}
-                              className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                               title="View details"
                             >
                               <Eye className="h-5 w-5" />
                             </button>
                             <button
                               onClick={() => router.push(`/admin/articles/${article.id}/edit`)}
-                              className="text-yellow-600 hover:text-yellow-900 p-1 rounded hover:bg-yellow-50 transition-colors"
+                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                               title="Edit"
                             >
                               <Edit className="h-5 w-5" />
@@ -411,7 +405,6 @@ const AdminArticles = () => {
         </div>
       </main>
 
-      {/* Bottom nav for mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <AdminMobileNav userName={undefined} />
       </div>

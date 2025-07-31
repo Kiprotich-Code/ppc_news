@@ -38,7 +38,7 @@ export function AdminSidebar({
     { label: "Articles", href: "/admin/articles", icon: "file-text" },
     { label: "Members", href: "/admin/members", icon: "users" },
     { label: "Settings", href: "/admin/settings", icon: "settings" },
-    { label: "Withdrawals", href: "/admin/withdrawals", icon: "dollar-sign" },
+    { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
   ]
 }: { 
   open: boolean, 
@@ -67,7 +67,7 @@ export function AdminSidebar({
         </button>
         {open && (
           <>
-            <span className="text-2xl font-bold text-blue-600 mr-2">PPC</span>
+            <span className="text-2xl font-bold text-red-600 mr-2">N</span>
             <span className="text-xl font-bold text-gray-900">Admin</span>
           </>
         )}
@@ -75,7 +75,6 @@ export function AdminSidebar({
       {/* Navigation */}
       <nav className="flex-1 py-6 flex flex-col gap-1">
         {navItems.map(({ label, href, icon }) => {
-          // Only mark as active if pathname exactly matches href (not startsWith)
           const active = pathname === href
           const Icon = iconMap[icon] || Home
           return (
@@ -83,9 +82,9 @@ export function AdminSidebar({
               key={href}
               href={href}
               className={`flex items-center gap-3 px-4 py-3 rounded-l-full text-base font-medium transition-colors
-                ${active ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100"}`}
+                ${active ? "bg-red-50 text-red-600" : "text-gray-700 hover:bg-gray-100"}`}
             >
-              <Icon className={`h-5 w-5 ${active ? "text-blue-600" : "text-gray-400"}`} />
+              <Icon className={`h-5 w-5 ${active ? "text-red-600" : "text-gray-400"}`} />
               {open && <span>{label}</span>}
             </Link>
           )

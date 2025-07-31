@@ -11,7 +11,7 @@ const navItems = [
   { label: "Content", href: "/dashboard/content", icon: BookOpen },
   { label: "Monetize", href: "/dashboard/monetization", icon: DollarSign },
   { label: "Account", href: "/dashboard/profile", icon: User },
-  { label: "Account", href: "/dashboard/academy", icon: BookOpen },
+  { label: "Academy", href: "/dashboard/academy", icon: BookOpen },
 ]
 
 type DashboardMobileNavProps = {

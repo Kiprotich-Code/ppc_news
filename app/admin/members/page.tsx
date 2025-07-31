@@ -121,7 +121,7 @@ const AdminMembers = () => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+    <div className="min-h-screen flex flex-col md:flex-row bg-white">
       {/* Sidebar for md+ */}
       <div className="hidden md:block">
         <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={undefined} />
@@ -135,7 +135,7 @@ const AdminMembers = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Members</h1>
-            <p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-600 text-sm mt-1">
               {members.length} {members.length === 1 ? 'member' : 'members'} total
             </p>
           </div>
@@ -148,12 +148,12 @@ const AdminMembers = () => {
               <input
                 type="text"
                 placeholder="Search members..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <button className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+            <button className="flex items-center justify-center bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors">
               <UserPlus className="w-5 h-5 mr-2" />
               Add Member
             </button>
@@ -162,50 +162,50 @@ const AdminMembers = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Total Members</p>
+                <p className="text-sm font-medium text-gray-600">Total Members</p>
                 <p className="text-2xl font-bold text-gray-900">{members.length}</p>
               </div>
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <UserPlus className="w-6 h-6 text-blue-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <UserPlus className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Admins</p>
+                <p className="text-sm font-medium text-gray-600">Admins</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {members.filter(m => m.role === 'ADMIN').length}
                 </p>
               </div>
-              <div className="bg-purple-100 p-2 rounded-lg">
-                <Shield className="w-6 h-6 text-purple-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <Shield className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">Writers</p>
+                <p className="text-sm font-medium text-gray-600">Writers</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {members.filter(m => m.role === 'WRITER').length}
                 </p>
               </div>
-              <div className="bg-green-100 p-2 rounded-lg">
-                <FileText className="w-6 h-6 text-green-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <FileText className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-sm p-4">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-500">New Today</p>
+                <p className="text-sm font-medium text-gray-600">New Today</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {members.filter(m => {
                     const memberDate = new Date(m.createdAt);
@@ -214,26 +214,26 @@ const AdminMembers = () => {
                   }).length}
                 </p>
               </div>
-              <div className="bg-yellow-100 p-2 rounded-lg">
-                <Calendar className="w-6 h-6 text-yellow-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <Calendar className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
         </div>
 
         {/* Members Table */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
           {loading ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              <Loader2 className="w-8 h-8 animate-spin text-red-600" />
             </div>
           ) : error ? (
-            <div className="p-6 text-red-500 flex flex-col items-center">
+            <div className="p-6 text-red-600 flex flex-col items-center">
               <AlertCircle className="w-10 h-10 mb-2" />
               <p>{error}</p>
               <button 
                 onClick={fetchMembers} 
-                className="mt-4 text-blue-600 hover:text-blue-800 flex items-center"
+                className="mt-4 text-red-600 hover:text-red-800 flex items-center"
               >
                 <RefreshCw className="w-4 h-4 mr-1" />
                 Try Again
@@ -246,7 +246,7 @@ const AdminMembers = () => {
                   <tr>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort('name')}
                     >
                       <div className="flex items-center">
@@ -256,7 +256,7 @@ const AdminMembers = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort('email')}
                     >
                       <div className="flex items-center">
@@ -266,7 +266,7 @@ const AdminMembers = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort('role')}
                     >
                       <div className="flex items-center">
@@ -276,7 +276,7 @@ const AdminMembers = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort('createdAt')}
                     >
                       <div className="flex items-center">
@@ -284,7 +284,7 @@ const AdminMembers = () => {
                         {getSortIcon('createdAt')}
                       </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -304,30 +304,30 @@ const AdminMembers = () => {
                             </div>
                             <div className="ml-4">
                               <div className="text-sm font-medium text-gray-900">{member.name}</div>
-                              <div className="text-sm text-gray-500">@{member.username}</div>
+                              <div className="text-sm text-gray-600">@{member.username}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {member.email}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            member.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' :
-                            member.role === 'WRITER' ? 'bg-blue-100 text-blue-800' :
+                            member.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                            member.role === 'WRITER' ? 'bg-red-100 text-red-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
                             {member.role}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {new Date(member.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => router.push(`/admin/members/${member.id}`)}
-                              className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
+                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
                               title="View details"
                             >
                               <Eye className="h-5 w-5" />
@@ -362,7 +362,7 @@ const AdminMembers = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-600">
                         {searchTerm ? 'No members match your search' : 'No members found'}
                       </td>
                     </tr>

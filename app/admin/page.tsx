@@ -19,7 +19,7 @@ import {
 import Link from "next/link"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { AdminMobileNav } from "@/components/AdminMobileNav"
-import { signOut } from "next-auth/react";
+import { signOut } from "next-auth/react"
 
 interface AdminStats {
   totalUsers: number
@@ -43,8 +43,8 @@ export default function AdminPage() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [pendingArticles, setPendingArticles] = useState<PendingArticle[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isMdUp, setIsMdUp] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [isMdUp, setIsMdUp] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -61,12 +61,12 @@ export default function AdminPage() {
 
   useEffect(() => {
     const checkScreen = () => {
-      setIsMdUp(window.matchMedia('(min-width: 768px)').matches);
-    };
-    checkScreen();
-    window.addEventListener('resize', checkScreen);
-    return () => window.removeEventListener('resize', checkScreen);
-  }, []);
+      setIsMdUp(window.matchMedia('(min-width: 768px)').matches)
+    }
+    checkScreen()
+    window.addEventListener('resize', checkScreen)
+    return () => window.removeEventListener('resize', checkScreen)
+  }, [])
 
   const fetchAdminData = async () => {
     try {
@@ -94,7 +94,6 @@ export default function AdminPage() {
       })
 
       if (response.ok) {
-        // Refresh data
         fetchAdminData()
       }
     } catch (error) {
@@ -104,7 +103,7 @@ export default function AdminPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex">
+      <div className="min-h-screen bg-white flex">
         <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
@@ -118,8 +117,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 flex flex-col md:flex-row">
-      {/* Sidebar for md+ */}
+    <div className="min-h-screen bg-white flex flex-col md:flex-row">
       <div className="hidden md:block">
         <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session.user.name} />
       </div>
@@ -127,7 +125,6 @@ export default function AdminPage() {
         className="flex-1 p-4 md:p-8 pb-20 transition-all duration-300"
         style={isMdUp ? { marginLeft: sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED } : {}}
       >
-        {/* Sign Out Button */}
         <div className="flex justify-end mb-4">
           <button
             onClick={() => signOut()}
@@ -137,52 +134,50 @@ export default function AdminPage() {
             Sign Out
           </button>
         </div>
-        {/* Mobile nav toggle removed, handled by bottom nav */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Manage your platform and moderate content.</p>
         </div>
-        {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-blue-500">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-green-500">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-green-600" />
+              <FileText className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Articles</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.totalArticles ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-orange-500">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-orange-600" />
+              <Clock className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Pending Articles</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.pendingArticles ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-purple-500">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
-              <Eye className="h-8 w-8 text-purple-600" />
+              <Eye className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Views</p>
                 <p className="text-2xl font-bold text-gray-900">{stats?.totalViews?.toLocaleString() ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-yellow-500">
+          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-yellow-600" />
+              <DollarSign className="h-8 w-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
                 <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.totalEarnings ?? 0)}</p>
@@ -199,11 +194,10 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-        {/* Quick Actions */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6 mb-6 sm:mb-8">
           <Link
             href="/admin/articles"
-            className="bg-gradient-to-r from-blue-500 to-blue-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center">
               <FileText className="h-8 w-8 text-white" />
@@ -215,7 +209,7 @@ export default function AdminPage() {
           </Link>
           <Link
             href="/admin/members"
-            className="bg-gradient-to-r from-green-500 to-green-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center">
               <Users className="h-8 w-8 text-white" />
@@ -227,7 +221,7 @@ export default function AdminPage() {
           </Link>
           <Link
             href="/admin/withdrawals"
-            className="bg-gradient-to-r from-yellow-500 to-yellow-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
           >
             <div className="flex items-center">
               <DollarSign className="h-8 w-8 text-white" />
@@ -238,7 +232,6 @@ export default function AdminPage() {
             </div>
           </Link>
         </div>
-        {/* Pending Articles */}
         <div className="bg-white rounded-lg shadow overflow-x-auto">
           <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200">
             <h2 className="text-base sm:text-lg font-semibold text-gray-900">Pending Articles</h2>
@@ -285,7 +278,6 @@ export default function AdminPage() {
           </div>
         </div>
       </main>
-      {/* Bottom nav for mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <AdminMobileNav userName={session.user.name} />
       </div>
