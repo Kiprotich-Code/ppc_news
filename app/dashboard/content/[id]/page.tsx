@@ -194,13 +194,19 @@ export default function ArticleDetailPage() {
         <main className={`flex-1 ${sidebarOpen ? "md:ml-64" : "md:ml-20"} mt-4 pb-20`}>
           <div className="px-4 sm:px-6 md:px-8 py-6">
             <div className="max-w-4xl mx-auto">
-              <div className="mb-6">
+              <div className="mb-6 flex justify-between items-center">
                 <Link
                   href="/dashboard/content"
                   className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back to Content Library
+                </Link>
+                <Link
+                  href={`/dashboard/articles/new?edit=${article.id}`}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                >
+                  Edit Article
                 </Link>
               </div>
 

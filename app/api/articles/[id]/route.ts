@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db";
 interface FormattedArticle {
   id: string;
   title: string;
-  content: string; // Raw TipTap JSON
+  content: string;
   status: string;
   images: any[];
   featuredImage: string | null;
@@ -53,12 +53,118 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       createdAt: article.createdAt.toISOString(),
       publishedAt: article.publishedAt?.toISOString() ?? null,
       views: article.views.length,
-      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0),
+      earnings: article.earnings.reduce((sum: any, earning: { amount: any; }) => sum + earning.amount, 0),
     };
 
     return NextResponse.json({ article: formattedArticle });
   } catch (error) {
     console.error("Error fetching article:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+
+
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { params } = await context;
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    console.log('Received update request body:', body);
+
+    const { title, subTitle, content, publishedStatus, status, featuredImage } = body;
+
+    // Ensure publishedStatus is valid
+    if (!['DRAFT', 'PUBLISHED'].includes(publishedStatus)) {
+      return NextResponse.json({ error: "Invalid publishedStatus value" }, { status: 400 });
+    }
+
+    // Ensure status is valid
+    if (status && !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
+      return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
+    }
+
+    // Validate required fields
+    if (!title || title.trim() === '') {
+      return NextResponse.json({ error: "Title is required" }, { status: 400 });
+    }
+
+    if (!content) {
+      return NextResponse.json({ error: "Content is required" }, { status: 400 });
+    }
+
+    if (publishedStatus === 'PUBLISHED' && !featuredImage) {
+      return NextResponse.json({ error: "Featured image is required for published articles" }, { status: 400 });
+    }
+
+    // Verify article ownership or admin status
+    const existingArticle = await prisma.article.findUnique({
+      where: {
+        id: (await params).id,
+      },
+      select: {
+        authorId: true,
+        publishedAt: true,
+      },
+    });
+
+    if (!existingArticle) {
+      return NextResponse.json({ error: "Article not found" }, { status: 404 });
+    }
+
+    if (session.user.role !== "ADMIN" && existingArticle.authorId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    // Update the article
+    try {
+      const updatedArticle = await prisma.article.update({
+        where: {
+          id: (await params).id,
+        },
+        data: {
+          title: title.trim(),
+          subTitle: subTitle?.trim() || null,
+          content,
+          status: publishedStatus, // Make sure we're using the correct field name
+          featuredImage: featuredImage || null,
+          ...(publishedStatus === "PUBLISHED" && !existingArticle.publishedAt
+            ? { publishedAt: new Date() }
+            : {}),
+        },
+        include: {
+          views: true,
+          earnings: true,
+        },
+      });
+
+      // Format the response similar to GET
+      const formattedArticle: FormattedArticle = {
+        id: updatedArticle.id,
+        title: updatedArticle.title,
+        content: updatedArticle.content,
+        status: updatedArticle.status,
+        images: updatedArticle.images ? JSON.parse(updatedArticle.images) : [],
+        featuredImage: updatedArticle.featuredImage,
+        createdAt: updatedArticle.createdAt.toISOString(),
+        publishedAt: updatedArticle.publishedAt?.toISOString() ?? null,
+        views: updatedArticle.views.length,
+        earnings: updatedArticle.earnings.reduce((sum: number, earning: { amount: number }) => sum + earning.amount, 0),
+      };
+
+      return NextResponse.json({ article: formattedArticle });
+    } catch (error) {
+      console.error('Error in prisma update:', error);
+      return NextResponse.json({ 
+        error: error instanceof Error ? error.message : "Failed to update article in database"
+      }, { status: 500 });
+    }
+  } catch (error) {
+    console.error("Error updating article:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

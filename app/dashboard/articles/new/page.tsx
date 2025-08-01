@@ -65,7 +65,48 @@ export default function NewArticle() {
   const [featuredImage, setFeaturedImage] = useState("")
   const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null)
   const [featuredImageUploading, setFeaturedImageUploading] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [articleId, setArticleId] = useState<string | null>(null)
   const featuredImageInputRef = useRef<HTMLInputElement>(null)
+
+  // Check for edit mode and fetch article data
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search)
+    const editId = searchParams.get('edit')
+    
+    if (editId) {
+      setEditMode(true)
+      setArticleId(editId)
+      fetchArticleData(editId)
+    }
+  }, [])
+
+  const fetchArticleData = async (id: string) => {
+    try {
+      const res = await fetch(`/api/articles/${id}`)
+      const data = await res.json()
+      
+      if (!res.ok) throw new Error(data.error || "Failed to fetch article")
+      
+      // Pre-fill the form with article data
+      setTitle(data.article.title)
+      setSubTitle(data.article.subTitle || "")
+      setFeaturedImage(data.article.featuredImage || "")
+      
+      // Set editor content if available
+      if (data.article.content && editor) {
+        try {
+          const contentData = JSON.parse(data.article.content)
+          editor.commands.setContent(contentData)
+        } catch (e) {
+          console.error("Failed to parse article content:", e)
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching article:", e)
+      toast.error("Failed to load article for editing")
+    }
+  }
 
   // TipTap Editor
   const editor = useEditor({
@@ -253,20 +294,39 @@ export default function NewArticle() {
     setIsLoading(true)
 
     try {
-      const res = await fetch("/api/articles", {
-        method: "POST",
+      const endpoint = editMode ? `/api/articles/${articleId}` : "/api/articles"
+      const method = editMode ? "PUT" : "POST"
+
+      // Ensure publishedStatus is exactly DRAFT or PUBLISHED
+      const status = editMode ? 'PENDING' : 'PENDING'; // Default to 'PENDING' or adjust as needed
+      const finalPublishedStatus = publishedStatus;
+
+      console.log('Sending article data:', {
+        title,
+        content: JSON.stringify(editor?.getJSON()),
+        publishedStatus: finalPublishedStatus,
+        status,
+        featuredImage,
+      });
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
-          subTitle,
           content: JSON.stringify(editor?.getJSON()),
-          publishedStatus, // Updated to use publishedStatus
-          authorId: session?.user?.id,
+          publishedStatus: finalPublishedStatus,
+          status,
           featuredImage,
         }),
       })
 
-      if (!res.ok) throw new Error("Failed to save article")
+      const data = await res.json();
+      
+      if (!res.ok) {
+        console.error('Server response:', data);
+        throw new Error(data.error || "Failed to save article");
+      }
 
       toast.success(publishedStatus === 'DRAFT' ? "Draft saved!" : "Article published!")
       router.push("/dashboard/content")
@@ -306,9 +366,13 @@ export default function NewArticle() {
         <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-32' : 'ml-16'} mt-4`}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">Write New Article</h1>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {editMode ? 'Edit Article' : 'Write New Article'}
+              </h1>
               <p className="text-gray-600 mt-2">
-                Share your knowledge and earn money for every view.
+                {editMode 
+                  ? 'Update your article content and settings.'
+                  : 'Share your knowledge and earn money for every view.'}
               </p>
             </div>
             

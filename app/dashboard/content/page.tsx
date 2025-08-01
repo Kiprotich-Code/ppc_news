@@ -43,50 +43,17 @@ export default function ContentPage() {
   const fetchArticles = async () => {
     setIsLoading(true)
     try {
-      // Mock API response
-      const mockArticles: Article[] = [
-        {
-          id: "1",
-          title: "Kenya's Economic Outlook 2025",
-          status: "APPROVED",
-          publishedStatus: "PUBLISHED",
-          views: 1200,
-          earnings: 45.50,
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          publishedAt: new Date(Date.now() - 86400000).toISOString()
-        },
-        {
-          id: "2",
-          title: "The Future of Tech in Nairobi",
-          status: "PENDING",
-          publishedStatus: "DRAFT",
-          views: 0,
-          earnings: 0,
-          createdAt: new Date(Date.now() - 172800000).toISOString()
-        },
-        {
-          id: "3",
-          title: "Climate Change Impacts in Kenya",
-          status: "REJECTED",
-          publishedStatus: "DRAFT",
-          views: 0,
-          earnings: 0,
-          createdAt: new Date(Date.now() - 259200000).toISOString()
-        },
-        {
-          id: "4",
-          title: "Tourism Recovery Strategies",
-          status: "APPROVED",
-          publishedStatus: "PUBLISHED",
-          views: 850,
-          earnings: 32.75,
-          createdAt: new Date(Date.now() - 345600000).toISOString(),
-          publishedAt: new Date(Date.now() - 345600000).toISOString()
-        }
-      ]
+      const response = await fetch('/api/articles')
+      if (!response.ok) {
+        throw new Error('Failed to fetch articles')
+      }
+      const data = await response.json()
+      
+      // Your API returns { articles: [...] }, so we need to access data.articles
+      const articlesArray = data.articles || []
 
       // Filter articles based on status and publishedStatus
-      const filteredArticles = mockArticles.filter(article => {
+      const filteredArticles = articlesArray.filter((article: Article) => {
         const statusMatch = statusFilter === "All" || article.status === statusFilter.toUpperCase()
         const publishedStatusMatch = publishedStatusFilter === "All" || article.publishedStatus === publishedStatusFilter.toUpperCase()
         return statusMatch && publishedStatusMatch
