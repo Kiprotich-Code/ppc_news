@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   // List all members (basic info with profile details)
   const users = await prisma.user.findMany({
     include: {
-      profile: true, // Include profile to access profileImage, phone, address, etc.
+      profile: true,
     },
     orderBy: { createdAt: 'desc' },
   });

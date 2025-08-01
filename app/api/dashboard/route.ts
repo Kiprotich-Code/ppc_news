@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
 
     if (!session?.user) {
       return NextResponse.json(
@@ -13,16 +14,17 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const userId = session.user.id
-
-    // Get user's articles with view counts and earnings
+    // Use the same filtering logic as /api/articles
     const articles = await prisma.article.findMany({
       where: {
-        authorId: userId
+        ...(session.user.role !== 'ADMIN'
+          ? { authorId: session.user.id } 
+          : {}),
       },
       include: {
         views: true,
-        earnings: true
+        earnings: true,
+        author: true 
       },
       orderBy: {
         createdAt: "desc"
@@ -31,20 +33,21 @@ export async function GET(request: NextRequest) {
 
     // Calculate statistics
     const totalArticles = articles.length
-    const totalViews = articles.reduce((sum: any, article: { views: string | any[] }) => sum + article.views.length, 0)
-    const totalEarnings = articles.reduce((sum: any, article: { earnings: any[] }) => {
-      return sum + article.earnings.reduce((earnSum: any, earning: { amount: any }) => earnSum + earning.amount, 0)
+    const totalViews = articles.reduce((sum, article) => sum + article.views.length, 0)
+    const totalEarnings = articles.reduce((sum, article) => {
+      return sum + article.earnings.reduce((earnSum, earning) => earnSum + earning.amount, 0)
     }, 0)
-    const pendingArticles = articles.filter((article: { status: string }) => article.status === "PENDING").length
+    const pendingArticles = articles.filter(article => article.status === "PENDING").length
 
-    // Get recent articles (last 5)
-    const recentArticles = articles.slice(0, 5).map((article: { id: any; title: any; status: any; createdAt: { toISOString: () => any }; views: string | any[]; earnings: any[] }) => ({
+    // Get recent articles (last 5) with author names
+    const recentArticles = articles.slice(0, 5).map(article => ({
       id: article.id,
       title: article.title,
       status: article.status,
       createdAt: article.createdAt.toISOString(),
       views: article.views.length,
-      earnings: article.earnings.reduce((sum: any, earning: { amount: any }) => sum + earning.amount, 0)
+      earnings: article.earnings.reduce((sum, earning) => sum + earning.amount, 0),
+      authorName: article.author?.name || 'Unknown' // Include author name
     }))
 
     return NextResponse.json({
