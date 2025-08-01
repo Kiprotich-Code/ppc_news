@@ -345,17 +345,21 @@ export default function NewArticle() {
                   />
                 </div>
                 
-                {/* Featured Image */}
+                {/* Featured Image with Debug */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Featured Image *
                   </label>
+                  
+                  
                   {featuredImage ? (
                     <div className="mb-2">
                       <img 
                         src={featuredImage} 
                         alt="Featured" 
                         className="max-h-48 rounded-lg border mb-2 object-cover w-full"
+                        onLoad={() => console.log("Image loaded successfully")}
+                        onError={(e) => console.error("Image failed to load:", e)}
                       />
                       <button
                         type="button"
@@ -399,12 +403,22 @@ export default function NewArticle() {
                           body: formData,
                         })
                         const data = await res.json()
+                        
                         if (!res.ok) throw new Error(data.error || "Upload failed")
 
+                        // DEBUG: Log before setting state
+                        console.log("Setting featured image to:", data.url)
                         setFeaturedImage(data.url)
                         setFeaturedImageFile(file)
+                        
+                        // DEBUG: Log after setting state (will show in next render)
+                        setTimeout(() => {
+                          console.log("Featured image state after update:", featuredImage)
+                        }, 100)
+                        
                         toast.success("Featured image uploaded!")
                       } catch (e) {
+                        console.error("Upload error:", e)
                         toast.error(e instanceof Error ? e.message : "Image upload failed")
                       } finally {
                         setFeaturedImageUploading(false)
