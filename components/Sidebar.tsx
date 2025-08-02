@@ -63,8 +63,16 @@ export function Sidebar({
         </button>
         {open && (
           <>
-            <span className="text-2xl font-bold text-red-600">N</span>
-            <span className="text-xl font-bold text-gray-900">Studio</span>
+            <span className="text-2xl font-bold text-red-600 mr-2">
+              <Image 
+                src="/logo.jpeg"  
+                alt="Company Logo"  
+                width={200}      
+                height={60}     
+                className="h-8 w-auto"  
+                priority          
+              />
+            </span>
           </>
         )}
       </div>

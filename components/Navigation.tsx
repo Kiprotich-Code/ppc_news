@@ -37,8 +37,16 @@ export function Navigation({ userImage }: { userImage?: string }) {
         <div className="flex justify-between h-16 items-center">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <div className="rounded-full bg-[var(--primary-red)] w-10 h-10 flex items-center justify-center text-white font-bold text-2xl">N</div>
-            <span className="font-bold text-xl text-gray-900">News<span className="bg-[var(--primary-red)] text-white rounded px-2 ml-1 text-base">Hub</span></span>
+           <span className="text-2xl font-bold text-red-600 mr-2">
+                         <Image 
+                           src="/logo.jpeg"  
+                           alt="Company Logo"  
+                           width={300}      
+                           height={100}     
+                           className="h-8 w-auto"  
+                           priority          
+                         />
+                       </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -147,11 +155,6 @@ export function Navigation({ userImage }: { userImage?: string }) {
             <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-[var(--primary-red)]">Home</Link>
             <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">About</Link>
             <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Revenues</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Benefits</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">FAQ</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Contact</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Privacy</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Opera News</Link>
             {/* Session logic */}
             {status === "authenticated" ? (
               <>
