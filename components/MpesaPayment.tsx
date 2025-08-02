@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { X, Smartphone, Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
@@ -27,7 +27,9 @@ export function MpesaPayment({
   description
 }: MpesaPaymentProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState<'form' | 'processing' | 'success'>('form');
+  const [step, setStep] = useState<'form' | 'processing' | 'success' | 'failed'>('form');
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const { register, handleSubmit, formState: { errors }, watch } = useForm<PaymentFormData>();
 
   const phoneNumber = watch("phoneNumber");
@@ -42,9 +44,16 @@ export function MpesaPayment({
         endpoint = '/api/wallet/course-payment';
       }
 
+      console.log('Submitting M-pesa payment:', {
+        amount,
+        type,
+        phoneNumber: data.phoneNumber,
+        description
+      });
+
       const response = await fetch(endpoint, {
         method: 'POST',
-        credentials: 'include', // Add this line
+        credentials: 'include',
         headers: { 
           'Content-Type': 'application/json'
         },
@@ -52,33 +61,98 @@ export function MpesaPayment({
           amount,
           paymentMethod: 'MPESA',
           phoneNumber: data.phoneNumber,
-          description
+          description,
+          type
         }),
       });
 
       const result = await response.json();
       
+      console.log('M-pesa API response:', result);
+      
       if (!response.ok) {
         throw new Error(result.error || 'Payment failed');
       }
 
-      setStep('success');
+      // Store transaction ID and start polling
+      setTransactionId(result.transactionId);
+      startPolling(result.transactionId);
+      
       toast.success('Please check your phone to complete the payment');
       
-      // Auto close and trigger success after 3 seconds
-      setTimeout(() => {
-        onSuccess();
-        onClose();
-        setStep('form'); // Reset for next time
-      }, 3000);
-      
     } catch (error: any) {
-      setStep('form');
+      console.error('M-pesa payment error:', error);
+      setStep('failed');
       toast.error(error.message || 'Failed to initiate payment');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const startPolling = (txnId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/wallet/transaction-status/${txnId}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const transaction = await response.json();
+          
+          if (transaction.status === 'COMPLETED') {
+            clearInterval(interval);
+            setPollingInterval(null);
+            setStep('success');
+            toast.success('Payment completed successfully!');
+            
+            // Auto close after 3 seconds
+            setTimeout(() => {
+              onSuccess();
+              onClose();
+              resetForm();
+            }, 3000);
+          } else if (transaction.status === 'FAILED') {
+            clearInterval(interval);
+            setPollingInterval(null);
+            setStep('failed');
+            toast.error('Payment failed. Please try again.');
+          }
+        }
+      } catch (error) {
+        console.error('Error polling transaction status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    setPollingInterval(interval);
+    
+    // Stop polling after 5 minutes (100 attempts)
+    setTimeout(() => {
+      if (interval) {
+        clearInterval(interval);
+        setPollingInterval(null);
+        setStep('failed');
+        toast.error('Payment timeout. Please check your phone and try again.');
+      }
+    }, 300000);
+  };
+
+  const resetForm = () => {
+    setStep('form');
+    setTransactionId(null);
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const formatPhoneNumber = (value: string) => {
     // Remove all non-digits
@@ -113,12 +187,19 @@ export function MpesaPayment({
                 <p className="text-red-100 text-sm">Secure & Instant</p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
-            >
-              <X className="w-4 h-4 text-white" />
-            </button>
+                         <button
+               onClick={() => {
+                 if (pollingInterval) {
+                   clearInterval(pollingInterval);
+                   setPollingInterval(null);
+                 }
+                 onClose();
+                 resetForm();
+               }}
+               className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+             >
+               <X className="w-4 h-4 text-white" />
+             </button>
           </div>
         </div>
 
@@ -206,52 +287,88 @@ export function MpesaPayment({
                     )}
                   </button>
                   
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="w-full border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all hover:bg-gray-50"
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
+                                     <button
+                     type="button"
+                     onClick={() => {
+                       if (pollingInterval) {
+                         clearInterval(pollingInterval);
+                         setPollingInterval(null);
+                       }
+                       onClose();
+                       resetForm();
+                     }}
+                     className="w-full border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all hover:bg-gray-50"
+                     disabled={isLoading}
+                   >
+                     Cancel
+                   </button>
                 </div>
               </form>
             </>
           )}
 
-          {step === 'processing' && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Processing Payment</h3>
-              <p className="text-gray-600 mb-4">
-                We're sending a payment request to your phone...
-              </p>
-              <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
-                <p className="text-sm text-yellow-800">
-                  Please check your phone for the M-Pesa payment prompt and enter your PIN to complete the transaction.
-                </p>
-              </div>
-            </div>
-          )}
+                     {step === 'processing' && (
+             <div className="text-center py-8">
+               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
+               </div>
+               <h3 className="text-lg font-semibold text-gray-800 mb-2">Waiting for Payment</h3>
+               <p className="text-gray-600 mb-4">
+                 Please check your phone and complete the M-Pesa payment...
+               </p>
+               <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                 <p className="text-sm text-yellow-800">
+                   Enter your M-Pesa PIN when prompted. We'll automatically detect when the payment is completed.
+                 </p>
+               </div>
+               <div className="mt-4 text-xs text-gray-500">
+                 Transaction ID: {transactionId}
+               </div>
+             </div>
+           )}
 
-          {step === 'success' && (
-            <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Payment Initiated!</h3>
-              <p className="text-gray-600 mb-4">
-                Check your phone to complete the M-Pesa payment.
-              </p>
-              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-                <p className="text-sm text-green-800">
-                  You should receive an SMS shortly. Enter your M-Pesa PIN to confirm the payment.
-                </p>
-              </div>
-            </div>
-          )}
+                     {step === 'success' && (
+             <div className="text-center py-8">
+               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <CheckCircle className="w-8 h-8 text-green-600" />
+               </div>
+               <h3 className="text-lg font-semibold text-gray-800 mb-2">Payment Completed!</h3>
+               <p className="text-gray-600 mb-4">
+                 Your payment has been processed successfully.
+               </p>
+               <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                 <p className="text-sm text-green-800">
+                   Your wallet has been updated with the payment amount.
+                 </p>
+               </div>
+             </div>
+           )}
+
+           {step === 'failed' && (
+             <div className="text-center py-8">
+               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <AlertCircle className="w-8 h-8 text-red-600" />
+               </div>
+               <h3 className="text-lg font-semibold text-gray-800 mb-2">Payment Failed</h3>
+               <p className="text-gray-600 mb-4">
+                 The payment could not be completed.
+               </p>
+               <div className="bg-red-50 p-4 rounded-xl border border-red-200">
+                 <p className="text-sm text-red-800">
+                   Please check your phone and try again. If the problem persists, contact support.
+                 </p>
+               </div>
+               <button
+                 onClick={() => {
+                   resetForm();
+                   setStep('form');
+                 }}
+                 className="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+               >
+                 Try Again
+               </button>
+             </div>
+           )}
         </div>
       </div>
     </div>
