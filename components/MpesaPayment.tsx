@@ -12,6 +12,7 @@ interface MpesaPaymentProps {
   onSuccess: () => void;
   type: 'deposit' | 'withdrawal' | 'course_payment';
   description: string;
+  courseId?: string; // Optional courseId for course payments
 }
 
 interface PaymentFormData {
@@ -24,7 +25,8 @@ export function MpesaPayment({
   amount,
   onSuccess,
   type,
-  description
+  description,
+  courseId
 }: MpesaPaymentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'processing' | 'success' | 'failed'>('form');
@@ -62,7 +64,8 @@ export function MpesaPayment({
           paymentMethod: 'MPESA',
           phoneNumber: data.phoneNumber,
           description,
-          type
+          type,
+          ...(courseId && { courseId }) // Include courseId if provided
         }),
       });
 

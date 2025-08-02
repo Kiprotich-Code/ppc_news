@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
+import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import toast from "react-hot-toast"
 import dynamic from "next/dynamic"
 import { FileText, Loader2, Upload, Image as ImageIcon, Video as VideoIcon, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Minus } from "lucide-react"
@@ -140,7 +141,7 @@ export default function NewArticle() {
     ],
     content: '',
     autofocus: 'end',
-    immediatelyRender: false, // Explicitly set to false for SSR
+    immediatelyRender: false,
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',
@@ -355,21 +356,29 @@ export default function NewArticle() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <Sidebar 
-          open={sidebarOpen} 
-          setOpen={setSidebarOpen} 
-          userName={session.user.name} 
-        />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Desktop Navigation */}
+      <div className="hidden md:block">
+        <Navigation />
+      </div>
+      
+      <div className="flex flex-1">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block">
+          <Sidebar 
+            open={sidebarOpen} 
+            setOpen={setSidebarOpen} 
+            userName={session.user.name} 
+          />
+        </div>
         
-        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-32' : 'ml-16'} mt-4`}>
+        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'} p-4 pb-20 md:pb-0`}>
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
                 {editMode ? 'Edit Article' : 'Write New Article'}
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 mt-2 text-sm md:text-base">
                 {editMode 
                   ? 'Update your article content and settings.'
                   : 'Share your knowledge and earn money for every view.'}
@@ -377,7 +386,7 @@ export default function NewArticle() {
             </div>
             
             <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="p-6 space-y-6">
+              <div className="p-4 md:p-6 space-y-6">
                 {/* Title */}
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -388,7 +397,7 @@ export default function NewArticle() {
                     id="title"
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm md:text-base"
                     placeholder="Enter your article title"
                     required
                   />
@@ -404,17 +413,16 @@ export default function NewArticle() {
                     id="subtitle"
                     value={subTitle}
                     onChange={e => setSubTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm md:text-base"
                     placeholder="Enter a subtitle (optional)"
                   />
                 </div>
                 
-                {/* Featured Image with Debug */}
+                {/* Featured Image */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Featured Image *
                   </label>
-                  
                   
                   {featuredImage ? (
                     <div className="mb-2">
@@ -422,8 +430,6 @@ export default function NewArticle() {
                         src={featuredImage} 
                         alt="Featured" 
                         className="max-h-48 rounded-lg border mb-2 object-cover w-full"
-                        onLoad={() => console.log("Image loaded successfully")}
-                        onError={(e) => console.error("Image failed to load:", e)}
                       />
                       <button
                         type="button"
@@ -470,15 +476,8 @@ export default function NewArticle() {
                         
                         if (!res.ok) throw new Error(data.error || "Upload failed")
 
-                        // DEBUG: Log before setting state
-                        console.log("Setting featured image to:", data.url)
                         setFeaturedImage(data.url)
                         setFeaturedImageFile(file)
-                        
-                        // DEBUG: Log after setting state (will show in next render)
-                        setTimeout(() => {
-                          console.log("Featured image state after update:", featuredImage)
-                        }, 100)
                         
                         toast.success("Featured image uploaded!")
                       } catch (e) {
@@ -503,11 +502,11 @@ export default function NewArticle() {
                 </div>
                 
                 {/* Editor Toolbar */}
-                <div className="flex flex-wrap gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
+                <div className="flex flex-wrap gap-1 md:gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleBold().run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
                     title="Bold"
                   >
                     <Bold className="w-4 h-4" />
@@ -515,7 +514,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleItalic().run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
                     title="Italic"
                   >
                     <Italic className="w-4 h-4" />
@@ -523,7 +522,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
                     title="Heading 1"
                   >
                     <Heading1 className="w-4 h-4" />
@@ -531,7 +530,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
                     title="Heading 2"
                   >
                     <Heading2 className="w-4 h-4" />
@@ -539,7 +538,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 3 }) ? 'bg-gray-200' : ''}`}
                     title="Heading 3"
                   >
                     <Heading3 className="w-4 h-4" />
@@ -547,7 +546,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleBulletList().run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
                     title="Bullet List"
                   >
                     <List className="w-4 h-4" />
@@ -555,7 +554,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().toggleOrderedList().run()} 
-                    className={`p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('orderedList') ? 'bg-gray-200' : ''}`}
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('orderedList') ? 'bg-gray-200' : ''}`}
                     title="Numbered List"
                   >
                     <ListOrdered className="w-4 h-4" />
@@ -563,7 +562,7 @@ export default function NewArticle() {
                   <button 
                     type="button" 
                     onClick={() => editor?.chain().focus().setHorizontalRule().run()} 
-                    className="p-2 rounded hover:bg-gray-200 transition"
+                    className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
                     title="Horizontal Rule"
                   >
                     <Minus className="w-4 h-4" />
@@ -580,7 +579,7 @@ export default function NewArticle() {
                       }
                       input.click()
                     }}
-                    className="p-2 rounded hover:bg-gray-200 transition"
+                    className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
                     title="Insert Image"
                   >
                     <ImageIcon className="w-4 h-4" />
@@ -588,7 +587,7 @@ export default function NewArticle() {
                   <button
                     type="button"
                     onClick={insertVideo}
-                    className="p-2 rounded hover:bg-gray-200 transition"
+                    className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
                     title="Insert Video"
                   >
                     <VideoIcon className="w-4 h-4" />
@@ -596,16 +595,16 @@ export default function NewArticle() {
                 </div>
                 
                 {/* Editor */}
-                <div className="border border-gray-300 rounded-lg min-h-[400px] p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
-                  <EditorContent editor={editor} className="min-h-[300px]" />
+                <div className="border border-gray-300 rounded-lg min-h-[300px] p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
+                  <EditorContent editor={editor} className="min-h-[200px] md:min-h-[300px]" />
                 </div>
                 
                 {/* Save/Publish Buttons */}
-                <div className="flex justify-end gap-4 pt-4 border-t border-gray-300">
+                <div className="flex justify-end gap-2 md:gap-4 pt-4 border-t border-gray-300">
                   <button
                     type="button"
                     onClick={() => setShowConfirm('draft')}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 md:px-4 md:py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
                     disabled={isLoading}
                   >
                     {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Save Draft"}
@@ -613,7 +612,7 @@ export default function NewArticle() {
                   <button
                     type="button"
                     onClick={() => setShowConfirm('publish')}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="px-3 py-1 md:px-6 md:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 md:gap-2 text-sm md:text-base"
                     disabled={isLoading}
                   >
                     {isLoading ? (
@@ -645,6 +644,11 @@ export default function NewArticle() {
             </div>
           </div>
         </main>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <DashboardMobileNav />
       </div>
     </div>
   )

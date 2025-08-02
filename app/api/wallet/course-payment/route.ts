@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       const stkResponse = await mpesa.initiateSTKPush(phoneNumber, course.price, reference);
       
       // Create pending transaction
-      await prisma.transaction.create({
+      const transaction = await prisma.transaction.create({
         data: {
           userId,
           amount: course.price,
@@ -45,6 +45,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         success: true,
         message: 'Please complete the payment on your phone',
+        transactionId: transaction.id,
         checkoutRequestId: stkResponse.CheckoutRequestID
       });
     }

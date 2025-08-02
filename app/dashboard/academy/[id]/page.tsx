@@ -7,6 +7,7 @@ import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
+import { MpesaPayment } from "@/components/MpesaPayment"
 import { BookOpen, Clock, FileText, DollarSign, Lock, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency } from "@/lib/utils"
@@ -29,6 +30,9 @@ export default function CourseDetail() {
   const [course, setCourse] = useState<Course | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // Mpesa Payment Modal State
+  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -128,7 +132,12 @@ export default function CourseDetail() {
   }
 
   const handleBuyCourse = () => {
-    router.push(`/dashboard/academy/payment?courseId=${courseId}`)
+    setIsMpesaModalOpen(true)
+  }
+
+  const handlePaymentSuccess = () => {
+    // Refresh the course data to update purchase status
+    fetchCourseData()
   }
 
   if (status === "loading" || isLoading) {
@@ -243,6 +252,21 @@ export default function CourseDetail() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <DashboardMobileNav />
       </div>
+      
+      {/* Mpesa Payment Modal */}
+      {course && (
+        <MpesaPayment
+          isOpen={isMpesaModalOpen}
+          onClose={() => {
+            setIsMpesaModalOpen(false)
+          }}
+          amount={course.price}
+          onSuccess={handlePaymentSuccess}
+          type="course_payment"
+          description={`Payment for ${course.title}`}
+          courseId={course.id}
+        />
+      )}
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
+import { MpesaPayment } from "@/components/MpesaPayment"
 import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency, formatDate } from "@/lib/utils"
@@ -40,6 +41,10 @@ export default function Academy() {
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // Mpesa Payment Modal State
+  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
 
   useEffect(() => {
     if (status === "loading") return
@@ -101,9 +106,14 @@ export default function Academy() {
     }
   }
 
-  const handleBuyCourse = (courseId: string) => {
-    // Mock redirection to payment page
-    router.push(`/dashboard/academy/payment?courseId=${courseId}`)
+  const handleBuyCourse = (course: Course) => {
+    setSelectedCourse(course)
+    setIsMpesaModalOpen(true)
+  }
+
+  const handlePaymentSuccess = () => {
+    // Refresh the courses data to update purchase status
+    fetchAcademyData()
   }
 
   if (status === "loading" || isLoading) {
@@ -219,14 +229,14 @@ export default function Academy() {
                       <div className="flex items-center space-x-4">
                         {course.isPurchased ? (
                           <Link
-                            href={`/dashboard/academy/course/${course.id}`}
+                            href={`/dashboard/academy/${course.id}`}
                             className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
                           >
                             View Course
                           </Link>
                         ) : (
                           <button
-                            onClick={() => handleBuyCourse(course.id)}
+                            onClick={() => handleBuyCourse(course)}
                             className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 flex items-center"
                           >
                             <Lock className="h-4 w-4 mr-1" />
@@ -251,6 +261,22 @@ export default function Academy() {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <DashboardMobileNav />
       </div>
+      
+      {/* Mpesa Payment Modal */}
+      {selectedCourse && (
+        <MpesaPayment
+          isOpen={isMpesaModalOpen}
+          onClose={() => {
+            setIsMpesaModalOpen(false)
+            setSelectedCourse(null)
+          }}
+          amount={selectedCourse.price}
+          onSuccess={handlePaymentSuccess}
+          type="course_payment"
+          description={`Payment for ${selectedCourse.title}`}
+          courseId={selectedCourse.id}
+        />
+      )}
     </div>
   )
 }
