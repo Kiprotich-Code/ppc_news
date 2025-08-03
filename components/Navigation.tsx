@@ -51,8 +51,8 @@ export function Navigation({ userImage }: { userImage?: string }) {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
-            <Link href="#" className="text-[var(--primary-red)]">Home</Link>
-            <Link href="#" className="text-gray-700 hover:text-[var(--primary-red)] transition">About</Link>
+            <Link href="/" className="text-[var(--primary-red)]">Home</Link>
+            <Link href="feed" className="text-gray-700 hover:text-[var(--primary-red)] transition">News</Link>
             {/* Session logic */}
             {status === "loading" ? (
               <div className="flex items-center space-x-4">
@@ -152,9 +152,9 @@ export function Navigation({ userImage }: { userImage?: string }) {
         <div className="md:hidden bg-white border-t">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
             {/* Main nav links */}
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-[var(--primary-red)]">Home</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">About</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Revenues</Link>
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-[var(--primary-red)]">Home</Link>
+            <Link href="/feed" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Feed</Link>
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[var(--primary-red)]">Revenues</Link>
             {/* Session logic */}
             {status === "authenticated" ? (
               <>

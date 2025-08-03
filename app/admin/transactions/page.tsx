@@ -13,7 +13,7 @@ import Link from "next/link"
 
 interface Transaction {
   id: string
-  type: "DEPOSIT" | "WITHDRAWAL" | "REVENUE"
+  type: "deposit" | "withdrawal" | "earning" | "transfer"
   amount: number
   status: "COMPLETED" | "PENDING" | "FAILED"
   date: string
@@ -26,7 +26,7 @@ interface Wallet {
   userId: string
   userName: string
   balance: number
-  pendingWithdrawals: number
+  earnings: number
 }
 
 interface TransactionStats {
@@ -66,106 +66,19 @@ export default function Transactions() {
   const fetchTransactionData = async () => {
     setIsLoading(true)
     try {
-      // Mock API response
-      const mockTransactions: Transaction[] = [
-        {
-          id: "tx1",
-          type: "REVENUE",
-          amount: 150.25,
-          status: "COMPLETED",
-          date: new Date(Date.now() - 86400000).toISOString(),
-          userId: "user1",
-          userName: "John Doe",
-          description: "Article earnings: 'Kenya's Economic Outlook'"
-        },
-        {
-          id: "tx2",
-          type: "WITHDRAWAL",
-          amount: 200.00,
-          status: "PENDING",
-          date: new Date(Date.now() - 172800000).toISOString(),
-          userId: "user2",
-          userName: "Jane Smith",
-          description: "Bank transfer to KCB"
-        },
-        {
-          id: "tx3",
-          type: "DEPOSIT",
-          amount: 500.00,
-          status: "COMPLETED",
-          date: new Date(Date.now() - 259200000).toISOString(),
-          userId: "user1",
-          userName: "John Doe",
-          description: "M-Pesa deposit"
-        },
-        {
-          id: "tx4",
-          type: "WITHDRAWAL",
-          amount: 100.00,
-          status: "FAILED",
-          date: new Date(Date.now() - 345600000).toISOString(),
-          userId: "user3",
-          userName: "Alice Johnson",
-          description: "Failed bank transfer"
-        },
-        {
-          id: "tx5",
-          type: "REVENUE",
-          amount: 75.30,
-          status: "COMPLETED",
-          date: new Date(Date.now() - 432000000).toISOString(),
-          userId: "user2",
-          userName: "Jane Smith",
-          description: "Article earnings: 'Tech in Nairobi'"
-        }
-      ]
-
-      const mockWallets: Wallet[] = [
-        {
-          userId: "user1",
-          userName: "John Doe",
-          balance: 650.25,
-          pendingWithdrawals: 0
-        },
-        {
-          userId: "user2",
-          userName: "Jane Smith",
-          balance: 275.30,
-          pendingWithdrawals: 200.00
-        },
-        {
-          userId: "user3",
-          userName: "Alice Johnson",
-          balance: 100.00,
-          pendingWithdrawals: 0
-        }
-      ]
-
-      // Calculate stats
-      const filteredTransactions = mockTransactions.filter(tx => {
-        const typeMatch = typeFilter === "All" || tx.type === typeFilter.toUpperCase()
-        const statusMatch = statusFilter === "All" || tx.status === statusFilter.toUpperCase()
-        return typeMatch && statusMatch
-      })
-
-      const stats: TransactionStats = {
-        totalDeposits: mockTransactions
-          .filter(tx => tx.type === "DEPOSIT" && tx.status === "COMPLETED")
-          .reduce((sum, tx) => sum + tx.amount, 0),
-        totalWithdrawals: mockTransactions
-          .filter(tx => tx.type === "WITHDRAWAL" && tx.status === "COMPLETED")
-          .reduce((sum, tx) => sum + tx.amount, 0),
-        totalRevenue: mockTransactions
-          .filter(tx => tx.type === "REVENUE" && tx.status === "COMPLETED")
-          .reduce((sum, tx) => sum + tx.amount, 0),
-        pendingAmount: mockTransactions
-          .filter(tx => tx.status === "PENDING")
-          .reduce((sum, tx) => sum + tx.amount, 0)
+      const params = new URLSearchParams()
+      if (typeFilter !== "All") params.append("type", typeFilter.toLowerCase())
+      if (statusFilter !== "All") params.append("status", statusFilter)
+      
+      const response = await fetch(`/api/admin/transactions?${params.toString()}`)
+      if (response.ok) {
+        const data = await response.json()
+        setStats(data.stats)
+        setTransactions(data.transactions)
+        setWallets(data.wallets)
+      } else {
+        console.error("Failed to fetch transaction data")
       }
-
-      setStats(stats)
-      setTransactions(filteredTransactions)
-      setWallets(mockWallets)
     } catch (error) {
       console.error("Error fetching transaction data:", error)
     } finally {
@@ -212,9 +125,10 @@ export default function Transactions() {
               onChange={(e) => setTypeFilter(e.target.value)}
             >
               <option>All</option>
-              <option>Deposit</option>
-              <option>Withdrawal</option>
-              <option>Revenue</option>
+              <option>deposit</option>
+              <option>withdrawal</option>
+              <option>earning</option>
+              <option>transfer</option>
             </select>
             <select
               className="border border-gray-300 rounded-md px-2 py-1 text-sm text-black focus:outline-none focus:ring-2 focus:ring-red-600"
@@ -310,11 +224,11 @@ export default function Transactions() {
                       </div>
                       <div className="flex items-center space-x-4 text-sm">
                         <div className={`font-medium ${
-                          transaction.type === "DEPOSIT" || transaction.type === "REVENUE" 
+                          transaction.type === "deposit" || transaction.type === "earning" 
                             ? "text-green-600" 
                             : "text-red-600"
                         }`}>
-                          {transaction.type === "DEPOSIT" || transaction.type === "REVENUE" ? "+" : "-"}
+                          {transaction.type === "deposit" || transaction.type === "earning" ? "+" : "-"}
                           {formatCurrency(transaction.amount)}
                         </div>
                         <div className="text-gray-500">{transaction.type}</div>
@@ -355,8 +269,8 @@ export default function Transactions() {
                           <span>Balance: {formatCurrency(wallet.balance)}</span>
                         </div>
                         <div className="flex items-center gap-1 text-black">
-                          <Clock className="h-4 w-4 text-red-600" />
-                          <span>Pending: {formatCurrency(wallet.pendingWithdrawals)}</span>
+                          <DollarSign className="h-4 w-4 text-red-600" />
+                          <span>Earnings: {formatCurrency(wallet.earnings)}</span>
                         </div>
                         <Link
                           href={`/dashboard/wallets/${wallet.userId}`}

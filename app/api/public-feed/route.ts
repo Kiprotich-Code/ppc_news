@@ -4,7 +4,10 @@ import { prisma } from "@/lib/db";
 export async function GET(request: NextRequest) {
   try {
     const articles = await prisma.article.findMany({
-      where: { publishedStatus: "PUBLISHED" },
+      where: { 
+        publishedStatus: "PUBLISHED",
+        status: "APPROVED"
+      },
       orderBy: { publishedAt: "desc" },
       include: {
         author: { select: { name: true } },
@@ -15,7 +18,10 @@ export async function GET(request: NextRequest) {
       id: a.id,
       title: a.title,
       content: a.content,
+      status: a.status,
+      publishedStatus: a.publishedStatus,
       publishedAt: a.publishedAt,
+      featuredImage: a.featuredImage,
       authorName: a.author?.name || "Unknown",
       views: a.views.length,
     }));

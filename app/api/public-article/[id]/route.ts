@@ -35,6 +35,7 @@ export async function GET(
         publishedAt: article.publishedAt,
         authorName: article.author?.name || "Unknown",
         views: article.views.length,
+        featuredImage: article.featuredImage,
       },
     });
   } catch (error) {

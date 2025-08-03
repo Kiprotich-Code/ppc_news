@@ -18,6 +18,24 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: !!process.env.SKIP_LINT,
   },
 
+  // Image configuration for external domains
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'uabarfbaw76zwhe3.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
+
   async headers() {
     return [
       {
