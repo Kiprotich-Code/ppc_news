@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getServerSession(authOptions);
 
@@ -14,9 +14,10 @@ export async function GET(
   }
 
   try {
+    const { id } = await params; // Resolve the Promise to get the id
     const transaction = await prisma.transaction.findFirst({
       where: { 
-        id: params.id,
+        id,
         userId: session.user.id 
       }
     });
@@ -38,4 +39,4 @@ export async function GET(
     console.error('Error fetching transaction status:', error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
-} 
+}

@@ -149,21 +149,23 @@ model Wallet {
 }
 
 model Transaction {
-  id                    String            @id @default(cuid())
+  id                    String           @id @default(cuid())
   user                  User             @relation(fields: [userId], references: [id])
   userId                String
   amount                Float
-  type                  String           // deposit, withdrawal, earning, deduction, course_payment, transfer
+  type                  String           
   description           String
   status                TransactionStatus @default(PENDING)
   paymentMethod         PaymentMethod?
-  mpesaRef             String?
-  reference             String?          // Unique transaction reference
-  mpesaRequestId       String?          // M-pesa CheckoutRequestID
-  mpesaMerchantRequestId String?        // M-pesa MerchantRequestID
+  mpesaRef              String?
+  reference             String?          
+  mpesaRequestId        String?          
+  mpesaMerchantRequestId String?        
+  mpesaTransactionId    String?         
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
 }
+
 
 model Course {
   id          String   @id @default(cuid())

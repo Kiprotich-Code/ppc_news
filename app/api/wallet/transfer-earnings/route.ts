@@ -3,10 +3,13 @@ import { TransactionStatus } from "@prisma/client";
 import { mpesa } from "@/lib/mpesa";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { formatCurrency } from "@/lib/utils";
 
 export async function POST(req: Request) {
   const session = await getServerSession();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { amount } = await req.json();
   if (!amount || amount <= 0) {
@@ -14,7 +17,16 @@ export async function POST(req: Request) {
   }
 
   const userId = session.user.id;
-  
+
+  // Validate phone number format (e.g., 2547XXXXXXXX or 07XXXXXXXX)
+  const phoneRegex = /^(?:2547|07)\d{8}$/;
+  if (!phoneRegex.test(userId)) {
+    return NextResponse.json(
+      { error: "Invalid phone number format. Use 2547XXXXXXXX or 07XXXXXXXX" },
+      { status: 400 }
+    );
+  }
+
   try {
     // Start a transaction to ensure atomic operation
     const result = await prisma.$transaction(async (tx) => {
@@ -28,8 +40,8 @@ export async function POST(req: Request) {
         where: { userId },
         data: {
           earnings: { decrement: amount },
-          balance: { increment: amount }
-        }
+          balance: { increment: amount },
+        },
       });
 
       // Create transaction record
@@ -37,10 +49,10 @@ export async function POST(req: Request) {
         data: {
           userId,
           amount,
-          type: 'transfer',
-          description: 'Earnings transfer to wallet',
-          status: 'PENDING'
-        }
+          type: "TRANSFER",
+          description: "Earnings transfer to wallet",
+          status: TransactionStatus.PENDING,
+        },
       });
 
       return { updated, transaction };
@@ -49,36 +61,42 @@ export async function POST(req: Request) {
     const { updated, transaction } = result;
 
     // Call to Mpesa API for payment processing
-    const mpesaResponse = await mpesa.paybill({
+    const mpesaResponse = await mpesa.initiateSTKPush(
+      userId, // Phone number
       amount,
-      phoneNumber: userId, // Assuming userId is the phone number
-      accountReference: transaction.id,
-      transactionDesc: 'Earnings transfer to wallet'
-    });
+      transaction.id // Reference
+    );
 
-    const { resultCode, resultDesc, callbackMetadata } = mpesaResponse;
-
-    if (resultCode === 0) {
-      // Payment successful
-      const amount = callbackMetadata.Item.find((item: any) => item.Name === 'Amount').Value;
-      
-      // Update transaction status
+    // Check if STK push was initiated successfully
+    if (mpesaResponse.ResponseCode !== "0") {
       await prisma.transaction.update({
         where: { id: transaction.id },
-        data: { status: TransactionStatus.COMPLETED }
+        data: { status: TransactionStatus.FAILED },
       });
-
-      return NextResponse.json({
-        success: true,
-        balance: updated.balance,
-        earnings: updated.earnings
-      });
-    } else {
-      throw new Error(resultDesc);
+      throw new Error(mpesaResponse.ResponseDescription || "Failed to initiate M-Pesa STK push");
     }
+
+    // Store CheckoutRequestID for callback verification
+    await prisma.transaction.update({
+      where: { id: transaction.id },
+      data: {
+        status: TransactionStatus.PENDING,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "Transfer initiated. Please confirm the STK push on your phone.",
+      transactionId: transaction.id,
+      balance: formatCurrency(updated.balance),
+      earnings: formatCurrency(updated.earnings),
+      amount: formatCurrency(amount),
+    });
   } catch (error: any) {
-    return NextResponse.json({ 
-      error: error.message || "Failed to transfer earnings" 
-    }, { status: 400 });
+    console.error("Transfer error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to transfer earnings" },
+      { status: 400 }
+    );
   }
 }

@@ -128,7 +128,6 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         },
         data: {
           title: title.trim(),
-          subTitle: subTitle?.trim() || null,
           content,
           status: publishedStatus, // Make sure we're using the correct field name
           featuredImage: featuredImage || null,
