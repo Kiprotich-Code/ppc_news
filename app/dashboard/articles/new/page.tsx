@@ -357,11 +357,7 @@ export default function NewArticle() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Desktop Navigation */}
-      <div className="hidden md:block">
-        <Navigation />
-      </div>
-      
+         
       <div className="flex flex-1">
         {/* Desktop Sidebar */}
         <div className="hidden md:block">

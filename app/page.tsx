@@ -574,12 +574,12 @@ export default function Home() {
               className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
             >
               <div className="h-48 relative">
-                <Image
+                {/* <Image
                   src="/content-tech.jpg"
                   alt="Technology"
                   fill
                   className="object-cover"
-                />
+                /> */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end p-6">
                   <h3 className="text-white text-xl font-bold">Technology</h3>
                 </div>
@@ -607,12 +607,12 @@ export default function Home() {
               className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
             >
               <div className="h-48 relative">
-                <Image
+                {/* <Image
                   src="/content-business.jpg"
                   alt="Business"
                   fill
                   className="object-cover"
-                />
+                /> */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end p-6">
                   <h3 className="text-white text-xl font-bold">Business</h3>
                 </div>
@@ -640,12 +640,12 @@ export default function Home() {
               className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
             >
               <div className="h-48 relative">
-                <Image
+                {/* <Image
                   src="/content-lifestyle.jpg"
                   alt="Lifestyle"
                   fill
                   className="object-cover"
-                />
+                /> */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end p-6">
                   <h3 className="text-white text-xl font-bold">Lifestyle</h3>
                 </div>
@@ -673,12 +673,12 @@ export default function Home() {
               className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200"
             >
               <div className="h-48 relative">
-                <Image
+                {/* <Image
                   src="/content-opinion.jpg"
                   alt="Opinion"
                   fill
                   className="object-cover"
-                />
+                /> */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent flex items-end p-6">
                   <h3 className="text-white text-xl font-bold">Opinion</h3>
                 </div>
