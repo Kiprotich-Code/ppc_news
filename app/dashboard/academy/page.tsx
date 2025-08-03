@@ -41,7 +41,7 @@ export default function Academy() {
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
-  
+
   // Mpesa Payment Modal State
   const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
@@ -204,40 +204,44 @@ export default function Academy() {
 
           {/* Course List */}
           <div className="bg-white rounded-lg shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200">
+            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Available Courses</h2>
             </div>
             <div className="divide-y divide-gray-200">
               {courses.length > 0 ? (
                 courses.map((course) => (
-                  <div key={course.id} className="px-6 py-4">
-                    <div className="flex items-center justify-between">
+                  <div key={course.id} className="px-4 sm:px-6 py-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div className="flex-1">
                         <h3 className="text-sm font-medium text-gray-900">{course.title}</h3>
                         <p className="text-sm text-gray-600 mt-1">{course.description}</p>
-                        <div className="flex items-center mt-1 text-sm text-gray-500">
-                          <Clock className="h-4 w-4 mr-1" />
-                          {course.duration}
-                          <span className="mx-2">•</span>
-                          <FileText className="h-4 w-4 mr-1" />
-                          {course.lessons} lessons
-                          <span className="mx-2">•</span>
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          {formatCurrency(course.price)}
+                        <div className="flex flex-wrap items-center mt-1 text-sm text-gray-500 gap-y-1">
+                          <div className="flex items-center mr-3">
+                            <Clock className="h-4 w-4 mr-1" />
+                            {course.duration}
+                          </div>
+                          <div className="flex items-center mr-3">
+                            <FileText className="h-4 w-4 mr-1" />
+                            {course.lessons} lessons
+                          </div>
+                          <div className="flex items-center">
+                            <DollarSign className="h-4 w-4 mr-1" />
+                            {formatCurrency(course.price)}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
+                      <div className="flex sm:items-center justify-end sm:space-x-4">
                         {course.isPurchased ? (
                           <Link
                             href={`/dashboard/academy/${course.id}`}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
+                            className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm font-medium hover:bg-red-700 whitespace-nowrap"
                           >
                             View Course
                           </Link>
                         ) : (
                           <button
                             onClick={() => handleBuyCourse(course)}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 flex items-center"
+                            className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm font-medium hover:bg-red-700 flex items-center whitespace-nowrap"
                           >
                             <Lock className="h-4 w-4 mr-1" />
                             Buy Course
@@ -248,7 +252,7 @@ export default function Academy() {
                   </div>
                 ))
               ) : (
-                <div className="px-6 py-8 text-center">
+                <div className="px-4 sm:px-6 py-8 text-center">
                   <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No courses available</h3>
                   <p className="text-gray-600 mb-4">Check back soon for new learning opportunities.</p>
@@ -256,12 +260,13 @@ export default function Academy() {
               )}
             </div>
           </div>
+
         </div>
       </main>
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <DashboardMobileNav />
       </div>
-      
+
       {/* Mpesa Payment Modal */}
       {selectedCourse && (
         <MpesaPayment
