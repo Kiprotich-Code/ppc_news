@@ -1,5 +1,4 @@
 "use client"
-
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -29,14 +28,12 @@ interface AdminStats {
   totalEarnings: number
   pendingWithdrawals: number
 }
-
 interface PendingArticle {
   id: string;
   title: string;
   authorName: string;
   createdAt: string;
 }
-
 export default function AdminPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -92,7 +89,6 @@ export default function AdminPage() {
         },
         body: JSON.stringify({ action })
       })
-
       if (response.ok) {
         fetchAdminData()
       }
@@ -103,7 +99,7 @@ export default function AdminPage() {
 
   if (status === "loading" || isLoading) {
     return (
-      <div className="min-h-screen bg-white flex">
+      <div className="min-h-screen bg-red-50 flex">
         <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
         <div className="flex-1 flex items-center justify-center">
           <LoadingSpinner />
@@ -117,7 +113,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col md:flex-row">
+    <div className="min-h-screen bg-red-50 flex flex-col md:flex-row">
       <div className="hidden md:block">
         <AdminSidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session.user.name} />
       </div>
@@ -128,138 +124,139 @@ export default function AdminPage() {
         <div className="flex justify-end mb-4">
           <button
             onClick={() => signOut()}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 border border-red-200 transition-colors text-sm font-medium shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium shadow-sm"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" /></svg>
             Sign Out
           </button>
         </div>
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Manage your platform and moderate content.</p>
+        
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-1 text-sm">Manage your platform and moderate content.</p>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 mb-6 sm:mb-8">
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+        
+        {/* Stats Grid - Modified for compact mobile layout */}
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalUsers ?? 0}</p>
+              <Users className="h-6 w-6 text-red-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Total Users</p>
+                <p className="text-lg font-bold text-gray-900">{stats?.totalUsers ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Articles</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalArticles ?? 0}</p>
+              <FileText className="h-6 w-6 text-red-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Total Articles</p>
+                <p className="text-lg font-bold text-gray-900">{stats?.totalArticles ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
             <div className="flex items-center">
-              <Clock className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Articles</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.pendingArticles ?? 0}</p>
+              <Clock className="h-6 w-6 text-red-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Pending Articles</p>
+                <p className="text-lg font-bold text-gray-900">{stats?.pendingArticles ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
             <div className="flex items-center">
-              <Eye className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Views</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.totalViews?.toLocaleString() ?? 0}</p>
+              <Eye className="h-6 w-6 text-red-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Total Views</p>
+                <p className="text-lg font-bold text-gray-900">{stats?.totalViews?.toLocaleString() ?? 0}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats?.totalEarnings ?? 0)}</p>
+              <DollarSign className="h-6 w-6 text-red-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Total Earnings</p>
+                <p className="text-lg font-bold text-gray-900">{formatCurrency(stats?.totalEarnings ?? 0)}</p>
               </div>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 border-l-4 border-red-500">
+          <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
             <div className="flex items-center">
-              <Settings className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Withdrawals</p>
-                <p className="text-2xl font-bold text-gray-900">{stats?.pendingWithdrawals ?? 0}</p>
+              <Settings className="h-6 w-6 text-red-600" />
+              <div className="ml-3">
+                <p className="text-xs font-medium text-gray-600">Pending Withdrawals</p>
+                <p className="text-lg font-bold text-gray-900">{stats?.pendingWithdrawals ?? 0}</p>
               </div>
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6 mb-6 sm:mb-8">
+        
+        {/* Quick Actions - Modified to look like buttons in the image */}
+        <div className="grid grid-cols-1 gap-3 mb-6">
           <Link
             href="/admin/articles"
-            className="bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-red-600 text-white rounded-lg shadow-sm p-4 hover:bg-red-700 transition-colors flex items-center justify-between"
           >
             <div className="flex items-center">
-              <FileText className="h-8 w-8 text-white" />
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold">Manage Articles</h3>
-                <p className="text-sm">Review and moderate all articles</p>
-              </div>
+              <FileText className="h-5 w-5 mr-3" />
+              <span className="font-medium">Manage Articles</span>
             </div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </Link>
           <Link
             href="/admin/members"
-            className="bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-red-600 text-white rounded-lg shadow-sm p-4 hover:bg-red-700 transition-colors flex items-center justify-between"
           >
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-white" />
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold">Manage Members</h3>
-                <p className="text-sm">View and manage user accounts</p>
-              </div>
+              <Users className="h-5 w-5 mr-3" />
+              <span className="font-medium">Manage Members</span>
             </div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </Link>
           <Link
             href="/admin/withdrawals"
-            className="bg-gradient-to-r from-red-500 to-red-700 text-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+            className="bg-red-600 text-white rounded-lg shadow-sm p-4 hover:bg-red-700 transition-colors flex items-center justify-between"
           >
             <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-white" />
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold">Withdrawals</h3>
-                <p className="text-sm">Process withdrawal requests</p>
-              </div>
+              <DollarSign className="h-5 w-5 mr-3" />
+              <span className="font-medium">Withdrawals</span>
             </div>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </Link>
         </div>
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-200">
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Pending Articles</h2>
+        
+        {/* Pending Articles - More compact layout */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200">
+            <h2 className="text-md font-semibold text-gray-900">Pending Articles</h2>
           </div>
-          <div className="divide-y divide-gray-200 min-w-[320px]">
+          <div className="divide-y divide-gray-200">
             {pendingArticles.length > 0 ? (
               pendingArticles.map((article) => (
-                <div key={article.id} className="px-4 py-3 sm:px-6 sm:py-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <div className="flex-1">
+                <div key={article.id} className="px-4 py-3">
+                  <div className="flex flex-col gap-2">
+                    <div>
                       <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{article.title}</h3>
-                      <div className="flex flex-wrap items-center mt-1 text-xs sm:text-sm text-gray-500 gap-x-2 gap-y-1">
+                      <div className="flex items-center mt-1 text-xs text-gray-500 gap-2">
                         <span>By {article.authorName}</span>
-                        <span className="hidden sm:inline">•</span>
+                        <span>•</span>
                         <span>{formatDate(new Date(article.createdAt))}</span>
                       </div>
                     </div>
-                    <div className="flex flex-row sm:flex-row items-center gap-2 mt-2 sm:mt-0">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleArticleAction(article.id, "approve")}
-                        className="flex items-center px-2.5 py-1 bg-green-100 text-green-800 rounded-md text-xs sm:text-sm hover:bg-green-200"
+                        className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-xs hover:bg-green-700"
                       >
                         <CheckCircle className="h-4 w-4 mr-1" />
                         Approve
                       </button>
                       <button
                         onClick={() => handleArticleAction(article.id, "reject")}
-                        className="flex items-center px-2.5 py-1 bg-red-100 text-red-800 rounded-md text-xs sm:text-sm hover:bg-red-200"
+                        className="flex items-center px-3 py-1 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
                       >
                         <XCircle className="h-4 w-4 mr-1" />
                         Reject
@@ -269,10 +266,10 @@ export default function AdminPage() {
                 </div>
               ))
             ) : (
-              <div className="px-4 py-8 sm:px-6 sm:py-8 text-center">
-                <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1 sm:mb-2">No pending articles</h3>
-                <p className="text-gray-600 text-sm sm:text-base">All articles have been reviewed.</p>
+              <div className="px-4 py-6 text-center">
+                <FileText className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                <h3 className="text-md font-medium text-gray-900 mb-1">No pending articles</h3>
+                <p className="text-gray-600 text-sm">All articles have been reviewed.</p>
               </div>
             )}
           </div>
