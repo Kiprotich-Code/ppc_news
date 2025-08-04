@@ -6,6 +6,7 @@ import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/compon
 import { AdminMobileNav } from "@/components/AdminMobileNav";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
+import { tiptapToHtml } from "@/lib/utils";
 import { 
   ArrowLeftIcon, 
   CheckCircleIcon, 
@@ -239,7 +240,7 @@ const ArticleDetailPage = () => {
           
           {/* Article Content */}
           <div className="p-6 prose prose-lg max-w-none text-gray-800">
-            <div dangerouslySetInnerHTML={{ __html: article.content || "" }} />
+            <div dangerouslySetInnerHTML={{ __html: tiptapToHtml(article.content || "") }} />
           </div>
         </div>
 
