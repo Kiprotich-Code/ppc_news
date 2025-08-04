@@ -1,5 +1,4 @@
 "use client"
-
 import { signOut, useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -27,12 +26,10 @@ interface DashboardStats {
   totalEarnings: number
   pendingArticles: number
 }
-
 interface ReferralStats {
   referralCode: string
   referralCount: number
 }
-
 interface Article {
   id: string
   title: string
@@ -42,7 +39,6 @@ interface Article {
   earnings: number
   authorName: string
 }
-
 export default function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -60,12 +56,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (status === "loading") return
-
     if (!session) {
       router.push("/auth/signin")
       return
     }
-
     fetchDashboardData()
     fetchReferralData()
   }, [session, status, router])
@@ -151,7 +145,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-red-50 flex flex-col md:flex-row">
       {/* Sidebar for md+ */}
       <div className="hidden md:block">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
@@ -159,48 +153,29 @@ export default function Dashboard() {
       <main className={`flex-1 p-4 md:p-8 pb-20 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Sign Out Button */}
-                  <div className="flex justify-end mb-4">
-                    <button
-                      onClick={() => signOut()}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded hover:bg-red-100 border border-red-200 transition-colors text-sm font-medium shadow-sm"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" /></svg>
-                      Sign Out
-                    </button>
-                  </div>
-
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium shadow-sm"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H7a2 2 0 01-2-2V7a2 2 0 012-2h4a2 2 0 012 2v1" /></svg>
+              Sign Out
+            </button>
+          </div>
+          
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
+          <div className="mb-6">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
               Welcome back, {session.user?.name}!
             </h1>
             <p className="text-gray-600 mt-2">
               Here's what's happening with your content today.
             </p>
           </div>
-
-          {/* Banner */}
-          {/* <div className="mb-8 bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <img src="/opera-news-hub-logo.png" alt="Opera News Hub Logo" className="w-16 h-16 mr-4" />
-                <div>
-                  <h2 className="text-xl font-bold text-red-600">OPERA NEWS HUB LAUNCHES IN TANZANIA AND UGANDA!</h2>
-                  <p className="text-gray-700">Kenyan Authors, Expand Your Reach!</p>
-                  <p className="text-yellow-500 bg-yellow-100 inline-block px-2 py-1 rounded mt-2">
-                    We are excited to announce the launch of Opera News Hub in Kiswahili for Tanzania or in English for Uganda and reach a wider audience!
-                  </p>
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
-                <p>Training Dates: <span className="font-semibold">Friday, 30th August</span></p>
-              </div>
-            </div>
-          </div> */}
-
-          {/* Referral Info */}
+          
+          {/* Referral Info - Only show on medium screens and larger */}
           {referral && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="hidden md:block bg-red-50 border border-red-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="mb-4 md:mb-0">
                 <span className="font-semibold text-red-800">Your Referral Link:</span>
                 <div className="flex items-center mt-2">
@@ -254,139 +229,103 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+          
+          {/* Stats Grid - Modified for compact mobile layout */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <FileText className="h-8 w-8 text-red-600" />
+                  <FileText className="h-6 w-6 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Articles</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalArticles}</p>
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Total Articles</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.totalArticles}</p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Eye className="h-8 w-8 text-red-600" />
+                  <Eye className="h-6 w-6 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Views</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalViews.toLocaleString()}</p>
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Total Views</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.totalViews.toLocaleString()}</p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <DollarSign className="h-8 w-8 text-red-600" />
+                  <DollarSign className="h-6 w-6 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalEarnings)}</p>
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Total Earnings</p>
+                  <p className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalEarnings)}</p>
                 </div>
               </div>
             </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-4 border border-red-200">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <TrendingUp className="h-8 w-8 text-red-600" />
+                  <TrendingUp className="h-6 w-6 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Pending Articles</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.pendingArticles}</p>
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-600">Pending Articles</p>
+                  <p className="text-lg font-bold text-gray-900">{stats.pendingArticles}</p>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          
+          {/* Quick Actions - Modified to look like buttons in the image */}
+          <div className="grid grid-cols-1 gap-3 mb-6">
             <Link
               href="/dashboard/articles/new"
-              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-red-200"
+              className="bg-red-600 text-white rounded-lg shadow-sm p-4 hover:bg-red-700 transition-colors flex items-center justify-between"
             >
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Plus className="h-8 w-8 text-red-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Write New Article</h3>
-                  <p className="text-sm text-gray-600">Create and publish a new article</p>
-                </div>
+                <Plus className="h-5 w-5 mr-3" />
+                <span className="font-medium">Write New Article</span>
               </div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
-
             <Link
               href="/dashboard/profile"
-              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-red-200"
+              className="bg-red-600 text-white rounded-lg shadow-sm p-4 hover:bg-red-700 transition-colors flex items-center justify-between"
             >
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <User className="h-8 w-8 text-red-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Update Profile</h3>
-                  <p className="text-sm text-gray-600">Manage your account settings</p>
-                </div>
+                <User className="h-5 w-5 mr-3" />
+                <span className="font-medium">Update Profile</span>
               </div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
-
             <Link
               href="/dashboard/wallet"
-              className="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow border border-red-200"
+              className="bg-red-600 text-white rounded-lg shadow-sm p-4 hover:bg-red-700 transition-colors flex items-center justify-between"
             >
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <DollarSign className="h-8 w-8 text-red-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Wallet</h3>
-                  <p className="text-sm text-gray-600">Manage your earnings</p>
-                </div>
+                <DollarSign className="h-5 w-5 mr-3" />
+                <span className="font-medium">Wallet</span>
               </div>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </Link>
           </div>
-
-          {/* Trending Topics */}
-          <div className="bg-white rounded-lg shadow-sm mb-8">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Trending Topics</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-md font-medium text-gray-900">Police Brutality</h3>
-                <p className="text-sm text-gray-600 mt-2">What will it take to end police brutality in Kenya? When are police officers allowed to use force? What are leaders and other stakeholders saying about it? Update your readers.</p>
-                <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">Create</button>
-              </div>
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-md font-medium text-gray-900">Broad-based Govt</h3>
-                <p className="text-sm text-gray-600 mt-2">Will President Ruto's broad-based government deliver? Is the country headed in the right direction? Be the watchdog, share with your readers events and insights about the happenings in Kenya.</p>
-                <button className="mt-4 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700">Create</button>
-              </div>
-            </div>
-          </div>
-
+          
           {/* Recent Articles */}
           <div className="bg-white rounded-lg shadow-sm">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Recent Articles</h2>
+            <div className="px-4 py-3 border-b border-gray-200">
+              <h2 className="text-md font-semibold text-gray-900">Recent Articles</h2>
             </div>
             <div className="divide-y divide-gray-200">
               {recentArticles.length > 0 ? (
                 recentArticles.map((article) => (
-                  <div key={article.id} className="px-6 py-4">
-                    <div className="flex items-center justify-between">
+                  <div key={article.id} className="px-4 py-3">
+                    <div className="flex flex-col">
                       <div className="flex-1">
                         <h3 className="text-sm font-medium text-gray-900">{article.title}</h3>
-                        <div className="flex items-center mt-1 text-sm text-gray-500">
-                          <Calendar className="h-4 w-4 mr-1" />
+                        <div className="flex items-center mt-1 text-xs text-gray-500">
+                          <Calendar className="h-3 w-3 mr-1" />
                           {formatDate(new Date(article.createdAt))}
                           <span className="mx-2">•</span>
                           <span className={`px-2 py-1 rounded-full text-xs ${
@@ -398,31 +337,32 @@ export default function Dashboard() {
                           }`}>
                             {article.status}
                           </span>
-                          <span className="mx-2">•</span>
-                          <span className="flex items-center">
-                            <User className="h-4 w-4 mr-1" />
-                            {article.authorName}
-                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
                         <div className="flex items-center">
-                          <Eye className="h-4 w-4 mr-1" />
-                          {article.views.toLocaleString()}
+                          <User className="h-3 w-3 mr-1" />
+                          {article.authorName}
                         </div>
-                        <div className="flex items-center">
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          {formatCurrency(article.earnings)}
+                        <div className="flex items-center space-x-3">
+                          <div className="flex items-center">
+                            <Eye className="h-3 w-3 mr-1" />
+                            {article.views.toLocaleString()}
+                          </div>
+                          <div className="flex items-center">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            {formatCurrency(article.earnings)}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="px-6 py-8 text-center">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No articles yet</h3>
-                  <p className="text-gray-600 mb-4">Start writing your first article to see it here.</p>
+                <div className="px-4 py-6 text-center">
+                  <FileText className="h-10 w-10 text-gray-400 mx-auto mb-3" />
+                  <h3 className="text-md font-medium text-gray-900 mb-2">No articles yet</h3>
+                  <p className="text-gray-600 text-sm mb-4">Start writing your first article to see it here.</p>
                   <Link
                     href="/dashboard/articles/new"
                     className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
