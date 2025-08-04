@@ -87,9 +87,9 @@ export default function PublicFeed() {
             const contentText = extractTextFromTipTap(article.content);
 
             return (
-              <div key={article.id} className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
+              <div key={article.id} className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
                 <Link href={`/feed/${article.id}`}>
-                <div className="flex">
+                <div className="flex p-4">
                   {/* Left side - Image */}
                   <div className="flex-shrink-0 w-32 h-24">
                     {article.featuredImage ? (
