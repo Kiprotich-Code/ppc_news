@@ -223,15 +223,15 @@ const WalletDashboard = () => {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
                     <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
                   </div>
-                  <div className="ml-2 sm:ml-3">
-                    <p className="text-xs font-medium text-gray-600">Available Earnings</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-900">
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Available Earnings</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
                       {formatCurrency(stats.earnings)}
                     </p>
                     {stats.earnings > 0 && (
@@ -239,7 +239,7 @@ const WalletDashboard = () => {
                         onClick={handleEarningsTransfer}
                         className="mt-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition"
                       >
-                        Transfer to Wallet
+                        Transfer
                       </button>
                     )}
                   </div>
@@ -251,9 +251,9 @@ const WalletDashboard = () => {
                   <div className="flex-shrink-0">
                     <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
                   </div>
-                  <div className="ml-2 sm:ml-3">
-                    <p className="text-xs font-medium text-gray-600">Pending Withdrawals</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-900">
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Pending Withdrawals</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
                       {formatCurrency(stats.pendingWithdrawals)}
                     </p>
                   </div>
@@ -265,9 +265,9 @@ const WalletDashboard = () => {
                   <div className="flex-shrink-0">
                     <PhoneCall className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   </div>
-                  <div className="ml-2 sm:ml-3">
-                    <p className="text-xs font-medium text-gray-600">M-Pesa</p>
-                    <p className="text-xs text-gray-500">Quick deposits & withdrawals</p>
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">M-Pesa</p>
+                    <p className="text-xs text-gray-500 truncate">Quick deposits & withdrawals</p>
                   </div>
                 </div>
               </div>
@@ -277,9 +277,9 @@ const WalletDashboard = () => {
                   <div className="flex-shrink-0">
                     <ArrowUpCircle className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
                   </div>
-                  <div className="ml-2 sm:ml-3">
-                    <p className="text-xs font-medium text-gray-600">Total Deposits</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-900">{formatCurrency(stats.totalDeposits)}</p>
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Total Deposits</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">{formatCurrency(stats.totalDeposits)}</p>
                   </div>
                 </div>
               </div>
@@ -289,9 +289,9 @@ const WalletDashboard = () => {
                   <div className="flex-shrink-0">
                     <ArrowDownCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
                   </div>
-                  <div className="ml-2 sm:ml-3">
-                    <p className="text-xs font-medium text-gray-600">Total Withdrawals</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-900">{formatCurrency(stats.totalWithdrawals)}</p>
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Total Withdrawals</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">{formatCurrency(stats.totalWithdrawals)}</p>
                   </div>
                 </div>
               </div>
@@ -301,9 +301,9 @@ const WalletDashboard = () => {
                   <div className="flex-shrink-0">
                     <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
                   </div>
-                  <div className="ml-2 sm:ml-3">
-                    <p className="text-xs font-medium text-gray-600">Investment Growth</p>
-                    <p className="text-sm sm:text-lg font-bold text-gray-900">+2.0%</p>
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Investment Growth</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">+2.0%</p>
                   </div>
                 </div>
               </div>

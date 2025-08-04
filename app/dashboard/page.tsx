@@ -175,7 +175,7 @@ export default function Dashboard() {
           
           {/* Referral Info - Only show on medium screens and larger */}
           {referral && (
-            <div className="hidden md:block bg-red-50 border border-red-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div className="md:block bg-red-50 border border-red-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
               <div className="mb-4 md:mb-0">
                 <span className="font-semibold text-red-800">Your Referral Link:</span>
                 <div className="flex items-center mt-2">
