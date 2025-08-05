@@ -12,13 +12,100 @@ export async function GET(req: Request) {
   }
 
   const userId = session.user.id;
-  const wallet = await prisma.wallet.findUnique({ where: { userId } });
+  
+  // Get or create wallet
+  let wallet = await prisma.wallet.findUnique({ where: { userId } });
+  if (!wallet) {
+    // Create wallet using Prisma ORM
+    wallet = await prisma.wallet.create({
+      data: {
+        userId,
+        balance: 0,
+        earnings: 0,
+        currency: 'KES'
+      }
+    });
+  }
+
+  // Get wallet data with investment field using raw SQL
+  const walletData = await prisma.$queryRaw<Array<{
+    balance: number;
+    earnings: number;
+    investment: number;
+    currency: string;
+  }>>`
+    SELECT balance, earnings, investment, currency 
+    FROM "Wallet" 
+    WHERE "userId" = ${userId}
+  `;
+
+  const currentWallet = walletData[0];
+
+  // Calculate actual earnings from articles (from Earning table)
+  const articleEarnings = await prisma.earning.aggregate({
+    where: { userId },
+    _sum: { amount: true }
+  });
+
+  // Calculate what's already been transferred to wallet from earnings
+  const transferredEarnings = await prisma.transaction.aggregate({
+    where: { 
+      userId,
+      type: 'transfer',
+      status: 'COMPLETED',
+      description: 'Transfer earnings to wallet'
+    },
+    _sum: { amount: true }
+  });
+
+  // Available earnings = total article earnings - already transferred earnings
+  const totalArticleEarnings = articleEarnings._sum.amount || 0;
+  const alreadyTransferred = transferredEarnings._sum.amount || 0;
+  const availableEarnings = Math.max(0, totalArticleEarnings - alreadyTransferred);
+
+  // Get recent transactions
   const transactions = await prisma.transaction.findMany({
     where: { userId },
     orderBy: { createdAt: "desc" },
     take: 20,
   });
-  return NextResponse.json({ balance: wallet?.balance || 0, transactions });
+
+  // Calculate pending withdrawals
+  const pendingWithdrawals = await prisma.transaction.findMany({
+    where: { 
+      userId,
+      type: 'WITHDRAWAL',
+      status: 'PENDING'
+    }
+  });
+  
+  const totalPendingWithdrawals = pendingWithdrawals.reduce((sum, txn) => sum + txn.amount, 0);
+
+  // Calculate total deposits and withdrawals
+  const allTransactions = await prisma.transaction.findMany({
+    where: { userId }
+  });
+
+  const totalDeposits = allTransactions
+    .filter(txn => txn.type === 'DEPOSIT' && txn.status === 'COMPLETED')
+    .reduce((sum, txn) => sum + txn.amount, 0);
+
+  const totalWithdrawals = allTransactions
+    .filter(txn => txn.type === 'WITHDRAWAL' && txn.status === 'COMPLETED')
+    .reduce((sum, txn) => sum + txn.amount, 0);
+
+  return NextResponse.json({ 
+    wallet: {
+      balance: currentWallet.balance,
+      investment: currentWallet.investment,
+      earnings: availableEarnings, // Use calculated available earnings
+      pendingWithdrawals: totalPendingWithdrawals,
+      totalDeposits,
+      totalWithdrawals,
+      currency: currentWallet.currency
+    },
+    transactions 
+  });
 }
 
 export async function POST(req: Request) {

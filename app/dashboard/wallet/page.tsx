@@ -7,7 +7,9 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Navigation } from "@/components/Navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardMobileNav } from "@/components/DashboardMobileNav";
+import { PayHeroPayment } from "@/components/PayHeroPayment";
 import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 import { 
   DollarSign, 
   ArrowUpCircle, 
@@ -31,26 +33,50 @@ const WalletDashboard = () => {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [transactionAmount, setTransactionAmount] = useState("");
   const [transactionType, setTransactionType] = useState("DEPOSIT");
+  const [mpesaModalOpen, setMpesaModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [walletData, setWalletData] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
   
-  // Mock data matching original structure
-  const stats = {
-    balance: 125430.50,
-    investment: 85000.00,
-    earnings: 12543.80,
-    pendingWithdrawals: 5000.00,
-    totalDeposits: 450000.00,
-    totalWithdrawals: 324569.50,
-    currency: 'KES'
+  // Fetch wallet data
+  const fetchWalletData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/wallet', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setWalletData(data.wallet);
+        setTransactions(data.transactions);
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to fetch wallet data');
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+      toast.error('Failed to load wallet data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Authentication check
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/auth/signin");
+    } else if (status === "authenticated") {
+      fetchWalletData();
     }
   }, [status, router]);
 
-  if (status === "loading") {
+  // Refresh data periodically
+  useEffect(() => {
+    if (session) {
+      const interval = setInterval(fetchWalletData, 30000); // Refresh every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [session]);
+
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
@@ -64,17 +90,11 @@ const WalletDashboard = () => {
     );
   }
 
-  if (!session) {
+  if (!session || !walletData) {
     return null;
   }
 
-  const transactions = [
-    { id: '1', type: 'DEPOSIT', amount: 15000, status: 'COMPLETED', date: '2025-08-04T10:30:00Z', description: 'M-Pesa Deposit', paymentMethod: 'MPESA' },
-    { id: '2', type: 'INVESTMENT', amount: 5000, status: 'COMPLETED', date: '2025-08-03T14:20:00Z', description: 'Investment Added', paymentMethod: 'WALLET' },
-    { id: '3', type: 'WITHDRAWAL', amount: 8000, status: 'PENDING', date: '2025-08-03T09:15:00Z', description: 'M-Pesa Withdrawal', paymentMethod: 'MPESA' },
-    { id: '4', type: 'INTEREST', amount: 234.50, status: 'COMPLETED', date: '2025-08-02T16:45:00Z', description: 'Investment Interest', paymentMethod: 'AUTO' },
-    { id: '5', type: 'TRANSFER', amount: 2500, status: 'COMPLETED', date: '2025-08-01T11:30:00Z', description: 'Internal Transfer', paymentMethod: 'WALLET' }
-  ];
+  const stats = walletData;
 
   const investmentInterest = stats.investment * 0.02;
 
@@ -111,62 +131,141 @@ const WalletDashboard = () => {
     e.preventDefault();
     const amount = parseFloat(transactionAmount);
     if (!amount || amount <= 0) {
-      alert("Please enter a valid amount");
+      toast.error("Please enter a valid amount");
       return;
     }
     
     if (transactionType === "WITHDRAWAL" && amount > stats.balance) {
-      alert("Insufficient balance");
+      toast.error("Insufficient balance");
       return;
     }
     
     if (transactionType === "INVEST" && amount > stats.balance) {
-      alert("Insufficient balance for investment");
+      toast.error("Insufficient balance for investment");
       return;
     }
     
-    // Handle transaction logic here
-    console.log(`${transactionType}: ${amount}`);
+    // Open M-Pesa modal for deposits and withdrawals
+    if (transactionType === "DEPOSIT" || transactionType === "WITHDRAWAL") {
+      setMpesaModalOpen(true);
+    } else if (transactionType === "INVEST") {
+      handleInvest();
+    }
   };
 
-  const handleInvest = () => {
+  const handleInvest = async () => {
     const amount = parseFloat(transactionAmount);
     if (!amount || amount <= 0) {
-      alert("Please enter a valid amount");
+      toast.error("Please enter a valid amount");
       return;
     }
     
     if (amount > stats.balance) {
-      alert("Insufficient balance for investment");
+      toast.error("Insufficient balance for investment");
       return;
     }
     
-    console.log(`Investment: ${amount}`);
-    setTransactionAmount("");
+    try {
+      const response = await fetch('/api/wallet/invest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ amount })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast.success("Investment successful!");
+        setTransactionAmount("");
+        fetchWalletData(); // Refresh data
+      } else {
+        toast.error(result.error || "Investment failed");
+      }
+    } catch (error) {
+      toast.error("Investment failed. Please try again.");
+    }
   };
 
-  const handleCollectInterest = () => {
-    console.log("Collecting interest");
+  const handleCollectInterest = async () => {
+    try {
+      const response = await fetch('/api/wallet/collect-interest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast.success("Interest collected successfully!");
+        fetchWalletData(); // Refresh data
+      } else {
+        toast.error(result.error || "Failed to collect interest");
+      }
+    } catch (error) {
+      toast.error("Failed to collect interest. Please try again.");
+    }
   };
 
-  const handleEarningsTransfer = () => {
-    console.log("Transferring earnings to wallet");
+  const handleEarningsTransfer = async () => {
+    if (stats.earnings <= 0) {
+      toast.error("No earnings available to transfer");
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/wallet/transfer-earnings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast.success(`Successfully transferred ${formatCurrency(stats.earnings)} to wallet!`);
+        fetchWalletData(); // Refresh data
+      } else {
+        toast.error(result.error || "Failed to transfer earnings");
+      }
+    } catch (error) {
+      toast.error("Failed to transfer earnings. Please try again.");
+    }
   };
 
-  const handleWithdrawInvestment = () => {
+  const handleWithdrawInvestment = async () => {
     const amount = parseFloat(transactionAmount);
     if (!amount || amount <= 0) {
-      alert("Please enter a valid amount");
+      toast.error("Please enter a valid amount");
       return;
     }
     
     if (amount > stats.investment) {
-      alert("Amount exceeds investment balance");
+      toast.error("Amount exceeds investment balance");
       return;
     }
     
-    console.log(`Withdraw investment: ${amount}`);
-    setTransactionAmount("");
+    try {
+      const response = await fetch('/api/wallet/investment-withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ amount })
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        toast.success("Investment withdrawal successful!");
+        setTransactionAmount("");
+        fetchWalletData(); // Refresh data
+      } else {
+        toast.error(result.error || "Investment withdrawal failed");
+      }
+    } catch (error) {
+      toast.error("Investment withdrawal failed. Please try again.");
+    }
   };
 
   return (
@@ -234,13 +333,15 @@ const WalletDashboard = () => {
                     <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
                       {formatCurrency(stats.earnings)}
                     </p>
-                    {stats.earnings > 0 && (
+                    {stats.earnings > 0 ? (
                       <button 
                         onClick={handleEarningsTransfer}
                         className="mt-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition"
                       >
-                        Transfer
+                        Transfer All
                       </button>
+                    ) : (
+                      <p className="text-xs text-gray-500 mt-1">Earn by writing articles!</p>
                     )}
                   </div>
                 </div>
@@ -376,6 +477,20 @@ const WalletDashboard = () => {
                   type="submit"
                   disabled={!transactionAmount || parseFloat(transactionAmount) <= 0}
                   className="w-full bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={(e) => {
+                    // Add validation before form submission
+                    const amount = parseFloat(transactionAmount);
+                    if (transactionType === "WITHDRAWAL" && amount > stats.balance) {
+                      e.preventDefault();
+                      toast.error(`Insufficient balance. Available: ${formatCurrency(stats.balance)}`);
+                      return;
+                    }
+                    if (transactionType === "INVEST" && amount > stats.balance) {
+                      e.preventDefault();
+                      toast.error(`Insufficient balance for investment. Available: ${formatCurrency(stats.balance)}`);
+                      return;
+                    }
+                  }}
                 >
                   {transactionType === "INVEST" ? "Invest Now" : `${transactionType.charAt(0) + transactionType.slice(1).toLowerCase()} ${formatCurrency(parseFloat(transactionAmount) || 0)}`}
                 </button>
@@ -393,8 +508,9 @@ const WalletDashboard = () => {
                     <p className="text-xl font-bold text-red-600">{formatCurrency(investmentInterest)}</p>
                   </div>
                   <button
-                    onClick={handleCollectInterest}
-                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all"
+                    onClick={stats.investment > 0 ? handleCollectInterest : () => toast.info("No investment to collect interest from")}
+                    disabled={stats.investment <= 0}
+                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Collect Interest
                   </button>
@@ -414,10 +530,10 @@ const WalletDashboard = () => {
                 </div>
                 <button
                   onClick={handleWithdrawInvestment}
-                  disabled={!transactionAmount || parseFloat(transactionAmount) > stats.investment}
+                  disabled={!transactionAmount || parseFloat(transactionAmount) > stats.investment || stats.investment <= 0}
                   className="w-full bg-gradient-to-r from-red-400 to-red-500 text-white py-3 px-4 rounded-lg font-medium hover:from-red-500 hover:to-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Withdraw from Investment
+                  {stats.investment <= 0 ? 'No Investment Available' : 'Withdraw from Investment'}
                 </button>
               </div>
             </div>
@@ -435,7 +551,7 @@ const WalletDashboard = () => {
                       <div>
                         <p className="font-medium text-gray-900">{transaction.description}</p>
                         <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span>{formatDate(transaction.date)}</span>
+                          <span>{formatDate(transaction.createdAt)}</span>
                           <span>•</span>
                           <span>{transaction.paymentMethod}</span>
                         </div>
@@ -466,6 +582,21 @@ const WalletDashboard = () => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <DashboardMobileNav />
       </div>
+
+      {/* PayHero Payment Modal */}
+      <PayHeroPayment
+        isOpen={mpesaModalOpen}
+        onClose={() => setMpesaModalOpen(false)}
+        amount={parseFloat(transactionAmount) || 0}
+        onSuccess={() => {
+          toast.success(`${transactionType.charAt(0) + transactionType.slice(1).toLowerCase()} completed successfully!`);
+          fetchWalletData(); // Refresh data
+          setTransactionAmount("");
+          setMpesaModalOpen(false);
+        }}
+        type={transactionType.toLowerCase() as 'deposit' | 'withdrawal'}
+        description={`${transactionType.charAt(0) + transactionType.slice(1).toLowerCase()} to wallet`}
+      />
     </div>
   );
 };

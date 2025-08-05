@@ -1,102 +1,85 @@
 import { getServerSession } from "next-auth";
-import { TransactionStatus } from "@prisma/client";
-import { mpesa } from "@/lib/mpesa";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { formatCurrency } from "@/lib/utils";
 
 export async function POST(req: Request) {
-  const session = await getServerSession();
+  const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { amount } = await req.json();
-  if (!amount || amount <= 0) {
-    return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
-  }
-
-  const userId = session.user.id;
-
-  // Validate phone number format (e.g., 2547XXXXXXXX or 07XXXXXXXX)
-  const phoneRegex = /^(?:2547|07)\d{8}$/;
-  if (!phoneRegex.test(userId)) {
-    return NextResponse.json(
-      { error: "Invalid phone number format. Use 2547XXXXXXXX or 07XXXXXXXX" },
-      { status: 400 }
-    );
-  }
-
   try {
-    // Start a transaction to ensure atomic operation
-    const result = await prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
-      if (!wallet || wallet.earnings < amount) {
-        throw new Error("Insufficient earnings");
-      }
+    const userId = session.user.id;
 
-      // Update wallet
-      const updated = await tx.wallet.update({
-        where: { userId },
-        data: {
-          earnings: { decrement: amount },
-          balance: { increment: amount },
-        },
-      });
-
-      // Create transaction record
-      const transaction = await tx.transaction.create({
-        data: {
-          userId,
-          amount,
-          type: "TRANSFER",
-          description: "Earnings transfer to wallet",
-          status: TransactionStatus.PENDING,
-        },
-      });
-
-      return { updated, transaction };
+    // Calculate actual earnings from articles (from Earning table)
+    const articleEarnings = await prisma.earning.aggregate({
+      where: { userId },
+      _sum: { amount: true }
     });
 
-    const { updated, transaction } = result;
+    // Calculate what's already been transferred to wallet from earnings
+    const transferredEarnings = await prisma.transaction.aggregate({
+      where: { 
+        userId,
+        type: 'transfer',
+        status: 'COMPLETED',
+        description: 'Transfer earnings to wallet'
+      },
+      _sum: { amount: true }
+    });
 
-    // Call to Mpesa API for payment processing
-    const mpesaResponse = await mpesa.initiateSTKPush(
-      userId, // Phone number
-      amount,
-      transaction.id // Reference
-    );
+    // Available earnings = total article earnings - already transferred earnings
+    const totalArticleEarnings = articleEarnings._sum.amount || 0;
+    const alreadyTransferred = transferredEarnings._sum.amount || 0;
+    const availableEarnings = Math.max(0, totalArticleEarnings - alreadyTransferred);
 
-    // Check if STK push was initiated successfully
-    if (mpesaResponse.ResponseCode !== "0") {
-      await prisma.transaction.update({
-        where: { id: transaction.id },
-        data: { status: TransactionStatus.FAILED },
-      });
-      throw new Error(mpesaResponse.ResponseDescription || "Failed to initiate M-Pesa STK push");
+    if (availableEarnings <= 0) {
+      return NextResponse.json({ error: "No earnings to transfer" }, { status: 400 });
     }
 
-    // Store CheckoutRequestID for callback verification
-    await prisma.transaction.update({
-      where: { id: transaction.id },
+    // Transfer all available earnings to wallet balance
+    const wallet = await prisma.wallet.update({
+      where: { userId },
       data: {
-        status: TransactionStatus.PENDING,
+        balance: { increment: availableEarnings }
+      }
+    });
+
+    // Record the transfer transaction
+    await prisma.transaction.create({
+      data: {
+        userId,
+        amount: availableEarnings,
+        type: 'transfer',
+        description: 'Transfer earnings to wallet',
+        status: 'COMPLETED'
       },
     });
 
+    // Get updated wallet data
+    const updatedWalletData = await prisma.$queryRaw<Array<{
+      balance: number;
+      investment: number;
+    }>>`
+      SELECT balance, investment 
+      FROM "Wallet" 
+      WHERE "userId" = ${userId}
+    `;
+
     return NextResponse.json({
       success: true,
-      message: "Transfer initiated. Please confirm the STK push on your phone.",
-      transactionId: transaction.id,
-      balance: formatCurrency(updated.balance),
-      earnings: formatCurrency(updated.earnings),
-      amount: formatCurrency(amount),
+      message: `Transferred ${availableEarnings.toFixed(2)} KES to wallet`,
+      wallet: {
+        balance: updatedWalletData[0].balance,
+        earnings: 0, // Now zero since all transferred
+        investment: updatedWalletData[0].investment
+      }
     });
   } catch (error: any) {
-    console.error("Transfer error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to transfer earnings" },
-      { status: 400 }
-    );
+    console.error('Transfer earnings error:', error);
+    return NextResponse.json({
+      error: error.message || 'Failed to transfer earnings'
+    }, { status: 400 });
   }
 }
