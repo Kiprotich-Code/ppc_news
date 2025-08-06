@@ -10,6 +10,7 @@ import Link from "next/link";
 import { DashboardMobileNav } from "@/components/DashboardMobileNav";
 import { useEditor, EditorContent } from "@tiptap/react"; // TipTap React components
 import StarterKit from "@tiptap/starter-kit"; // Basic extensions
+import { Share2, Copy, CheckCircle } from "lucide-react";
 
 interface Article {
   id: string;
@@ -33,6 +34,8 @@ export default function ArticleDetailPage() {
   const [article, setArticle] = useState<Article | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
 
   // Initialize TipTap editor (read-only for rendering)
   const editor = useEditor({
@@ -51,6 +54,19 @@ export default function ArticleDetailPage() {
     window.addEventListener("resize", checkIfMobile);
     return () => window.removeEventListener("resize", checkIfMobile);
   }, []);
+
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showShareMenu && !target.closest('.share-menu-container')) {
+        setShowShareMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showShareMenu]);
 
   useEffect(() => {
     console.log("ID:", id, "Session:", session, "Status:", status);
@@ -103,6 +119,54 @@ export default function ArticleDetailPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCopyLink = async () => {
+    if (!article) return;
+    
+    // Generate the public shareable link
+    const shareUrl = `${window.location.origin}/feed/${article.id}`;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea');
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    }
+  };
+
+  const handleShare = (platform: string) => {
+    if (!article) return;
+    
+    const shareUrl = `${window.location.origin}/feed/${article.id}`;
+    const title = article.title;
+    const description = `📰 ${title}\n\nRead the full article on PayPost.co.ke\n${shareUrl}`;
+    
+    switch (platform) {
+      case 'twitter':
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`📰 ${title}`)}&url=${encodeURIComponent(shareUrl)}&via=paypost`, '_blank');
+        break;
+      case 'facebook':
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
+        break;
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(description)}`, '_blank');
+        break;
+      case 'copy':
+        handleCopyLink();
+        break;
+    }
+    setShowShareMenu(false);
   };
 
   if (status === "loading" || isLoading) {
@@ -202,12 +266,71 @@ export default function ArticleDetailPage() {
                   <ArrowLeft className="h-4 w-4" />
                   Back to Content Library
                 </Link>
-                <Link
-                  href={`/dashboard/articles/new?edit=${article.id}`}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                >
-                  Edit Article
-                </Link>
+                <div className="flex items-center gap-3">
+                  {/* Share Button */}
+                  <div className="relative share-menu-container">
+                    <button
+                      onClick={() => setShowShareMenu(!showShareMenu)}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Share2 className="h-4 w-4 mr-2" />
+                      Share
+                    </button>
+
+                    {/* Share Menu Dropdown */}
+                    {showShareMenu && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleShare('copy')}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            {copySuccess ? (
+                              <>
+                                <CheckCircle className="h-4 w-4 mr-3 text-green-500" />
+                                Link Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-4 w-4 mr-3" />
+                                Copy Link
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleShare('whatsapp')}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <span className="h-4 w-4 mr-3">📱</span>
+                            WhatsApp
+                          </button>
+                          <button
+                            onClick={() => handleShare('twitter')}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <span className="h-4 w-4 mr-3">🐦</span>
+                            Twitter
+                          </button>
+                          <button
+                            onClick={() => handleShare('facebook')}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            <span className="h-4 w-4 mr-3">📘</span>
+                            Facebook
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Edit Article Button */}
+                  <Link
+                    href={`/dashboard/articles/new?edit=${article.id}`}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  >
+                    Edit Article
+                  </Link>
+                </div>
               </div>
 
               <div className="bg-white rounded-lg shadow-sm overflow-hidden">

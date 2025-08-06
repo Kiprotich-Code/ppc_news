@@ -3,12 +3,13 @@
 import { useState, useEffect } from "react"
 import { Sidebar } from "@/components/Sidebar"
 import Link from "next/link"
-import { FileText, Plus, Eye, MousePointer, DollarSign, Share2, Facebook, Twitter, Linkedin } from "lucide-react"
+import { FileText, Plus, Eye, MousePointer, DollarSign, Share2, Facebook, Twitter, Linkedin, Copy, CheckCircle, MessageCircle } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useRouter } from "next/navigation"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import { formatCurrency } from "@/lib/utils"
+import { Toast } from "@/components/Toast"
 
 interface Article {
   id: string;
@@ -19,6 +20,7 @@ interface Article {
   earnings: number;
   createdAt: string;
   publishedAt?: string;
+  featuredImage?: string;
 }
 
 export default function ContentPage() {
@@ -30,6 +32,10 @@ export default function ContentPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [showShareOptions, setShowShareOptions] = useState<{[key: string]: boolean}>({})
+  const [copySuccess, setCopySuccess] = useState<{[key: string]: boolean}>({})
+  const [isMobile, setIsMobile] = useState(false)
+  const [toastMessage, setToastMessage] = useState("")
+  const [showToast, setShowToast] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -39,6 +45,28 @@ export default function ContentPage() {
     }
     fetchArticles()
   }, [session, status, router, statusFilter, publishedStatusFilter])
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    checkIfMobile()
+    window.addEventListener("resize", checkIfMobile)
+    return () => window.removeEventListener("resize", checkIfMobile)
+  }, [])
+
+  // Close share menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (!target.closest('.share-menu-container')) {
+        setShowShareOptions({})
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const fetchArticles = async () => {
     setIsLoading(true)
@@ -101,23 +129,75 @@ export default function ContentPage() {
     }))
   }
 
+  const handleCopyLink = async (article: Article) => {
+    const shareUrl = `${window.location.origin}/feed/${article.id}`
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      setCopySuccess(prev => ({ ...prev, [article.id]: true }))
+      
+      // Show different messages for development vs production
+      if (window.location.hostname === 'localhost') {
+        setToastMessage("Link copied! Note: Social media previews won't work with localhost URLs. Deploy to see full preview.")
+      } else {
+        setToastMessage("Link copied to clipboard!")
+      }
+      
+      setShowToast(true)
+      setTimeout(() => {
+        setCopySuccess(prev => ({ ...prev, [article.id]: false }))
+      }, 2000)
+    } catch (err) {
+      console.error('Failed to copy link:', err)
+      // Fallback for browsers that don't support clipboard API
+      const textArea = document.createElement('textarea')
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      setCopySuccess(prev => ({ ...prev, [article.id]: true }))
+      
+      if (window.location.hostname === 'localhost') {
+        setToastMessage("Link copied! Note: Social media previews won't work with localhost URLs. Deploy to see full preview.")
+      } else {
+        setToastMessage("Link copied to clipboard!")
+      }
+      
+      setShowToast(true)
+      setTimeout(() => {
+        setCopySuccess(prev => ({ ...prev, [article.id]: false }))
+      }, 2000)
+    }
+  }
+
   const shareOnSocialMedia = (platform: string, article: Article) => {
-    const articleUrl = `${window.location.origin}/articles/${article.id}`
+    const shareUrl = `${window.location.origin}/feed/${article.id}`
     const shareText = `Check out this article: ${article.title}`
+    const description = `📰 ${article.title}\n\nRead the full article on PayPost.co.ke\n${shareUrl}`
 
     switch (platform) {
       case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(articleUrl)}`, '_blank')
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank')
         break
       case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(articleUrl)}`, '_blank')
+        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`📰 ${article.title}`)}&url=${encodeURIComponent(shareUrl)}&via=paypost`, '_blank')
         break
       case 'linkedin':
-        window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(articleUrl)}&title=${encodeURIComponent(article.title)}`, '_blank')
+        window.open(`https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(article.title)}&summary=${encodeURIComponent(`Read this article on PayPost.co.ke`)}&source=PayPost.co.ke`, '_blank')
+        break
+      case 'whatsapp':
+        window.open(`https://wa.me/?text=${encodeURIComponent(description)}`, '_blank')
+        break
+      case 'copy':
+        handleCopyLink(article)
         break
       default:
         break
     }
+    
+    // Close share menu after action
+    setShowShareOptions(prev => ({ ...prev, [article.id]: false }))
   }
 
   if (status === "loading" || isLoading) {
@@ -138,6 +218,12 @@ export default function ContentPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
+      <Toast 
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        type="success"
+      />
       <div className="hidden md:block">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} userName={session?.user?.name} />
       </div>
@@ -217,34 +303,61 @@ export default function ContentPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           {article.publishedStatus === "PUBLISHED" && (
-                            <div className="relative">
+                            <div className="relative share-menu-container">
                               <button 
                                 onClick={() => toggleShareOptions(article.id)}
-                                className="p-2 text-gray-500 hover:text-red-600"
+                                className="p-2 text-gray-500 hover:text-red-600 transition-colors duration-200 rounded-md hover:bg-gray-100"
+                                title="Share article"
                               >
                                 <Share2 className="h-4 w-4" />
                               </button>
                               {showShareOptions[article.id] && (
-                                <div className="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-md shadow-lg z-10 py-1">
+                                <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50 py-2">
+                                  <div className="px-3 py-2 text-xs font-medium text-gray-500 border-b border-gray-100">
+                                    Share on PayPost.co.ke
+                                  </div>
+                                  <button
+                                    onClick={() => shareOnSocialMedia('copy', article)}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                                  >
+                                    {copySuccess[article.id] ? (
+                                      <>
+                                        <CheckCircle className="h-4 w-4 mr-3 text-green-500" />
+                                        <span className="text-green-600">Link Copied!</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="h-4 w-4 mr-3 text-gray-400" />
+                                        Copy Link
+                                      </>
+                                    )}
+                                  </button>
+                                  <button
+                                    onClick={() => shareOnSocialMedia('whatsapp', article)}
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
+                                  >
+                                    <MessageCircle className="h-4 w-4 mr-3 text-green-500" />
+                                    WhatsApp
+                                  </button>
                                   <button
                                     onClick={() => shareOnSocialMedia('facebook', article)}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                                   >
-                                    <Facebook className="h-4 w-4 mr-2 text-blue-600" />
+                                    <Facebook className="h-4 w-4 mr-3 text-blue-600" />
                                     Facebook
                                   </button>
                                   <button
                                     onClick={() => shareOnSocialMedia('twitter', article)}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                                   >
-                                    <Twitter className="h-4 w-4 mr-2 text-blue-400" />
+                                    <Twitter className="h-4 w-4 mr-3 text-blue-400" />
                                     Twitter
                                   </button>
                                   <button
                                     onClick={() => shareOnSocialMedia('linkedin', article)}
-                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                                   >
-                                    <Linkedin className="h-4 w-4 mr-2 text-blue-700" />
+                                    <Linkedin className="h-4 w-4 mr-3 text-blue-700" />
                                     LinkedIn
                                   </button>
                                 </div>
@@ -253,7 +366,7 @@ export default function ContentPage() {
                           )}
                           <Link
                             href={`/dashboard/content/${article.id}`}
-                            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
+                            className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 transition-colors duration-200"
                           >
                             Details
                           </Link>
