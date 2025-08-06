@@ -112,7 +112,11 @@ model Withdrawal {
   flagged        Boolean          @default(false)
   note           String?
   paidAt         DateTime?
-  accountDetails String
+  accountDetails String?          // Made optional
+  phoneNumber    String?          // Added for M-Pesa
+  method         String           @default("BANK") // BANK, MPESA
+  reference      String?          // PayHero reference
+  transactionId  String?          // Link to Transaction model
   createdAt      DateTime         @default(now())
   processedAt    DateTime?
 

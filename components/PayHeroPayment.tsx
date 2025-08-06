@@ -102,11 +102,23 @@ export const PayHeroPayment: React.FC<PayHeroPaymentProps> = ({
       
       const result = await response.json();
       
-      if (response.ok && result.checkoutRequestId) {
-        setCheckoutRequestId(result.checkoutRequestId);
-        setStatus('waiting');
-        setCountdown(120); // Reset countdown
-        toast.success('STK push sent! Check your phone for M-Pesa prompt');
+      if (response.ok) {
+        if (type === 'deposit' && result.checkoutRequestId) {
+          // Deposit flow - wait for STK push completion
+          setCheckoutRequestId(result.checkoutRequestId);
+          setStatus('waiting');
+          setCountdown(120);
+          toast.success('STK push sent! Check your phone for M-Pesa prompt');
+        } else if (type === 'withdrawal' && result.success) {
+          // Withdrawal flow - manual processing
+          setStatus('success');
+          toast.success('Withdrawal request submitted successfully!');
+          onSuccess();
+          setTimeout(() => onClose(), 3000);
+        } else {
+          setStatus('failed');
+          toast.error(result.error || `${type} failed`);
+        }
       } else {
         setStatus('failed');
         toast.error(result.error || `${type} failed`);
@@ -188,7 +200,11 @@ export const PayHeroPayment: React.FC<PayHeroPaymentProps> = ({
             </button>
             <div className="text-center text-xs text-gray-500">
               <p>Powered by PayHero • Secure & Fast</p>
-              <p className="mt-1">You will receive an M-Pesa prompt on your phone</p>
+              {type === 'deposit' ? (
+                <p className="mt-1">You will receive an M-Pesa prompt on your phone</p>
+              ) : (
+                <p className="mt-1">Withdrawal will be processed within 24 hours</p>
+              )}
             </div>
           </form>
         );
@@ -239,14 +255,20 @@ export const PayHeroPayment: React.FC<PayHeroPaymentProps> = ({
               <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
             <h4 className="text-lg font-medium text-green-900">
-              Payment Successful!
+              {type === 'deposit' ? 'Payment Successful!' : 'Withdrawal Request Submitted!'}
             </h4>
             <p className="text-sm text-gray-600">
-              KES {amount.toLocaleString()} has been {type === 'deposit' ? 'added to' : 'withdrawn from'} your wallet
+              {type === 'deposit' 
+                ? `KES ${amount.toLocaleString()} has been added to your wallet`
+                : `Your withdrawal request for KES ${amount.toLocaleString()} has been submitted and will be processed within 24 hours.`
+              }
             </p>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <p className="text-sm text-green-800">
-                ✅ Transaction completed successfully
+                {type === 'deposit' 
+                  ? '✅ Transaction completed successfully'
+                  : '✅ Withdrawal request received - You will be notified once processed'
+                }
               </p>
             </div>
           </div>

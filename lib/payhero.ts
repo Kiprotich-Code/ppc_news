@@ -80,29 +80,48 @@ export class PayHeroService {
     }
   }
 
-  // Initiate withdrawal to M-Pesa till
+  // Initiate withdrawal using B2C (Business to Customer)
   async initiateWithdrawal({ amount, phoneNumber, reference, description }: {
     amount: number;
     phoneNumber: string;
     reference: string;
     description: string;
   }) {
-    // For withdrawals, we typically use B2C which may require different implementation
-    // For now, using similar structure but this may need adjustment based on PayHero's B2C API
+    // ⚠️ IMPORTANT: PayHero B2C API might be different from STK Push
+    // This is a placeholder implementation. You should:
+    // 1. Check PayHero documentation for B2C API endpoints
+    // 2. Verify if your PayHero account supports B2C transactions
+    // 3. Use appropriate B2C payload structure
+    
+    console.log('⚠️ PayHero B2C Withdrawal - Check documentation for proper implementation');
+    console.log('Withdrawal request:', { amount, phoneNumber, reference });
+    
+    // For now, return a manual processing response
+    // In production, you would either:
+    // A) Use PayHero B2C API if available
+    // B) Process manually through admin panel
+    // C) Use alternative withdrawal methods
+    
+    return {
+      success: true,
+      status: 'MANUAL_PROCESSING',
+      reference,
+      message: 'Withdrawal request submitted for manual processing',
+      requiresManualApproval: true
+    };
+    
+    /* 
+    // This would be the actual B2C implementation if PayHero supports it:
     const payload = {
       amount,
       phone_number: phoneNumber,
-      channel_id: parseInt(this.channelId),
-      provider: "m-pesa",
-      external_reference: reference,
-      customer_name: "Customer",
-      callback_url: `${process.env.NEXTAUTH_URL}/api/webhooks/payhero`
+      transaction_type: "B2C", // Business to Customer
+      reference: reference,
+      callback_url: `${process.env.NEXTAUTH_URL}/api/webhooks/payhero/b2c`
     };
     
-    console.log('PayHero withdrawal payload:', payload);
-    
     try {
-      const response = await fetch(`${this.baseUrl}/payments`, {
+      const response = await fetch(`${this.baseUrl}/b2c/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,18 +131,12 @@ export class PayHeroService {
       });
       
       const result = await response.json();
-      console.log('PayHero withdrawal response:', { status: response.status, result });
-      
-      if (!response.ok) {
-        console.error('PayHero withdrawal error:', response.status, result);
-        return { error: result.message || result.error || 'PayHero withdrawal failed' };
-      }
-      
+      // Process B2C response...
       return result;
     } catch (error) {
-      console.error('PayHero withdrawal network error:', error);
-      return { error: 'Network error connecting to PayHero' };
+      return { error: 'B2C withdrawal failed' };
     }
+    */
   }
 
   // Verify webhook signature
