@@ -240,7 +240,7 @@ export default function ArticleDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <div
-        className={`fixed md:static inset-0 z-40 md:z-auto transform ${
+        className={`fixed inset-y-0 left-0 z-40 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 transition-transform duration-300 ease-in-out`}
       >

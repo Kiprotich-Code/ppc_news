@@ -320,10 +320,14 @@ export default function Dashboard() {
             <div className="divide-y divide-gray-200">
               {recentArticles.length > 0 ? (
                 recentArticles.map((article) => (
-                  <div key={article.id} className="px-4 py-3">
+                  <Link 
+                    key={article.id} 
+                    href={`/dashboard/content/${article.id}`}
+                    className="block px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
                     <div className="flex flex-col">
                       <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900">{article.title}</h3>
+                        <h3 className="text-sm font-medium text-gray-900 hover:text-red-600 transition-colors">{article.title}</h3>
                         <div className="flex items-center mt-1 text-xs text-gray-500">
                           <Calendar className="h-3 w-3 mr-1" />
                           {formatDate(new Date(article.createdAt))}
@@ -345,18 +349,18 @@ export default function Dashboard() {
                           {article.authorName}
                         </div>
                         <div className="flex items-center space-x-3">
-                          <div className="flex items-center">
-                            <Eye className="h-3 w-3 mr-1" />
-                            {article.views.toLocaleString()}
+                          <div className="flex items-center text-blue-600">
+                            <Eye className="h-3 w-3 mr-1 text-blue-600" />
+                            <span className="text-blue-600">{article.views.toLocaleString()}</span>
                           </div>
-                          <div className="flex items-center">
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            {formatCurrency(article.earnings)}
+                          <div className="flex items-center text-blue-600">
+                            <DollarSign className="h-3 w-3 mr-1 text-blue-600" />
+                            <span className="text-blue-600">{formatCurrency(article.earnings)}</span>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))
               ) : (
                 <div className="px-4 py-6 text-center">
