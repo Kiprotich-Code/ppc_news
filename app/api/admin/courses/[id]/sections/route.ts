@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { id: courseId } = params
+    const { id: courseId } = await params
 
     const sections = await prisma.courseSection.findMany({
       where: { courseId },
@@ -37,7 +37,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -47,7 +47,7 @@ export async function POST(
     }
 
     const { title, description } = await request.json()
-    const { id: courseId } = params
+    const { id: courseId } = await params
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })

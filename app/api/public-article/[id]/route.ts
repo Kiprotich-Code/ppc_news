@@ -1,19 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-// Define the params type explicitly
-interface RouteParams {
-  id: string;
-}
-
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<RouteParams> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Resolve the params promise
-    const params = await context.params;
-    const { id } = params;
+    const { id } = await params;
 
     const article = await prisma.article.findUnique({
       where: { id, publishedStatus: "PUBLISHED" },

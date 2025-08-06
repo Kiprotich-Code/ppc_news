@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,28 +16,23 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { courseId } = params
+    const { sectionId } = await params
 
-    const sections = await prisma.courseSection.findMany({
-      where: { courseId },
-      include: {
-        lessons: {
-          orderBy: { orderIndex: 'asc' }
-        }
-      },
+    const lessons = await prisma.lesson.findMany({
+      where: { sectionId },
       orderBy: { orderIndex: 'asc' }
     })
 
-    return NextResponse.json(sections)
+    return NextResponse.json(lessons)
   } catch (error: any) {
-    console.error('Error fetching sections:', error)
+    console.error('Error fetching lessons:', error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
 
 export async function POST(
   request: Request,
-  { params }: { params: { courseId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -46,38 +41,51 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, description } = await request.json()
-    const { courseId } = params
+    const { 
+      title, 
+      description, 
+      content, 
+      videoUrl, 
+      type, 
+      duration, 
+      isFreePreview 
+    } = await request.json()
+    const { sectionId } = await params
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
+    if (!type || !["ARTICLE", "VIDEO", "PDF", "QUIZ"].includes(type)) {
+      return NextResponse.json({ error: "Valid lesson type is required" }, { status: 400 })
+    }
+
     // Get the next order index
-    const lastSection = await prisma.courseSection.findFirst({
-      where: { courseId },
+    const lastLesson = await prisma.lesson.findFirst({
+      where: { sectionId },
       orderBy: { orderIndex: 'desc' }
     })
 
-    const orderIndex = lastSection ? lastSection.orderIndex + 1 : 0
+    const orderIndex = lastLesson ? lastLesson.orderIndex + 1 : 0
 
-    const section = await prisma.courseSection.create({
+    const lesson = await prisma.lesson.create({
       data: {
         title,
         description,
-        courseId,
-        orderIndex
-      },
-      include: {
-        lessons: {
-          orderBy: { orderIndex: 'asc' }
-        }
+        content,
+        videoUrl,
+        type,
+        duration: duration || null,
+        sectionId,
+        orderIndex,
+        isFreePreview: isFreePreview || false,
+        isPublished: true // Default to published for now
       }
     })
 
-    return NextResponse.json(section)
+    return NextResponse.json(lesson)
   } catch (error: any) {
-    console.error('Error creating section:', error)
+    console.error('Error creating lesson:', error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
