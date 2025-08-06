@@ -48,7 +48,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       id: article.id,
       title: article.title,
       content: parsedContent, // Return raw JSON string
-      // category: article.category, // TODO: Enable after Prisma client update
+      category: article.category,
       status: article.status,
       images: article.images ? JSON.parse(article.images) : [],
       featuredImage: article.featuredImage,
@@ -131,7 +131,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         data: {
           title: title.trim(),
           content,
-          // category: category || null, // TODO: Enable after Prisma client update
+          category: category || null,
           publishedStatus: publishedStatus, // Use publishedStatus instead of status for consistency
           featuredImage: featuredImage || null,
           ...(publishedStatus === "PUBLISHED" && !existingArticle.publishedAt
@@ -149,7 +149,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         id: updatedArticle.id,
         title: updatedArticle.title,
         content: updatedArticle.content,
-        // category: updatedArticle.category, // TODO: Enable after Prisma client update
+        category: updatedArticle.category,
         status: updatedArticle.status,
         images: updatedArticle.images ? JSON.parse(updatedArticle.images) : [],
         featuredImage: updatedArticle.featuredImage,

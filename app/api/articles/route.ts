@@ -72,11 +72,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, content, publishedStatus, authorId, featuredImage, category } = body;
 
-    if (publishedStatus === 'PUBLISHED' && (!title || !content || !featuredImage || !category)) {
-      return NextResponse.json({ error: 'Title, content, category, and featured image are required to publish' }, { status: 400 });
+    if (publishedStatus === 'PUBLISHED' && (!title || !content || !featuredImage)) {
+      return NextResponse.json({ error: 'Title, content, and featured image are required to publish' }, { status: 400 });
     }
 
-    if (publishedStatus === 'DRAFT' && !title && !content && !featuredImage && !category) {
+    if (publishedStatus === 'DRAFT' && !title && !content && !featuredImage) {
       return NextResponse.json({ error: 'At least one field is required to save a draft' }, { status: 400 });
     }
 
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       data: {
         title: title || '', 
         content: content || '', 
-        // category: category || null, // TODO: Enable after Prisma client update
+        category: category || null,
         publishedStatus, 
         authorId: session.user.id,
         featuredImage: featuredImage || null,

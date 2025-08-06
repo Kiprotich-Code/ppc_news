@@ -291,10 +291,10 @@ export default function NewArticle() {
         toast.error("Title is required to publish.")
         return
       }
-      // if (!category) {
-      //   toast.error("Category is required to publish.")
-      //   return
-      // }
+      if (!category) {
+        toast.error("Category is required to publish.")
+        return
+      }
       if (!editor?.getJSON().content?.length) {
         toast.error("Content is required to publish.")
         return

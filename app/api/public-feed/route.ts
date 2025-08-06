@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       id: a.id,
       title: a.title,
       content: a.content,
-      // category: a.category, // TODO: Enable after Prisma client update
+      category: a.category,
       status: a.status,
       publishedStatus: a.publishedStatus,
       publishedAt: a.publishedAt,

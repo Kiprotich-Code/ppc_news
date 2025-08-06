@@ -119,21 +119,18 @@ export default function PublicFeed() {
                           {article.title}
                         </h3>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          {article.category && (
+                          {article.category ? (
                             <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getCategoryConfig(article.category).color}`}>
                               {getCategoryConfig(article.category).name}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                              Uncategorized
                             </span>
                           )}
                           <span className="text-xs text-gray-500">
                             {article.publishedAt ? getTimeAgo(article.publishedAt) : "Draft"}
                           </span>
-                          <Link
-                            href={`/feed/${article.id}`}
-                            className="text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            <span className="text-sm">See More</span>
-                            <ArrowRight className="w-3 h-3 ml-1 inline" />
-                          </Link>
                         </div>
                       </div>
                     </div>
