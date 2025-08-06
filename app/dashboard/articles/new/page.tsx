@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/Sidebar"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import toast from "react-hot-toast"
 import dynamic from "next/dynamic"
-import { FileText, Loader2, Upload, Image as ImageIcon, Video as VideoIcon, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Minus } from "lucide-react"
+import { FileText, Loader2, Upload, Image as ImageIcon, Video as VideoIcon, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Minus, ChevronDown } from "lucide-react"
 import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
@@ -17,6 +17,7 @@ import TextAlign from "@tiptap/extension-text-align"
 import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
 import { Dialog } from "@/components/Dialog"
+import { ARTICLE_CATEGORIES, ArticleCategory, getCategoryConfig } from "@/lib/categories"
 
 // Custom Video extension using iframe embeds
 const Video = Image.extend({
@@ -62,13 +63,15 @@ export default function NewArticle() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [showConfirm, setShowConfirm] = useState<null | 'draft' | 'publish'>(null)
   const [title, setTitle] = useState("")
-  const [subTitle, setSubTitle] = useState("")
+  const [category, setCategory] = useState<ArticleCategory | "">("")
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [featuredImage, setFeaturedImage] = useState("")
   const [featuredImageFile, setFeaturedImageFile] = useState<File | null>(null)
   const [featuredImageUploading, setFeaturedImageUploading] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [articleId, setArticleId] = useState<string | null>(null)
   const featuredImageInputRef = useRef<HTMLInputElement>(null)
+  const categoryDropdownRef = useRef<HTMLDivElement>(null)
 
   // Check for edit mode and fetch article data
   useEffect(() => {
@@ -91,7 +94,7 @@ export default function NewArticle() {
       
       // Pre-fill the form with article data
       setTitle(data.article.title)
-      setSubTitle(data.article.subTitle || "")
+      setCategory(data.article.category || "")
       setFeaturedImage(data.article.featuredImage || "")
       
       // Set editor content if available
@@ -152,7 +155,7 @@ export default function NewArticle() {
   // Warn before leaving with unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (title || subTitle || featuredImage || editor?.getText().trim()) {
+      if (title || category || featuredImage || editor?.getText().trim()) {
         e.preventDefault()
         e.returnValue = 'You have unsaved changes. Are you sure you want to leave?'
       }
@@ -160,7 +163,19 @@ export default function NewArticle() {
 
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
-  }, [title, subTitle, featuredImage, editor])
+  }, [title, category, featuredImage, editor])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(event.target as Node)) {
+        setShowCategoryDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   // Insert image handler
   const insertImage = useCallback(async (file: File) => {
@@ -276,6 +291,10 @@ export default function NewArticle() {
         toast.error("Title is required to publish.")
         return
       }
+      // if (!category) {
+      //   toast.error("Category is required to publish.")
+      //   return
+      // }
       if (!editor?.getJSON().content?.length) {
         toast.error("Content is required to publish.")
         return
@@ -308,6 +327,7 @@ export default function NewArticle() {
         publishedStatus: finalPublishedStatus,
         status,
         featuredImage,
+        category,
       });
 
       const res = await fetch(endpoint, {
@@ -319,6 +339,7 @@ export default function NewArticle() {
           publishedStatus: finalPublishedStatus,
           status,
           featuredImage,
+          category,
         }),
       })
 
@@ -399,19 +420,50 @@ export default function NewArticle() {
                   />
                 </div>
                 
-                {/* Subtitle */}
-                <div>
-                  <label htmlFor="subtitle" className="block text-sm font-medium text-gray-700 mb-2">
-                    Subtitle
+                {/* Category Selection */}
+                <div className="relative" ref={categoryDropdownRef}>
+                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
                   </label>
-                  <input
-                    type="text"
-                    id="subtitle"
-                    value={subTitle}
-                    onChange={e => setSubTitle(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm md:text-base"
-                    placeholder="Enter a subtitle (optional)"
-                  />
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition text-sm md:text-base text-left bg-white flex items-center justify-between"
+                    >
+                      <span className={category ? "text-gray-900" : "text-gray-500"}>
+                        {category ? getCategoryConfig(category).name : "Select a category"}
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                    
+                    {showCategoryDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                        <div className="py-1">
+                          {ARTICLE_CATEGORIES.map((cat) => (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setCategory(cat.id as ArticleCategory)
+                                setShowCategoryDropdown(false)
+                              }}
+                              className={`w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors ${
+                                category === cat.id ? 'bg-blue-50 text-blue-900' : 'text-gray-900'
+                              }`}
+                            >
+                              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${cat.color} mr-2`}>
+                                {cat.name}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose the most relevant category for your article
+                  </p>
                 </div>
                 
                 {/* Featured Image */}

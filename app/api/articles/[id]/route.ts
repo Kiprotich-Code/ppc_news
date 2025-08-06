@@ -7,6 +7,7 @@ interface FormattedArticle {
   id: string;
   title: string;
   content: string;
+  category?: string | null;
   status: string;
   images: any[];
   featuredImage: string | null;
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       id: article.id,
       title: article.title,
       content: parsedContent, // Return raw JSON string
+      // category: article.category, // TODO: Enable after Prisma client update
       status: article.status,
       images: article.images ? JSON.parse(article.images) : [],
       featuredImage: article.featuredImage,
@@ -76,7 +78,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
     const body = await request.json();
     console.log('Received update request body:', body);
 
-    const { title, subTitle, content, publishedStatus, status, featuredImage } = body;
+    const { title, content, publishedStatus, status, featuredImage, category } = body;
 
     // Ensure publishedStatus is valid
     if (!['DRAFT', 'PUBLISHED'].includes(publishedStatus)) {
@@ -129,7 +131,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         data: {
           title: title.trim(),
           content,
-          status: publishedStatus, // Make sure we're using the correct field name
+          // category: category || null, // TODO: Enable after Prisma client update
+          publishedStatus: publishedStatus, // Use publishedStatus instead of status for consistency
           featuredImage: featuredImage || null,
           ...(publishedStatus === "PUBLISHED" && !existingArticle.publishedAt
             ? { publishedAt: new Date() }
@@ -146,6 +149,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         id: updatedArticle.id,
         title: updatedArticle.title,
         content: updatedArticle.content,
+        // category: updatedArticle.category, // TODO: Enable after Prisma client update
         status: updatedArticle.status,
         images: updatedArticle.images ? JSON.parse(updatedArticle.images) : [],
         featuredImage: updatedArticle.featuredImage,

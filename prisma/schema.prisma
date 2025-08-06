@@ -59,6 +59,7 @@ model Article {
   id             String           @id @default(cuid())
   title          String
   content        String
+  category       String?          // Article category
   images         String? // JSON array of image URLs
   featuredImage  String? // Main featured image URL
   publishedStatus PublishedStatus @default(DRAFT)

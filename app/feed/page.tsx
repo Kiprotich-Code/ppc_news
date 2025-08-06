@@ -6,6 +6,7 @@ import Image from "next/image";
 import { User, Eye, Clock, ArrowRight, MessageCircle, Share, FileText } from "lucide-react";
 import useSWR from "swr";
 import { Navigation } from "@/components/Navigation";
+import { getCategoryConfig } from "@/lib/categories";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
@@ -118,9 +119,11 @@ export default function PublicFeed() {
                           {article.title}
                         </h3>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
-                            Published
-                          </span>
+                          {article.category && (
+                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium border ${getCategoryConfig(article.category).color}`}>
+                              {getCategoryConfig(article.category).name}
+                            </span>
+                          )}
                           <span className="text-xs text-gray-500">
                             {article.publishedAt ? getTimeAgo(article.publishedAt) : "Draft"}
                           </span>
