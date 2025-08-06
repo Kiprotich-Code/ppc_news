@@ -37,6 +37,7 @@ export function AdminSidebar({
   navItems = [
     { label: "Dashboard", href: "/admin", icon: "home" },
     { label: "Articles", href: "/admin/articles", icon: "file-text" },
+    { label: "Courses", href: "/admin/courses", icon: "book-open" },
     { label: "Members", href: "/admin/members", icon: "users" },
     { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
     { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },

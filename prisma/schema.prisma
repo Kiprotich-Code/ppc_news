@@ -26,14 +26,17 @@ model User {
   updatedAt         DateTime @updatedAt
 
   // Relations
-  profile      Profile?
-  articles     Article[]
-  views        View[]
-  earnings     Earning[]
-  withdrawals  Withdrawal[]
-  auditLogs    AuditLog[]
-  wallet       Wallet?
-  transactions Transaction[]
+  profile        Profile?
+  articles       Article[]
+  views          View[]
+  earnings       Earning[]
+  withdrawals    Withdrawal[]
+  auditLogs      AuditLog[]
+  wallet         Wallet?
+  transactions   Transaction[]
+  enrollments    CourseEnrollment[]
+  lessonProgress LessonProgress[]
+  courseReviews  CourseReview[]
 }
 
 model Profile {
@@ -56,22 +59,22 @@ model Profile {
 }
 
 model Article {
-  id             String           @id @default(cuid())
-  title          String
-  content        String
-  category       String?          // Article category
-  images         String? // JSON array of image URLs
-  featuredImage  String? // Main featured image URL
-  publishedStatus PublishedStatus @default(DRAFT)
-  status         ModerationStatus @default(PENDING)
-  moderationNote String?
-  isBoosted      Boolean          @default(false)
-  boostLevel     BoostLevel?
-  boostExpiry    DateTime?
-  clickValue     Float?
-  publishedAt    DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  title           String
+  content         String
+  category        String? // Article category
+  images          String? // JSON array of image URLs
+  featuredImage   String? // Main featured image URL
+  publishedStatus PublishedStatus  @default(DRAFT)
+  status          ModerationStatus @default(PENDING)
+  moderationNote  String?
+  isBoosted       Boolean          @default(false)
+  boostLevel      BoostLevel?
+  boostExpiry     DateTime?
+  clickValue      Float?
+  publishedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   // Relations
   authorId String
@@ -113,11 +116,11 @@ model Withdrawal {
   flagged        Boolean          @default(false)
   note           String?
   paidAt         DateTime?
-  accountDetails String?          // Made optional
-  phoneNumber    String?          // Added for M-Pesa
+  accountDetails String? // Made optional
+  phoneNumber    String? // Added for M-Pesa
   method         String           @default("BANK") // BANK, MPESA
-  reference      String?          // PayHero reference
-  transactionId  String?          // Link to Transaction model
+  reference      String? // PayHero reference
+  transactionId  String? // Link to Transaction model
   createdAt      DateTime         @default(now())
   processedAt    DateTime?
 
@@ -143,43 +146,157 @@ model Settings {
 }
 
 model Wallet {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @unique
-  balance   Float    @default(0)
-  earnings  Float    @default(0)
-  investment Float   @default(0)
-  currency  String   @default("KES")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     String   @unique
+  balance    Float    @default(0)
+  earnings   Float    @default(0)
+  investment Float    @default(0)
+  currency   String   @default("KES")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Transaction {
-  id                    String           @id @default(cuid())
-  user                  User             @relation(fields: [userId], references: [id])
-  userId                String
-  amount                Float
-  type                  String           
-  description           String
-  status                TransactionStatus @default(PENDING)
-  paymentMethod         PaymentMethod?
-  mpesaRef              String?
-  reference             String?          
-  mpesaRequestId        String?          
-  mpesaMerchantRequestId String?        
-  mpesaTransactionId    String?         
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  id                     String            @id @default(cuid())
+  user                   User              @relation(fields: [userId], references: [id])
+  userId                 String
+  amount                 Float
+  type                   String
+  description            String
+  status                 TransactionStatus @default(PENDING)
+  paymentMethod          PaymentMethod?
+  mpesaRef               String?
+  reference              String?
+  mpesaRequestId         String?
+  mpesaMerchantRequestId String?
+  mpesaTransactionId     String?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
 }
 
-
-model Course {
+model CourseCategory {
   id          String   @id @default(cuid())
-  title       String
-  price       Float
+  name        String   @unique
+  description String?
+  slug        String   @unique
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  // Add other course fields as needed
+
+  // Relations
+  courses Course[]
+}
+
+model Course {
+  id               String           @id @default(cuid())
+  title            String
+  description      String?
+  shortDescription String?
+  featuredImage    String?
+  price            Float            @default(0)
+  isFree           Boolean          @default(false)
+  isPremium        Boolean          @default(true)
+  isPublished      Boolean          @default(false)
+  difficulty       CourseDifficulty @default(BEGINNER)
+  duration         String? // e.g., "4 weeks", "2 months"
+  tags             String? // JSON array of tags
+  requirements     String? // JSON array of prerequisites
+  whatYouWillLearn String? // JSON array of learning outcomes
+  instructor       String?
+  enrollmentCount  Int              @default(0)
+  rating           Float?
+  slug             String           @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  categoryId  String
+  category    CourseCategory     @relation(fields: [categoryId], references: [id])
+  sections    CourseSection[]
+  enrollments CourseEnrollment[]
+  reviews     CourseReview[]
+}
+
+model CourseSection {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  orderIndex  Int
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  courseId String
+  course   Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons  Lesson[]
+}
+
+model Lesson {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  content       String? // Rich text content for article-type lessons
+  videoUrl      String? // YouTube, Vimeo, or direct video URL
+  videoFile     String? // Uploaded video file path
+  pdfFile       String? // PDF file path
+  duration      Int? // Duration in seconds for videos
+  type          LessonType @default(ARTICLE)
+  orderIndex    Int
+  isFreePreview Boolean    @default(false)
+  isPublished   Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  sectionId String
+  section   CourseSection    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress  LessonProgress[]
+}
+
+model CourseEnrollment {
+  id          String    @id @default(cuid())
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  progress    Float     @default(0) // Percentage completion
+
+  // Relations
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model LessonProgress {
+  id          String    @id @default(cuid())
+  isCompleted Boolean   @default(false)
+  watchTime   Int? // For video lessons, time watched in seconds
+  completedAt DateTime?
+
+  // Relations
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  lessonId String
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+
+  @@unique([userId, lessonId])
+}
+
+model CourseReview {
+  id        String   @id @default(cuid())
+  rating    Int // 1-5 stars
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // Relations
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+  courseId String
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
 }
 
 enum TransactionStatus {
@@ -215,6 +332,19 @@ enum WithdrawalStatus {
 }
 
 enum PublishedStatus {
-  DRAFT 
+  DRAFT
   PUBLISHED
+}
+
+enum CourseDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum LessonType {
+  ARTICLE
+  VIDEO
+  PDF
+  QUIZ
 }
