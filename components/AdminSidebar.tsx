@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Pencil, BookOpen, DollarSign, User, MessageSquare, Menu, Settings, FileText, Users } from "lucide-react"
+import { Home, Pencil, BookOpen, DollarSign, User, MessageSquare, Menu, Settings, FileText, Users, Wallet } from "lucide-react"
 import { LucideIcon } from "lucide-react"
 
 const iconMap: { [key: string]: LucideIcon } = {
@@ -10,6 +10,7 @@ const iconMap: { [key: string]: LucideIcon } = {
   pencil: Pencil,
   "book-open": BookOpen,
   "dollar-sign": DollarSign,
+  wallet: Wallet,
   user: User,
   "file-text": FileText,
   users: Users,
@@ -37,8 +38,9 @@ export function AdminSidebar({
     { label: "Dashboard", href: "/admin", icon: "home" },
     { label: "Articles", href: "/admin/articles", icon: "file-text" },
     { label: "Members", href: "/admin/members", icon: "users" },
-    { label: "Settings", href: "/admin/settings", icon: "settings" },
+    { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
     { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
+    { label: "Settings", href: "/admin/settings", icon: "settings" },
   ]
 }: { 
   open: boolean, 
