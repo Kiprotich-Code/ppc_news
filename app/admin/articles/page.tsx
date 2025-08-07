@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar";
@@ -15,7 +15,6 @@ import {
   CheckCircle, 
   Clock, 
   XCircle,
-  BarChart2,
   DollarSign,
   AlertCircle,
   RefreshCw
@@ -91,10 +90,12 @@ const AdminArticles = () => {
   const sortedArticles = React.useMemo(() => {
     if (!sortConfig) return articles;
     return [...articles].sort((a, b) => {
-      if (a[sortConfig.key as keyof Article] < b[sortConfig.key as keyof Article]) {
+      const aValue = sortConfig.key === "author.name" ? a.author.name : a[sortConfig.key as keyof Article];
+      const bValue = sortConfig.key === "author.name" ? b.author.name : b[sortConfig.key as keyof Article];
+      if (aValue < bValue) {
         return sortConfig.direction === "asc" ? -1 : 1;
       }
-      if (a[sortConfig.key as keyof Article] > b[sortConfig.key as keyof Article]) {
+      if (aValue > bValue) {
         return sortConfig.direction === "asc" ? 1 : -1;
       }
       return 0;
@@ -147,7 +148,7 @@ const AdminArticles = () => {
       </div>
 
       <main
-        className="flex-1 p-4 md:p-8 pb-20 transition-all duration-300"
+        className="flex-1 p-4 md:p-8 pb-20 transition-all duration-300 max-w-7xl mx-auto"
         style={isMdUp ? { marginLeft: sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED } : {}}
       >
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -166,7 +167,7 @@ const AdminArticles = () => {
               <input
                 type="text"
                 placeholder="Search articles..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -182,7 +183,7 @@ const AdminArticles = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Articles</p>
@@ -194,34 +195,34 @@ const AdminArticles = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Approved</p>
                 <p className="text-2xl font-bold text-gray-900">{approvedArticles}</p>
-                <p className="text-sm text-green-600">
+                <p className="text-sm text-gray-600">
                   {totalArticles ? Math.round((approvedArticles / totalArticles) * 100) : 0}%
                 </p>
               </div>
-              <div className="bg-green-100 p-2 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <CheckCircle className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Review</p>
                 <p className="text-2xl font-bold text-gray-900">{pendingArticles}</p>
               </div>
-              <div className="bg-yellow-100 p-2 rounded-lg">
-                <Clock className="w-6 h-6 text-yellow-600" />
+              <div className="bg-red-100 p-2 rounded-lg">
+                <Clock className="w-6 h-6 text-red-600" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-500">
+          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Earnings</p>
@@ -237,13 +238,13 @@ const AdminArticles = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
           {loading ? (
             <div className="flex items-center justify-center p-8">
               <Loader2 className="w-8 h-8 animate-spin text-red-600" />
             </div>
           ) : error ? (
-            <div className="p-6 text-red-500 flex flex-col items-center">
+            <div className="p-6 text-red-600 flex flex-col items-center">
               <AlertCircle className="w-10 h-10 mb-2" />
               <p>{error}</p>
               <button 
@@ -256,12 +257,12 @@ const AdminArticles = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="min-w-full divide-y divide-gray-200 table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("title")}
                     >
                       <div className="flex items-center">
@@ -271,7 +272,7 @@ const AdminArticles = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("author.name")}
                     >
                       <div className="flex items-center">
@@ -281,7 +282,7 @@ const AdminArticles = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("status")}
                     >
                       <div className="flex items-center">
@@ -291,7 +292,7 @@ const AdminArticles = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("clickValue")}
                     >
                       <div className="flex items-center">
@@ -301,7 +302,7 @@ const AdminArticles = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("earnings")}
                     >
                       <div className="flex items-center">
@@ -311,7 +312,7 @@ const AdminArticles = () => {
                     </th>
                     <th 
                       scope="col" 
-                      className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                      className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("createdAt")}
                     >
                       <div className="flex items-center">
@@ -319,7 +320,7 @@ const AdminArticles = () => {
                         {getSortIcon("createdAt")}
                       </div>
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th scope="col" className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -328,9 +329,9 @@ const AdminArticles = () => {
                   {filteredArticles.length > 0 ? (
                     filteredArticles.map(article => (
                       <tr key={article.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
-                            {article.title.length > 50 ? `${article.title.substring(0, 50)}...` : article.title}
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900 overflow-hidden text-ellipsis whitespace-nowrap">
+                            {article.title}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -352,13 +353,13 @@ const AdminArticles = () => {
                             {article.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           ${(article.clickValue ?? 0).toFixed(2)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           ${(article.earnings ?? 0).toFixed(2)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                           {new Date(article.createdAt).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -395,7 +396,7 @@ const AdminArticles = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-500">
+                      <td colSpan={7} className="px-6 py-4 text-center text-sm text-gray-600">
                         {searchTerm ? "No articles match your search" : "No articles found"}
                       </td>
                     </tr>
