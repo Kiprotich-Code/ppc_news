@@ -187,22 +187,22 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
             </div>
             
             {/* Course Meta */}
-            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <User className="h-4 w-4" />
-                <span>{course.instructor}</span>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-md shadow-sm">
+                <User className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">{course.instructor}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <BookOpen className="h-4 w-4" />
-                <span>{course.totalLessons} lessons</span>
+              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-md shadow-sm">
+                <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">{course.totalLessons} lessons</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>{course.totalDuration} minutes</span>
+              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-md shadow-sm">
+                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">{course.totalDuration} minutes</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span>{course.enrollmentCount} students</span>
+              <div className="flex items-center gap-1 bg-white px-2 py-1 rounded-md shadow-sm">
+                <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="text-xs sm:text-sm">{course.enrollmentCount} students</span>
               </div>
               <span className={`px-2 py-1 rounded-full text-xs ${getDifficultyColor(course.difficulty)}`}>
                 {course.difficulty}

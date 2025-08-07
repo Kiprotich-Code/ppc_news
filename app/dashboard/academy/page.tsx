@@ -138,51 +138,51 @@ export default function Academy() {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-8">
+            <div className="bg-white rounded-lg shadow-sm p-3 md:p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <BookOpen className="h-8 w-8 text-red-600" />
+                  <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Enrolled Courses</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.enrolledCourses}</p>
+                <div className="ml-2 md:ml-4">
+                  <p className="text-xs md:text-sm font-medium text-gray-600">Enrolled Courses</p>
+                  <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.enrolledCourses}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-3 md:p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CheckCircle className="h-8 w-8 text-red-600" />
+                  <CheckCircle className="h-6 w-6 md:h-8 md:w-8 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Completed Courses</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.completedCourses}</p>
+                <div className="ml-2 md:ml-4">
+                  <p className="text-xs md:text-sm font-medium text-gray-600">Completed Courses</p>
+                  <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.completedCourses}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-3 md:p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <FileText className="h-8 w-8 text-red-600" />
+                  <FileText className="h-6 w-6 md:h-8 md:w-8 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Lessons</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalLessons}</p>
+                <div className="ml-2 md:ml-4">
+                  <p className="text-xs md:text-sm font-medium text-gray-600">Total Lessons</p>
+                  <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.totalLessons}</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="bg-white rounded-lg shadow-sm p-3 md:p-6">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <Clock className="h-8 w-8 text-red-600" />
+                  <Clock className="h-6 w-6 md:h-8 md:w-8 text-red-600" />
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600">Total Hours</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalHours}</p>
+                <div className="ml-2 md:ml-4">
+                  <p className="text-xs md:text-sm font-medium text-gray-600">Total Hours</p>
+                  <p className="text-lg md:text-2xl font-bold text-gray-900">{stats.totalHours}</p>
                 </div>
               </div>
             </div>
