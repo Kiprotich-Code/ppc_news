@@ -69,7 +69,7 @@ interface Course {
   }
 }
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
+export default function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
@@ -77,6 +77,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [isMdUp, setIsMdUp] = useState(false)
+  const [courseId, setCourseId] = useState<string>("")
 
   useEffect(() => {
     const checkScreen = () => {
@@ -88,7 +89,14 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
   }, [])
 
   useEffect(() => {
-    if (status === "loading") return
+    // Get the course ID from params Promise
+    params.then(({ id }) => {
+      setCourseId(id)
+    })
+  }, [params])
+
+  useEffect(() => {
+    if (status === "loading" || !courseId) return
     if (!session) {
       router.push("/auth/signin")
       return
@@ -98,11 +106,11 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
       return
     }
     fetchCourse()
-  }, [session, status, router, params.id])
+  }, [session, status, router, courseId])
 
   const fetchCourse = async () => {
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}`)
+      const response = await fetch(`/api/admin/courses/${courseId}`)
       if (response.ok) {
         const data = await response.json()
         setCourse(data)

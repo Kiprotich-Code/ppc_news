@@ -68,16 +68,24 @@ interface Course {
   createdAt: string
 }
 
-export default function CourseDetailPage({ params }: { params: { id: string } }) {
+export default function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeTab, setActiveTab] = useState<'overview' | 'curriculum' | 'reviews'>('overview')
+  const [courseId, setCourseId] = useState<string>("")
 
   useEffect(() => {
-    if (status === "loading") return
+    // Get the course ID from params Promise
+    params.then(({ id }) => {
+      setCourseId(id)
+    })
+  }, [params])
+
+  useEffect(() => {
+    if (status === "loading" || !courseId) return
 
     if (!session) {
       router.push("/auth/signin")
@@ -85,11 +93,11 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
     }
 
     fetchCourse()
-  }, [session, status, router, params.id])
+  }, [session, status, router, courseId])
 
   const fetchCourse = async () => {
     try {
-      const response = await fetch(`/api/dashboard/courses/${params.id}`)
+      const response = await fetch(`/api/dashboard/courses/${courseId}`)
       if (response.ok) {
         const data = await response.json()
         setCourse(data)

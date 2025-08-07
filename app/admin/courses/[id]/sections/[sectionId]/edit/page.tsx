@@ -35,7 +35,7 @@ interface FormData {
 export default function EditSectionPage({ 
   params 
 }: { 
-  params: { id: string; sectionId: string } 
+  params: Promise<{ id: string; sectionId: string }> 
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -44,6 +44,8 @@ export default function EditSectionPage({
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [courseId, setCourseId] = useState<string>("")
+  const [sectionId, setSectionId] = useState<string>("")
   
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -52,7 +54,15 @@ export default function EditSectionPage({
   })
 
   useEffect(() => {
-    if (status === "loading") return
+    // Get the course ID and section ID from params Promise
+    params.then(({ id, sectionId }) => {
+      setCourseId(id)
+      setSectionId(sectionId)
+    })
+  }, [params])
+
+  useEffect(() => {
+    if (status === "loading" || !courseId || !sectionId) return
     if (!session) {
       router.push("/auth/signin")
       return
@@ -62,12 +72,12 @@ export default function EditSectionPage({
       return
     }
     fetchData()
-  }, [session, status, router, params.id, params.sectionId])
+  }, [session, status, router, courseId, sectionId])
 
   const fetchData = async () => {
     try {
       // Fetch course data
-      const courseResponse = await fetch(`/api/admin/courses/${params.id}`)
+      const courseResponse = await fetch(`/api/admin/courses/${courseId}`)
       if (!courseResponse.ok) {
         toast.error("Failed to fetch course")
         router.push("/admin/courses")
@@ -77,10 +87,10 @@ export default function EditSectionPage({
       setCourse(courseData)
 
       // Find the section in the course data
-      const sectionData = courseData.sections?.find((s: Section) => s.id === params.sectionId)
+      const sectionData = courseData.sections?.find((s: Section) => s.id === sectionId)
       if (!sectionData) {
         toast.error("Section not found")
-        router.push(`/admin/courses/${params.id}`)
+        router.push(`/admin/courses/${courseId}`)
         return
       }
 
@@ -110,7 +120,7 @@ export default function EditSectionPage({
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}/sections/${params.sectionId}`, {
+      const response = await fetch(`/api/admin/courses/${courseId}/sections/${sectionId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -118,7 +128,7 @@ export default function EditSectionPage({
 
       if (response.ok) {
         toast.success("Section updated successfully")
-        router.push(`/admin/courses/${params.id}`)
+        router.push(`/admin/courses/${courseId}`)
       } else {
         const error = await response.json()
         toast.error(error.error || "Failed to update section")
@@ -143,13 +153,13 @@ export default function EditSectionPage({
     }
 
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}/sections/${params.sectionId}`, {
+      const response = await fetch(`/api/admin/courses/${courseId}/sections/${sectionId}`, {
         method: "DELETE"
       })
 
       if (response.ok) {
         toast.success("Section deleted successfully")
-        router.push(`/admin/courses/${params.id}`)
+        router.push(`/admin/courses/${courseId}`)
       } else {
         const error = await response.json()
         toast.error(error.error || "Failed to delete section")

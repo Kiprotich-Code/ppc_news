@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string; sectionId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { sectionId } = params
+    const { sectionId } = await params
 
     const section = await prisma.courseSection.findUnique({
       where: { id: sectionId },
@@ -51,7 +51,7 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string; sectionId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -61,7 +61,7 @@ export async function PUT(
     }
 
     const { title, description, isPublished } = await request.json()
-    const { sectionId } = params
+    const { sectionId } = await params
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
@@ -93,7 +93,7 @@ export async function PUT(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string; sectionId: string } }
+  { params }: { params: Promise<{ id: string; sectionId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -102,7 +102,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { sectionId } = params
+    const { sectionId } = await params
 
     // Check if section exists and get lesson count
     const section = await prisma.courseSection.findUnique({

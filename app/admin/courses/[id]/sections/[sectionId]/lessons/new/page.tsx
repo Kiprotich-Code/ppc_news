@@ -36,7 +36,7 @@ interface FormData {
 export default function NewLessonPage({ 
   params 
 }: { 
-  params: { id: string; sectionId: string } 
+  params: Promise<{ id: string; sectionId: string }> 
 }) {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -45,6 +45,8 @@ export default function NewLessonPage({
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [courseId, setCourseId] = useState<string>("")
+  const [sectionId, setSectionId] = useState<string>("")
   
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -66,23 +68,31 @@ export default function NewLessonPage({
   }, [])
 
   useEffect(() => {
-    if (status === "loading") return
+    // Get the course ID and section ID from params Promise
+    params.then(({ id, sectionId }) => {
+      setCourseId(id)
+      setSectionId(sectionId)
+    })
+  }, [params])
+
+  useEffect(() => {
+    if (status === "loading" || !courseId || !sectionId) return
     if (!session || session.user?.role !== "ADMIN") {
       router.push("/auth/signin")
       return
     }
     fetchSection()
-  }, [session, status, router, params.id, params.sectionId])
+  }, [session, status, router, courseId, sectionId])
 
   const fetchSection = async () => {
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}/sections/${params.sectionId}`)
+      const response = await fetch(`/api/admin/courses/${courseId}/sections/${sectionId}`)
       if (response.ok) {
         const data = await response.json()
         setSection(data)
       } else {
         toast.error("Failed to fetch section")
-        router.push(`/admin/courses/${params.id}`)
+        router.push(`/admin/courses/${courseId}`)
       }
     } catch (error) {
       console.error('Error fetching section:', error)
@@ -101,7 +111,7 @@ export default function NewLessonPage({
 
     setIsSubmitting(true)
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}/sections/${params.sectionId}/lessons`, {
+      const response = await fetch(`/api/admin/courses/${courseId}/sections/${sectionId}/lessons`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +121,7 @@ export default function NewLessonPage({
 
       if (response.ok) {
         toast.success("Lesson created successfully!")
-        router.push(`/admin/courses/${params.id}`)
+        router.push(`/admin/courses/${courseId}`)
       } else {
         const data = await response.json()
         toast.error(data.error || "Failed to create lesson")
@@ -154,7 +164,7 @@ export default function NewLessonPage({
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Section not found</h2>
           <Link
-            href={`/admin/courses/${params.id}`}
+            href={`/admin/courses/${courseId}`}
             className="text-red-600 hover:text-red-700"
           >
             Return to course
@@ -179,7 +189,7 @@ export default function NewLessonPage({
             <h1 className="text-lg font-semibold text-gray-900">New Lesson</h1>
           </div>
           <Link 
-            href={`/admin/courses/${params.id}`}
+            href={`/admin/courses/${courseId}`}
             className="p-2 rounded-lg hover:bg-gray-100"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -214,7 +224,7 @@ export default function NewLessonPage({
             <div className="hidden md:flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Link
-                  href={`/admin/courses/${params.id}`}
+                  href={`/admin/courses/${courseId}`}
                   className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
@@ -231,7 +241,7 @@ export default function NewLessonPage({
               <nav className="flex text-sm text-gray-500">
                 <Link href="/admin/courses" className="hover:text-red-600">Courses</Link>
                 <span className="mx-2">/</span>
-                <Link href={`/admin/courses/${params.id}`} className="hover:text-red-600">
+                <Link href={`/admin/courses/${courseId}`} className="hover:text-red-600">
                   {section.course.title}
                 </Link>
                 <span className="mx-2">/</span>
@@ -437,7 +447,7 @@ export default function NewLessonPage({
                     {isSubmitting ? "Creating..." : "Create Lesson"}
                   </button>
                   <Link
-                    href={`/admin/courses/${params.id}`}
+                    href={`/admin/courses/${courseId}`}
                     className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-center"
                   >
                     Cancel

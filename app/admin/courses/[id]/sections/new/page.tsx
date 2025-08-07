@@ -22,7 +22,7 @@ interface FormData {
   description: string
 }
 
-export default function NewSectionPage({ params }: { params: { id: string } }) {
+export default function NewSectionPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
@@ -30,6 +30,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [courseId, setCourseId] = useState<string>("")
   
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -46,7 +47,14 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
   }, [])
 
   useEffect(() => {
-    if (status === "loading") return
+    // Get the course ID from params Promise
+    params.then(({ id }) => {
+      setCourseId(id)
+    })
+  }, [params])
+
+  useEffect(() => {
+    if (status === "loading" || !courseId) return
     if (!session) {
       router.push("/auth/signin")
       return
@@ -56,11 +64,11 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
       return
     }
     fetchCourse()
-  }, [session, status, router, params.id])
+  }, [session, status, router, courseId])
 
   const fetchCourse = async () => {
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}`)
+      const response = await fetch(`/api/admin/courses/${courseId}`)
       if (response.ok) {
         const data = await response.json()
         setCourse(data)
@@ -88,7 +96,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
     setIsSubmitting(true)
 
     try {
-      const response = await fetch(`/api/admin/courses/${params.id}/sections`, {
+      const response = await fetch(`/api/admin/courses/${courseId}/sections`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)
@@ -97,7 +105,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
       if (response.ok) {
         const section = await response.json()
         toast.success("Section created successfully")
-        router.push(`/admin/courses/${params.id}`)
+        router.push(`/admin/courses/${courseId}`)
       } else {
         const error = await response.json()
         toast.error(error.error || "Failed to create section")
