@@ -122,9 +122,8 @@ function RegisterContent() {
                 </label>
                 <div className="relative">
                   <div
-                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${
-                      focusedField === "username" ? "text-red-600" : "text-gray-400"
-                    }`}
+                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${focusedField === "username" ? "text-red-600" : "text-gray-400"
+                      }`}
                   >
                     <User className="h-5 w-5" />
                   </div>
@@ -151,9 +150,8 @@ function RegisterContent() {
                 </label>
                 <div className="relative">
                   <div
-                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${
-                      focusedField === "email" ? "text-red-600" : "text-gray-400"
-                    }`}
+                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${focusedField === "email" ? "text-red-600" : "text-gray-400"
+                      }`}
                   >
                     <Mail className="h-5 w-5" />
                   </div>
@@ -180,9 +178,8 @@ function RegisterContent() {
                 </label>
                 <div className="relative">
                   <div
-                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${
-                      focusedField === "name" ? "text-red-600" : "text-gray-400"
-                    }`}
+                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${focusedField === "name" ? "text-red-600" : "text-gray-400"
+                      }`}
                   >
                     <User className="h-5 w-5" />
                   </div>
@@ -209,9 +206,8 @@ function RegisterContent() {
                 </label>
                 <div className="relative">
                   <div
-                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${
-                      focusedField === "password" ? "text-red-600" : "text-gray-400"
-                    }`}
+                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${focusedField === "password" ? "text-red-600" : "text-gray-400"
+                      }`}
                   >
                     <Lock className="h-5 w-5" />
                   </div>
@@ -245,9 +241,8 @@ function RegisterContent() {
                 </label>
                 <div className="relative">
                   <div
-                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${
-                      focusedField === "confirmPassword" ? "text-red-600" : "text-gray-400"
-                    }`}
+                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${focusedField === "confirmPassword" ? "text-red-600" : "text-gray-400"
+                      }`}
                   >
                     <Lock className="h-5 w-5" />
                   </div>
@@ -282,13 +277,12 @@ function RegisterContent() {
               {/* Minipay Account */}
               <div className="group animate-slide-in-up">
                 <label htmlFor="withdrawalAccount" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Minipay Account
+                  M-pesa No
                 </label>
                 <div className="relative">
                   <div
-                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${
-                      focusedField === "withdrawalAccount" ? "text-red-600" : "text-gray-400"
-                    }`}
+                    className={`absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none ${focusedField === "withdrawalAccount" ? "text-red-600" : "text-gray-400"
+                      }`}
                   >
                     <CreditCard className="h-5 w-5" />
                   </div>
