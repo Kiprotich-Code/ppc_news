@@ -8,7 +8,7 @@ import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import { MpesaPayment } from "@/components/MpesaPayment"
-import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText } from "lucide-react"
+import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText, User } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
@@ -16,10 +16,22 @@ interface Course {
   id: string
   title: string
   description: string
+  shortDescription: string
   price: number
   duration: string
-  lessons: number
+  totalLessons: number
   isPurchased: boolean
+  isFree: boolean
+  isPremium: boolean
+  difficulty: string
+  instructor: string
+  category: {
+    id: string
+    name: string
+  }
+  featuredImage: string
+  enrollmentCount: number
+  rating: number
 }
 
 interface AcademyStats {
@@ -41,6 +53,7 @@ export default function Academy() {
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [filter, setFilter] = useState<'all' | 'free' | 'premium'>('all')
 
   // Mpesa Payment Modal State
   const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false)
@@ -55,50 +68,23 @@ export default function Academy() {
     }
 
     fetchAcademyData()
-  }, [session, status, router])
+  }, [session, status, router, filter])
 
   const fetchAcademyData = async () => {
     try {
-      // Mock API response
-      const mockStats: AcademyStats = {
-        enrolledCourses: 2,
-        completedCourses: 1,
-        totalLessons: 15,
-        totalHours: 10
+      // Fetch user stats
+      const statsResponse = await fetch('/api/academy/stats')
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json()
+        setStats(statsData)
       }
 
-      const mockCourses: Course[] = [
-        {
-          id: "course1",
-          title: "Introduction to Content Creation",
-          description: "Learn the basics of creating engaging content for online platforms.",
-          price: 49.99,
-          duration: "5 hours",
-          lessons: 10,
-          isPurchased: true
-        },
-        {
-          id: "course2",
-          title: "Advanced SEO Strategies",
-          description: "Master SEO techniques to boost your content's visibility.",
-          price: 79.99,
-          duration: "8 hours",
-          lessons: 12,
-          isPurchased: false
-        },
-        {
-          id: "course3",
-          title: "Social Media Marketing",
-          description: "Grow your audience using social media strategies.",
-          price: 59.99,
-          duration: "6 hours",
-          lessons: 8,
-          isPurchased: false
-        }
-      ]
-
-      setStats(mockStats)
-      setCourses(mockCourses)
+      // Fetch courses based on filter
+      const coursesResponse = await fetch(`/api/dashboard/courses?filter=${filter}`)
+      if (coursesResponse.ok) {
+        const coursesData = await coursesResponse.json()
+        setCourses(coursesData)
+      }
     } catch (error) {
       console.error("Error fetching academy data:", error)
     } finally {
@@ -205,46 +191,115 @@ export default function Academy() {
           {/* Course List */}
           <div className="bg-white rounded-lg shadow-sm">
             <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Available Courses</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <h2 className="text-lg font-semibold text-gray-900">Available Courses</h2>
+                
+                {/* Filter Buttons */}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setFilter('all')}
+                    className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+                      filter === 'all'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    All Courses
+                  </button>
+                  <button
+                    onClick={() => setFilter('free')}
+                    className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+                      filter === 'free'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Free
+                  </button>
+                  <button
+                    onClick={() => setFilter('premium')}
+                    className={`px-3 py-1 text-sm font-medium rounded-full transition-colors ${
+                      filter === 'premium'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Premium
+                  </button>
+                </div>
+              </div>
             </div>
             <div className="divide-y divide-gray-200">
               {courses.length > 0 ? (
                 courses.map((course) => (
-                  <div key={course.id} className="px-4 sm:px-6 py-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div key={course.id} className="px-4 sm:px-6 py-3">
+                    <div className="flex flex-col gap-3">
                       <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900">{course.title}</h3>
-                        <p className="text-sm text-gray-600 mt-1">{course.description}</p>
-                        <div className="flex flex-wrap items-center mt-1 text-sm text-gray-500 gap-y-1">
-                          <div className="flex items-center mr-3">
-                            <Clock className="h-4 w-4 mr-1" />
-                            {course.duration}
-                          </div>
-                          <div className="flex items-center mr-3">
-                            <FileText className="h-4 w-4 mr-1" />
-                            {course.lessons} lessons
-                          </div>
-                          <div className="flex items-center">
-                            <DollarSign className="h-4 w-4 mr-1" />
-                            {formatCurrency(course.price)}
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="text-sm font-medium text-gray-900">{course.title}</h3>
+                          <div className="flex flex-wrap items-center gap-1">
+                            {course.isFree && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                                Free
+                              </span>
+                            )}
+                            {course.isPremium && (
+                              <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                Premium
+                              </span>
+                            )}
+                            <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+                              {course.difficulty}
+                            </span>
                           </div>
                         </div>
+                        <p className="text-sm text-gray-600 mt-1">{course.shortDescription || course.description}</p>
+                        <div className="flex flex-wrap items-center mt-2 text-xs text-gray-500 gap-x-4 gap-y-1">
+                          <div className="flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {course.duration}
+                          </div>
+                          <div className="flex items-center">
+                            <FileText className="h-3 w-3 mr-1" />
+                            {course.totalLessons} lessons
+                          </div>
+                          <div className="flex items-center">
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            {course.isFree ? 'Free' : formatCurrency(course.price)}
+                          </div>
+                          {course.instructor && (
+                            <div className="flex items-center">
+                              <User className="h-3 w-3 mr-1" />
+                              {course.instructor}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex sm:items-center justify-end sm:space-x-4">
+                      <div className="flex justify-end">
                         {course.isPurchased ? (
                           <Link
                             href={`/dashboard/academy/${course.id}`}
-                            className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm font-medium hover:bg-red-700 whitespace-nowrap"
+                            className="bg-red-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-red-700 whitespace-nowrap"
                           >
-                            View Course
+                            Continue Learning
                           </Link>
                         ) : (
                           <button
                             onClick={() => handleBuyCourse(course)}
-                            className="bg-red-600 text-white px-3 py-2 sm:px-4 rounded-md text-sm font-medium hover:bg-red-700 flex items-center whitespace-nowrap"
+                            className="bg-red-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-red-700 flex items-center whitespace-nowrap"
+                            disabled={course.isFree}
                           >
-                            <Lock className="h-4 w-4 mr-1" />
-                            Buy Course
+                            {course.isFree ? (
+                              <>
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Enroll Free
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="h-3 w-3 mr-1" />
+                                Buy Course
+                              </>
+                            )}
                           </button>
                         )}
                       </div>

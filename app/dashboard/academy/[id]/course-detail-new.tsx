@@ -14,12 +14,14 @@ import {
   FileText, 
   Download, 
   CheckCircle,
+  Lock,
   User,
   Star,
   Users,
   ArrowLeft
 } from "lucide-react"
 import Link from "next/link"
+import { formatCurrency } from "@/lib/utils"
 
 interface Lesson {
   id: string
@@ -89,7 +91,7 @@ export default function CourseDetailPage({ params }: { params: { id: string } })
 
   const fetchCourse = async () => {
     try {
-      const response = await fetch(`/api/dashboard/courses/${params.id}`)
+      const response = await fetch(`/api/courses/${params.id}`)
       if (response.ok) {
         const data = await response.json()
         setCourse(data)

@@ -8,7 +8,7 @@ import { Home, Pencil, BookOpen, DollarSign, User, Menu } from "lucide-react"
 const navItems = [
   { label: "Home", href: "/dashboard", icon: Home },
   { label: "Create", href: "/dashboard/articles/new", icon: Pencil },
-  { label: "Content", href: "/dashboard/content", icon: BookOpen },
+  { label: "Academy", href: "/dashboard/academy", icon: BookOpen },
   { label: "Wallet", href: "/dashboard/wallet", icon: DollarSign },
   { label: "Account", href: "/dashboard/profile", icon: User },
 ]
