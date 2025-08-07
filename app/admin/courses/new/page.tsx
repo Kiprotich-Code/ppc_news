@@ -2,16 +2,19 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { AdminSidebar } from "@/components/AdminSidebar"
+import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { ArrowLeft, Plus, X } from "lucide-react"
+import { ArrowLeft, Save, X, Upload, Menu, Plus } from "lucide-react"
 import Link from "next/link"
+import { AdminMobileNav } from "@/components/AdminMobileNav"
 import toast from "react-hot-toast"
+import { CourseCategory } from "@prisma/client"
 
-interface CourseCategory {
+interface Category {
   id: string
   name: string
 }
+
 
 interface FormData {
   title: string
@@ -171,6 +174,21 @@ export default function NewCoursePage() {
     })
   }
 
+  // Hook to detect if screen is md or up
+  function useIsMdUp() {
+    const [isMdUp, setIsMdUp] = useState(false)
+    useEffect(() => {
+      const media = window.matchMedia("(min-width: 768px)")
+      const listener = () => setIsMdUp(media.matches)
+      listener()
+      media.addEventListener("change", listener)
+      return () => media.removeEventListener("change", listener)
+    }, [])
+    return isMdUp
+  }
+
+  const isMdUp = useIsMdUp()
+
   if (status === "loading" || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -180,35 +198,40 @@ export default function NewCoursePage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar 
-        open={sidebarOpen} 
-        setOpen={setSidebarOpen}
-        navItems={[
-          { label: "Dashboard", href: "/admin", icon: "home" },
-          { label: "Articles", href: "/admin/articles", icon: "file-text" },
-          { label: "Courses", href: "/admin/courses", icon: "book-open" },
-          { label: "Members", href: "/admin/members", icon: "users" },
-          { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
-          { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
-          { label: "Settings", href: "/admin/settings", icon: "settings" },
-        ]}
-      />
+    <div className="min-h-screen flex flex-col md:flex-row bg-gray-50">
+      {/* Sidebar for md+ */}
+      <div className="hidden md:block">
+        <AdminSidebar 
+          open={sidebarOpen} 
+          setOpen={setSidebarOpen}
+          navItems={[
+            { label: "Dashboard", href: "/admin", icon: "home" },
+            { label: "Articles", href: "/admin/articles", icon: "file-text" },
+            { label: "Courses", href: "/admin/courses", icon: "book-open" },
+            { label: "Members", href: "/admin/members", icon: "users" },
+            { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
+            { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
+            { label: "Settings", href: "/admin/settings", icon: "settings" },
+          ]}
+        />
+      </div>
       
-      <div className="flex-1 ml-0 md:ml-64">
-        <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <Link 
-              href="/admin/courses"
-              className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New Course</h1>
-              <p className="text-gray-600 mt-1">Set up a new course with all its details</p>
-            </div>
+      <main
+        className="flex-1 p-4 md:p-6 pb-20 transition-all duration-300"
+        style={isMdUp ? { marginLeft: sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED } : {}}
+      >
+        <div className="flex items-center gap-4 mb-6">
+          <Link 
+            href="/admin/courses"
+            className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Create New Course</h1>
+            <p className="text-gray-600 mt-1">Set up a new course with all its details</p>
           </div>
+        </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
             <div className="bg-white p-6 rounded-lg shadow border">
@@ -502,8 +525,12 @@ export default function NewCoursePage() {
               </Link>
             </div>
           </form>
+        </main>
+
+        {/* Bottom nav for mobile */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+          <AdminMobileNav />
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }

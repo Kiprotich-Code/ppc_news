@@ -2,9 +2,10 @@
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { AdminSidebar } from "@/components/AdminSidebar"
+import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar"
+import { AdminMobileNav } from "@/components/AdminMobileNav"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { ArrowLeft, Plus } from "lucide-react"
+import { ArrowLeft, Plus, Menu } from "lucide-react"
 import Link from "next/link"
 import toast from "react-hot-toast"
 
@@ -28,11 +29,21 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
   const [isLoading, setIsLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   
   const [formData, setFormData] = useState<FormData>({
     title: "",
     description: ""
   })
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     if (status === "loading") return
@@ -102,7 +113,10 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
   if (status === "loading" || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
+        <div className="text-center">
+          <LoadingSpinner />
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
       </div>
     )
   }
@@ -112,7 +126,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Course Not Found</h1>
-          <Link href="/admin/courses" className="text-blue-600 hover:text-blue-800">
+          <Link href="/admin/courses" className="text-red-600 hover:text-red-800 transition-colors">
             Return to Courses
           </Link>
         </div>
@@ -121,34 +135,65 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar 
-        open={sidebarOpen} 
-        setOpen={setSidebarOpen}
-        navItems={[
-          { label: "Dashboard", href: "/admin", icon: "home" },
-          { label: "Articles", href: "/admin/articles", icon: "file-text" },
-          { label: "Courses", href: "/admin/courses", icon: "book-open" },
-          { label: "Members", href: "/admin/members", icon: "users" },
-          { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
-          { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
-          { label: "Settings", href: "/admin/settings", icon: "settings" },
-        ]}
-      />
-      
-      <div className="flex-1 ml-0 md:ml-64">
+    <div className="min-h-screen bg-gray-50">
+      {/* Desktop Sidebar */}
+      <div className="hidden md:block">
+        <AdminSidebar 
+          open={sidebarOpen} 
+          setOpen={setSidebarOpen}
+          navItems={[
+            { label: "Dashboard", href: "/admin", icon: "home" },
+            { label: "Articles", href: "/admin/articles", icon: "file-text" },
+            { label: "Courses", href: "/admin/courses", icon: "book-open" },
+            { label: "Members", href: "/admin/members", icon: "users" },
+            { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
+            { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
+            { label: "Settings", href: "/admin/settings", icon: "settings" },
+          ]}
+        />
+      </div>
+
+      {/* Mobile Header */}
+      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="p-2 rounded-lg hover:bg-gray-100"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className="text-lg font-semibold text-gray-900">New Section</h1>
+          </div>
+          <Link 
+            href={`/admin/courses/${course.id}`}
+            className="p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main 
+        className="transition-all duration-300 ease-in-out"
+        style={{
+          marginLeft: isMobile ? 0 : (sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED)
+        }}
+      >
         <div className="p-6">
-          <div className="flex items-center gap-4 mb-6">
+          {/* Desktop Header */}
+          <div className="hidden md:flex items-center gap-4 mb-6">
             <Link 
               href={`/admin/courses/${course.id}`}
-              className="p-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Add New Section</h1>
               <p className="text-gray-600 mt-1">
-                Add a section to <span className="font-medium">{course.title}</span>
+                Add a section to <span className="font-medium text-red-600">{course.title}</span>
               </p>
             </div>
           </div>
@@ -156,11 +201,11 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
           {/* Breadcrumb */}
           <nav className="mb-6">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Link href="/admin/courses" className="hover:text-blue-600">
+              <Link href="/admin/courses" className="hover:text-red-600 transition-colors">
                 Courses
               </Link>
               <span>/</span>
-              <Link href={`/admin/courses/${course.id}`} className="hover:text-blue-600">
+              <Link href={`/admin/courses/${course.id}`} className="hover:text-red-600 transition-colors">
                 {course.title}
               </Link>
               <span>/</span>
@@ -170,8 +215,8 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
 
           <div className="max-w-2xl">
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="bg-white p-6 rounded-lg shadow border">
-                <h2 className="text-lg font-semibold mb-4">Section Details</h2>
+              <div className="bg-white p-6 rounded-lg shadow border border-red-100">
+                <h2 className="text-lg font-semibold mb-4 text-gray-900">Section Details</h2>
                 
                 <div className="space-y-4">
                   <div>
@@ -182,7 +227,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
                       type="text"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
                       placeholder="Enter section title (e.g., Introduction, Advanced Techniques)"
                       required
                     />
@@ -198,7 +243,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
                     <textarea
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors"
                       placeholder="Brief description of what this section covers"
                       rows={3}
                     />
@@ -210,9 +255,9 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
               </div>
 
               {/* Course Context Info */}
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">Course Information</h3>
-                <div className="text-sm text-blue-800">
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg">
+                <h3 className="text-sm font-medium text-red-900 mb-2">Course Information</h3>
+                <div className="text-sm text-red-800">
                   <p><span className="font-medium">Course:</span> {course.title}</p>
                   <p><span className="font-medium">Category:</span> {course.category.name}</p>
                 </div>
@@ -223,7 +268,7 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {isSubmitting ? <LoadingSpinner /> : <Plus className="w-4 h-4" />}
                   {isSubmitting ? "Creating..." : "Create Section"}
@@ -250,6 +295,11 @@ export default function NewSectionPage({ params }: { params: { id: string } }) {
             </form>
           </div>
         </div>
+      </main>
+
+      {/* Mobile Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
+        <AdminMobileNav />
       </div>
     </div>
   )

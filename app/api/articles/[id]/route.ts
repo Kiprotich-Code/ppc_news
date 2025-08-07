@@ -17,9 +17,9 @@ interface FormattedArticle {
   earnings: number;
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
+    const { params } = await context; // Await the params Promise
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     const article = await prisma.article.findUnique({
       where: {
-        id,
+        id: (await params).id, // Now safe to use after awaiting
         ...(session.user.role !== "ADMIN" ? { authorId: session.user.id } : {}),
       },
       include: {
@@ -66,9 +66,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
+    const { params } = await context;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -106,7 +106,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     // Verify article ownership or admin status
     const existingArticle = await prisma.article.findUnique({
       where: {
-        id,
+        id: (await params).id,
       },
       select: {
         authorId: true,
@@ -126,7 +126,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     try {
       const updatedArticle = await prisma.article.update({
         where: {
-          id,
+          id: (await params).id,
         },
         data: {
           title: title.trim(),

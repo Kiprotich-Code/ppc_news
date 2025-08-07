@@ -37,7 +37,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -47,7 +47,7 @@ export async function POST(
     }
 
     const { title, description } = await request.json()
-    const { id: courseId } = await params
+    const { id: courseId } = params
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })

@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ id: string; sectionId: string }> }
+  { params }: { params: { id: string; sectionId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { sectionId } = await params
+    const { sectionId } = params
 
     const lessons = await prisma.lesson.findMany({
       where: { sectionId },
@@ -32,7 +32,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ id: string; sectionId: string }> }
+  { params }: { params: { id: string; sectionId: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -50,7 +50,7 @@ export async function POST(
       duration, 
       isFreePreview 
     } = await request.json()
-    const { sectionId } = await params
+    const { sectionId } = params
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
