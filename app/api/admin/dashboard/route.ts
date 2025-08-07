@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getServerSession(authOptions)
+
+    console.log("=== SESSION DEBUG ===")
+    console.log("Session:", session)
+    console.log("User role:", session?.user?.role)
+    console.log("====================")
 
     if (!session?.user) {
       return NextResponse.json(
@@ -14,6 +20,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (session.user.role !== "ADMIN") {
+      console.log("User role is not ADMIN:", session.user.role)
       return NextResponse.json(
         { error: "Forbidden" },
         { status: 403 }
@@ -37,6 +44,22 @@ export async function GET(request: NextRequest) {
       prisma.withdrawal.count({ where: { status: "PENDING" } })
     ])
 
+    // Debug: Check all articles and their statuses
+    const allArticles = await prisma.article.findMany({
+      select: { id: true, title: true, status: true, publishedStatus: true }
+    })
+    console.log("=== ALL ARTICLES DEBUG ===")
+    console.log("Total articles found:", allArticles.length)
+    console.log("Articles:", allArticles)
+
+    // Check status distribution
+    const statusCounts = await prisma.article.groupBy({
+      by: ['status'],
+      _count: { status: true }
+    })
+    console.log("Status distribution:", statusCounts)
+    console.log("==========================")
+
     // Get pending articles with author information
     const pendingArticlesData = await prisma.article.findMany({
       where: { status: "PENDING" },
@@ -56,7 +79,7 @@ export async function GET(request: NextRequest) {
       createdAt: article.createdAt.toISOString()
     }))
 
-    return NextResponse.json({
+    const responseData = {
       stats: {
         totalUsers,
         totalArticles,
@@ -66,7 +89,15 @@ export async function GET(request: NextRequest) {
         pendingWithdrawals
       },
       pendingArticles: formattedPendingArticles
-    })
+    }
+
+    console.log("=== ADMIN DASHBOARD DEBUG ===")
+    console.log("Stats:", responseData.stats)
+    console.log("Pending articles count:", formattedPendingArticles.length)
+    console.log("Raw pending articles data:", pendingArticlesData)
+    console.log("=============================")
+
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error("Admin dashboard API error:", error)
     return NextResponse.json(

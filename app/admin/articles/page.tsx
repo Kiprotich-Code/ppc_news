@@ -329,7 +329,9 @@ const AdminArticles = () => {
                     filteredArticles.map(article => (
                       <tr key={article.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{article.title}</div>
+                          <div className="text-sm font-medium text-gray-900 max-w-xs truncate">
+                            {article.title.length > 50 ? `${article.title.substring(0, 50)}...` : article.title}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">

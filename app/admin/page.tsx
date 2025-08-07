@@ -67,11 +67,16 @@ export default function AdminPage() {
 
   const fetchAdminData = async () => {
     try {
+      console.log("Fetching admin data from /api/admin/dashboard")
       const response = await fetch("/api/admin/dashboard")
+      console.log("Response status:", response.status)
       if (response.ok) {
         const data = await response.json()
+        console.log("Admin data received:", data)
         setStats(data.stats)
         setPendingArticles(data.pendingArticles)
+      } else {
+        console.error("Failed to fetch admin data, status:", response.status)
       }
     } catch (error) {
       console.error("Error fetching admin data:", error)
@@ -239,7 +244,9 @@ export default function AdminPage() {
                 <div key={article.id} className="px-4 py-3">
                   <div className="flex flex-col gap-2">
                     <div>
-                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2">{article.title}</h3>
+                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+                        {article.title.length > 80 ? `${article.title.substring(0, 80)}...` : article.title}
+                      </h3>
                       <div className="flex items-center mt-1 text-xs text-gray-500 gap-2">
                         <span>By {article.authorName}</span>
                         <span>•</span>
