@@ -93,7 +93,7 @@ export default function Dashboard() {
 
   const handleCopyLink = async () => {
     if (referral?.referralCode) {
-      const referralLink = `${window.location.origin}/signup?ref=${referral.referralCode}`
+      const referralLink = `${window.location.origin}/auth/register?ref=${referral.referralCode}`
       try {
         await navigator.clipboard.writeText(referralLink)
         setCopySuccess(true)
@@ -106,7 +106,7 @@ export default function Dashboard() {
 
   const shareToSocialMedia = (platform: string) => {
     if (!referral?.referralCode) return
-    const referralLink = `${window.location.origin}/signup?ref=${referral.referralCode}`
+    const referralLink = `${window.location.origin}/auth/register?ref=${referral.referralCode}`
     const encodedLink = encodeURIComponent(referralLink)
     const text = encodeURIComponent(`Join me on N Studio and start creating content! Use my referral link: ${referralLink}`)
     
@@ -175,56 +175,74 @@ export default function Dashboard() {
           
           {/* Referral Info - Only show on medium screens and larger */}
           {referral && (
-            <div className="md:block bg-red-50 border border-red-200 rounded-lg p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-              <div className="mb-4 md:mb-0">
-                <span className="font-semibold text-red-800">Your Referral Link:</span>
-                <div className="flex items-center mt-2">
-                  <Link
-                    href={`/signup?ref=${referral.referralCode}`}
-                    className="font-mono text-red-700 bg-red-100 px-2 py-1 rounded mr-2 hover:underline"
-                  >
-                    {`${window.location.origin}/signup?ref=${referral.referralCode}`}
-                  </Link>
-                  <button
-                    onClick={handleCopyLink}
-                    className="p-1 rounded hover:bg-red-200 focus:outline-none"
-                    aria-label="Copy referral link"
-                    title={copySuccess ? "Copied!" : "Copy link"}
-                  >
-                    <Copy className={`h-5 w-5 ${copySuccess ? "text-green-600" : "text-red-600"}`} />
-                  </button>
+            <div className="md:block bg-red-50 border border-red-200 rounded-lg p-6 mb-8">
+              {/* Referral Earning Info */}
+              <div className="mb-4 p-4 bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <h3 className="font-semibold text-green-800">Earn with Referrals!</h3>
                 </div>
+                <p className="text-green-700 text-sm">
+                  Invite your friends to join N Studio and earn <span className="font-bold text-green-800">KSH 2</span> for every successful registration using your referral link.
+                </p>
               </div>
-              <div className="flex flex-col md:flex-row md:items-center md:gap-4">
-                <div className="mb-2 md:mb-0">
-                  <span className="font-semibold text-red-800">Successful Referrals:</span>
-                  <span className="ml-2 text-red-700">{referral.referralCount}</span>
+              
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div className="mb-4 md:mb-0">
+                  <span className="font-semibold text-red-800">Your Referral Link:</span>
+                  <div className="flex items-center mt-2">
+                    <Link
+                      href={`/auth/register?ref=${referral.referralCode}`}
+                      className="font-mono text-red-700 bg-red-100 px-2 py-1 rounded mr-2 hover:underline"
+                    >
+                      {`${window.location.origin}/auth/register?ref=${referral.referralCode}`}
+                    </Link>
+                    <button
+                      onClick={handleCopyLink}
+                      className="p-1 rounded hover:bg-red-200 focus:outline-none"
+                      aria-label="Copy referral link"
+                      title={copySuccess ? "Copied!" : "Copy link"}
+                    >
+                      <Copy className={`h-5 w-5 ${copySuccess ? "text-green-600" : "text-red-600"}`} />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => shareToSocialMedia("x")}
-                    className="p-2 rounded bg-red-600 text-white hover:bg-red-700"
-                    aria-label="Share to X"
-                    title="Share to X"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => shareToSocialMedia("whatsapp")}
-                    className="p-2 rounded bg-green-600 text-white hover:bg-green-700"
-                    aria-label="Share to WhatsApp"
-                    title="Share to WhatsApp"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => shareToSocialMedia("facebook")}
-                    className="p-2 rounded bg-blue-600 text-white hover:bg-blue-700"
-                    aria-label="Share to Facebook"
-                    title="Share to Facebook"
-                  >
-                    <Share2 className="h-5 w-5" />
-                  </button>
+                <div className="flex flex-col md:flex-row md:items-center md:gap-4">
+                  <div className="mb-2 md:mb-0 flex items-center gap-4">
+                    <div>
+                      <span className="font-semibold text-red-800">Successful Referrals:</span>
+                      <span className="ml-2 text-red-700">{referral.referralCount}</span>
+                    </div>
+                    <div className="text-sm text-green-700 bg-green-100 px-2 py-1 rounded">
+                      <span className="font-semibold">Earned: KSH {referral.referralCount * 2}</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => shareToSocialMedia("x")}
+                      className="p-2 rounded bg-red-600 text-white hover:bg-red-700"
+                      aria-label="Share to X"
+                      title="Share to X"
+                    >
+                      <Share2 className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => shareToSocialMedia("whatsapp")}
+                      className="p-2 rounded bg-green-600 text-white hover:bg-green-700"
+                      aria-label="Share to WhatsApp"
+                      title="Share to WhatsApp"
+                    >
+                      <Share2 className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => shareToSocialMedia("facebook")}
+                      className="p-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                      aria-label="Share to Facebook"
+                      title="Share to Facebook"
+                    >
+                      <Share2 className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

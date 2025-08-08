@@ -4,19 +4,38 @@ import { PayHeroService } from "@/lib/payhero";
 
 export async function POST(req: Request) {
   try {
+    console.log('=== PayHero Deposit Request Started ===');
+    
     // Expected body: { userId, amount, phoneNumber }
-    const { userId, amount, phoneNumber } = await req.json();
+    const body = await req.json();
+    console.log('Request body:', body);
+    
+    const { userId, amount, phoneNumber } = body;
     if (!userId || !amount || amount <= 0 || !phoneNumber) {
-      return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+      console.error('Invalid request parameters:', { userId, amount, phoneNumber });
+      return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 });
     }
     
     console.log('Initiating PayHero deposit:', { userId, amount, phoneNumber });
     
     // Generate unique reference
     const reference = `DEPOSIT_${Date.now()}_${userId}`;
+    console.log('Generated reference:', reference);
     
     // Initiate PayHero STK push
-    const service = new PayHeroService();
+    console.log('Creating PayHero service...');
+    let service;
+    try {
+      service = new PayHeroService();
+      console.log('PayHero service created successfully');
+    } catch (serviceError: any) {
+      console.error('Failed to create PayHero service:', serviceError);
+      return NextResponse.json({ 
+        error: `PayHero configuration error: ${serviceError?.message || 'Unknown error'}` 
+      }, { status: 500 });
+    }
+    
+    console.log('Calling PayHero initiateDeposit...');
     const payResponse = await service.initiateDeposit({
       amount,
       phoneNumber,
@@ -24,7 +43,7 @@ export async function POST(req: Request) {
       description: 'Deposit to wallet'
     });
     
-    console.log('PayHero response:', payResponse);
+    console.log('PayHero response received:', payResponse);
     
     // Check if PayHero returned an error
     if (payResponse.error) {

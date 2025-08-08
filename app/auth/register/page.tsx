@@ -295,7 +295,7 @@ function RegisterContent() {
                     onFocus={() => setFocusedField("withdrawalAccount")}
                     onBlur={() => setFocusedField(null)}
                     className="block w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-red-500 focus:ring-4 focus:ring-red-500/20 transition-all duration-300 hover:border-gray-300"
-                    placeholder="Enter your Minipay account"
+                    placeholder="Enter your M-pesa account"
                   />
                 </div>
               </div>

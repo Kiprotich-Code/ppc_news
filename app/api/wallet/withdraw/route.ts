@@ -60,51 +60,64 @@ export async function POST(req: Request) {
     // Generate unique reference
     const reference = `WITHDRAWAL_${Date.now()}_${userId}`;
 
-    // **IMPORTANT**: For withdrawals, we should use a manual approval process
-    // OR integrate with PayHero's B2C API if available
-    // For now, let's create a pending transaction that requires admin approval
+    console.log('Processing withdrawal request with manual approval...');
+
+    // For production with basic PayHero credentials, use manual processing
+    const service = new PayHeroService();
     
-    // Debit the wallet immediately but keep transaction as PENDING
+    const withdrawalResponse = await service.initiateWithdrawal({
+      amount,
+      phoneNumber,
+      reference,
+      description: 'Wallet withdrawal'
+    });
+
+    console.log('PayHero withdrawal response:', withdrawalResponse);
+
+    // Debit the wallet immediately (will be refunded if withdrawal fails)
     await prisma.wallet.update({
       where: { userId },
       data: { balance: { decrement: amount } }
     });
 
-    // Create pending withdrawal transaction
+    // Create transaction record
     const transaction = await prisma.transaction.create({
       data: {
         userId,
         amount: -amount, // Negative for withdrawals
         type: 'WITHDRAWAL',
-        status: 'PENDING',
-        description: 'Withdrawal to M-Pesa',
+        status: 'PENDING', // Manual processing starts as PENDING
+        description: 'Withdrawal to M-Pesa (Manual Processing)',
         paymentMethod: 'MPESA',
         reference,
-        mpesaRequestId: phoneNumber, // Store phone number for processing
+        mpesaRequestId: phoneNumber,
       }
     });
 
-    // Create withdrawal request for admin processing
+    // Create withdrawal request record
     await prisma.withdrawal.create({
       data: {
         userId,
         amount,
         phoneNumber,
-        status: 'PENDING',
+        status: 'PENDING', // Will be updated by admin to APPROVED/PAID
         method: 'MPESA',
         reference,
-        transactionId: transaction.id
+        transactionId: transaction.id,
+        note: 'Manual processing required for PayHero basic account'
       }
     });
 
-    console.log(`Withdrawal request created: ${amount} for user ${userId}`);
+    console.log(`Manual withdrawal request created: ${amount} for user ${userId}, Reference: ${reference}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Withdrawal request submitted successfully. It will be processed within 24 hours.',
+      message: 'Withdrawal request submitted successfully. Our team will process your withdrawal within 24 hours during business hours.',
       transactionId: transaction.id,
       reference,
-      status: 'PENDING'
+      status: 'PENDING',
+      requiresManualApproval: true,
+      instructions: withdrawalResponse.instructions || 'Your withdrawal will be processed manually by our team within 24 hours.'
     });
 
   } catch (error: any) {
