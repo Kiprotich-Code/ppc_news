@@ -9,6 +9,7 @@ interface FormattedArticle {
   content: string;
   category?: string | null;
   status: string;
+  publishedStatus: string;
   images: any[];
   featuredImage: string | null;
   createdAt: string;
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
       content: parsedContent, // Return raw JSON string
       category: article.category,
       status: article.status,
+      publishedStatus: article.publishedStatus,
       images: article.images ? JSON.parse(article.images) : [],
       featuredImage: article.featuredImage,
       createdAt: article.createdAt.toISOString(),
@@ -151,6 +153,7 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
         content: updatedArticle.content,
         category: updatedArticle.category,
         status: updatedArticle.status,
+        publishedStatus: updatedArticle.publishedStatus,
         images: updatedArticle.images ? JSON.parse(updatedArticle.images) : [],
         featuredImage: updatedArticle.featuredImage,
         createdAt: updatedArticle.createdAt.toISOString(),

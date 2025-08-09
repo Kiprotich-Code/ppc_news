@@ -17,6 +17,7 @@ interface Article {
   title: string;
   content: string; // Raw TipTap JSON
   status: string;
+  publishedStatus: string;
   views: number;
   earnings: number;
   images?: string[];
@@ -267,61 +268,63 @@ export default function ArticleDetailPage() {
                   Back to Content Library
                 </Link>
                 <div className="flex items-center gap-3">
-                  {/* Share Button */}
-                  <div className="relative share-menu-container">
-                    <button
-                      onClick={() => setShowShareMenu(!showShareMenu)}
-                      className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      <Share2 className="h-4 w-4 mr-2" />
-                      Share
-                    </button>
+                  {/* Share Button - Only show for approved and published articles */}
+                  {article?.status === "APPROVED" && article?.publishedStatus === "PUBLISHED" && (
+                    <div className="relative share-menu-container">
+                      <button
+                        onClick={() => setShowShareMenu(!showShareMenu)}
+                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        <Share2 className="h-4 w-4 mr-2" />
+                        Share
+                      </button>
 
-                    {/* Share Menu Dropdown */}
-                    {showShareMenu && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                        <div className="py-1">
-                          <button
-                            onClick={() => handleShare('copy')}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            {copySuccess ? (
-                              <>
-                                <CheckCircle className="h-4 w-4 mr-3 text-green-500" />
-                                Link Copied!
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="h-4 w-4 mr-3" />
-                                Copy Link
-                              </>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleShare('whatsapp')}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <span className="h-4 w-4 mr-3">📱</span>
-                            WhatsApp
-                          </button>
-                          <button
-                            onClick={() => handleShare('twitter')}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <span className="h-4 w-4 mr-3">🐦</span>
-                            Twitter
-                          </button>
-                          <button
-                            onClick={() => handleShare('facebook')}
-                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <span className="h-4 w-4 mr-3">📘</span>
-                            Facebook
-                          </button>
+                      {/* Share Menu Dropdown */}
+                      {showShareMenu && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                          <div className="py-1">
+                            <button
+                              onClick={() => handleShare('copy')}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              {copySuccess ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-3 text-green-500" />
+                                  Link Copied!
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-4 w-4 mr-3" />
+                                  Copy Link
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleShare('whatsapp')}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <span className="h-4 w-4 mr-3">📱</span>
+                              WhatsApp
+                            </button>
+                            <button
+                              onClick={() => handleShare('twitter')}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <span className="h-4 w-4 mr-3">🐦</span>
+                              Twitter
+                            </button>
+                            <button
+                              onClick={() => handleShare('facebook')}
+                              className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            >
+                              <span className="h-4 w-4 mr-3">📘</span>
+                              Facebook
+                            </button>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Edit Article Button */}
                   <Link

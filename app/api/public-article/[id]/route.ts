@@ -16,7 +16,11 @@ export async function GET(
     const { id } = params;
 
     const article = await prisma.article.findUnique({
-      where: { id, publishedStatus: "PUBLISHED" },
+      where: { 
+        id, 
+        status: "APPROVED",
+        publishedStatus: "PUBLISHED"
+      },
       include: {
         author: { select: { name: true } },
         views: true,

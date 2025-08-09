@@ -302,7 +302,7 @@ export default function ContentPage() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {article.publishedStatus === "PUBLISHED" && (
+                          {article.status === "APPROVED" && article.publishedStatus === "PUBLISHED" && (
                             <div className="relative share-menu-container">
                               <button 
                                 onClick={() => toggleShareOptions(article.id)}
