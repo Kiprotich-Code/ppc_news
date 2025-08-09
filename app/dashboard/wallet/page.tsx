@@ -23,7 +23,9 @@ import {
   XCircle,
   Zap,
   Building2,
-  PhoneCall
+  PhoneCall,
+  ArrowUpRight,
+  Copy
 } from 'lucide-react';
 
 const WalletDashboard = () => {
@@ -37,6 +39,20 @@ const WalletDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [walletData, setWalletData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
+  
+  // Investment related state
+  const [investments, setInvestments] = useState<any[]>([]);
+  const [showInvestmentModal, setShowInvestmentModal] = useState(false);
+  const [selectedInvestmentPeriod, setSelectedInvestmentPeriod] = useState("");
+  const [investmentAmount, setInvestmentAmount] = useState("");
+  const [creatingInvestment, setCreatingInvestment] = useState(false);
+  
+  // Investment plans configuration
+  const investmentPlans = [
+    { period: "ONE_WEEK", label: "1 Week", rate: 1, days: 7, color: "text-green-600" },
+    { period: "TWO_WEEKS", label: "2 Weeks", rate: 3, days: 14, color: "text-blue-600" },
+    { period: "ONE_MONTH", label: "1 Month", rate: 7, days: 30, color: "text-purple-600" }
+  ];
   
   // Fetch wallet data
   const fetchWalletData = async () => {
@@ -59,6 +75,19 @@ const WalletDashboard = () => {
     }
   };
 
+  // Fetch investments
+  const fetchInvestments = async () => {
+    try {
+      const res = await fetch("/api/investments");
+      const data = await res.json();
+      if (res.ok) {
+        setInvestments(data.investments);
+      }
+    } catch (error) {
+      console.error("Error fetching investments:", error);
+    }
+  };
+
   // Authentication check
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -73,6 +102,13 @@ const WalletDashboard = () => {
     if (session) {
       const interval = setInterval(fetchWalletData, 30000); // Refresh every 30 seconds
       return () => clearInterval(interval);
+    }
+  }, [session]);
+
+  // Fetch investments when component mounts
+  useEffect(() => {
+    if (session) {
+      fetchInvestments();
     }
   }, [session]);
 
@@ -95,6 +131,17 @@ const WalletDashboard = () => {
   }
 
   const stats = walletData;
+  
+  // Calculate investment stats
+  const totalInvested = investments
+    .filter(inv => inv.status === 'ACTIVE')
+    .reduce((sum, inv) => sum + inv.amount, 0);
+
+  const totalEarnings = investments
+    .filter(inv => inv.status === 'ACTIVE')
+    .reduce((sum, inv) => sum + inv.currentEarnedInterest, 0);
+
+  const activeInvestments = investments.filter(inv => inv.status === 'ACTIVE').length;
 
   const investmentInterest = stats.investment * 0.02;
 
@@ -268,6 +315,86 @@ const WalletDashboard = () => {
     }
   };
 
+  // Create new investment
+  const handleCreateInvestment = async () => {
+    if (!selectedInvestmentPeriod || !investmentAmount || parseFloat(investmentAmount) < 100) {
+      toast.error("Please select a period and enter a valid amount (minimum KES 100)");
+      return;
+    }
+
+    if (parseFloat(investmentAmount) > stats.balance) {
+      toast.error("Insufficient wallet balance");
+      return;
+    }
+
+    setCreatingInvestment(true);
+    try {
+      const res = await fetch("/api/investments/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: parseFloat(investmentAmount),
+          period: selectedInvestmentPeriod
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Investment created successfully!");
+        setShowInvestmentModal(false);
+        setSelectedInvestmentPeriod("");
+        setInvestmentAmount("");
+        fetchInvestments();
+        fetchWalletData(); // Refresh wallet balance
+      } else {
+        toast.error(data.error || "Failed to create investment");
+      }
+    } catch (error) {
+      toast.error("Failed to create investment");
+    } finally {
+      setCreatingInvestment(false);
+    }
+  };
+
+  // Withdraw matured investment
+  const handleInvestmentWithdraw = async (investmentId: string) => {
+    try {
+      const res = await fetch("/api/investments/withdraw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ investmentId })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Investment withdrawn! KES ${data.amount.toLocaleString()} added to your wallet.`);
+        fetchInvestments();
+        fetchWalletData(); // Refresh wallet balance
+      } else {
+        toast.error(data.error || "Withdrawal failed");
+      }
+    } catch (error) {
+      toast.error("Withdrawal failed");
+    }
+  };
+
+  // Helper functions for investments
+  const formatPeriod = (period: string) => {
+    return period.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const getStatusColor = (status: string, isMatured: boolean) => {
+    if (status === 'WITHDRAWN') return 'bg-gray-500';
+    if (isMatured) return 'bg-green-500';
+    return 'bg-blue-500';
+  };
+
+  const getStatusText = (status: string, isMatured: boolean) => {
+    if (status === 'WITHDRAWN') return 'Withdrawn';
+    if (isMatured) return 'Ready to Withdraw';
+    return 'Active';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       {/* Sidebar for md+ */}
@@ -311,7 +438,7 @@ const WalletDashboard = () => {
                   <div>
                     <p className="text-red-100 text-sm font-medium mb-2">Total Investment</p>
                     <h2 className="text-3xl font-bold">
-                      {balanceVisible ? formatCurrency(stats.investment) : '••••••••'}
+                      {balanceVisible ? formatCurrency(totalInvested) : '••••••••'}
                     </h2>
                   </div>
                   <div className="p-3 bg-red-500 rounded-lg">
@@ -403,8 +530,8 @@ const WalletDashboard = () => {
                     <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
                   </div>
                   <div className="ml-2 sm:ml-3 min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-600 truncate">Investment Growth</p>
-                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">+2.0%</p>
+                    <p className="text-xs font-medium text-gray-600 truncate">Investment Earnings</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">{formatCurrency(totalEarnings)}</p>
                   </div>
                 </div>
               </div>
@@ -439,7 +566,7 @@ const WalletDashboard = () => {
                 </button>
                 
                 <button 
-                  onClick={() => setTransactionType("INVEST")}
+                  onClick={() => setShowInvestmentModal(true)}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     transactionType === "INVEST" 
                       ? 'border-red-500 bg-red-50 text-red-700' 
@@ -447,7 +574,7 @@ const WalletDashboard = () => {
                   }`}
                 >
                   <TrendingUp className="w-6 h-6 mx-auto mb-2" />
-                  <span className="text-sm font-medium">Hold & Earn</span>
+                  <span className="text-sm font-medium">Invest</span>
                 </button>
               </div>
             </div>
@@ -497,44 +624,148 @@ const WalletDashboard = () => {
               </form>
             </div>
 
-            {/* Investment Management */}
-            <div className="bg-white rounded-xl shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Manage Investment</h3>
-              
-              <div className="bg-gradient-to-r from-red-50 to-red-100 rounded-lg p-4 mb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Available Interest (2%)</p>
-                    <p className="text-xl font-bold text-red-600">{formatCurrency(investmentInterest)}</p>
+            {/* Investment Section */}
+            <div className="space-y-6">
+              {/* Investment Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Invested</p>
+                      <p className="text-2xl font-bold">{formatCurrency(totalInvested)}</p>
+                    </div>
+                    <TrendingUp className="h-8 w-8 text-blue-600" />
                   </div>
-                  <button
-                    onClick={stats.investment > 0 ? handleCollectInterest : () => toast.info("No investment to collect interest from")}
-                    disabled={stats.investment <= 0}
-                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-2 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Collect Interest
-                  </button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Current Earnings</p>
+                      <p className="text-2xl font-bold text-green-600">{formatCurrency(totalEarnings)}</p>
+                    </div>
+                    <DollarSign className="h-8 w-8 text-green-600" />
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Active Investments</p>
+                      <p className="text-2xl font-bold">{activeInvestments}</p>
+                    </div>
+                    <Clock className="h-8 w-8 text-purple-600" />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Withdraw Amount</label>
-                  <input
-                    type="number"
-                    value={transactionAmount}
-                    onChange={(e) => setTransactionAmount(e.target.value)}
-                    placeholder="Enter amount to withdraw"
-                    className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
+              {/* Investment Plans */}
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex flex-row items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Investment Plans</h3>
+                  <button 
+                    onClick={() => setShowInvestmentModal(true)}
+                    className="bg-gradient-to-r from-red-500 to-red-600 text-white px-4 py-2 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all"
+                  >
+                    <TrendingUp className="w-4 h-4 mr-2 inline" />
+                    New Investment
+                  </button>
                 </div>
-                <button
-                  onClick={handleWithdrawInvestment}
-                  disabled={!transactionAmount || parseFloat(transactionAmount) > stats.investment || stats.investment <= 0}
-                  className="w-full bg-gradient-to-r from-red-400 to-red-500 text-white py-3 px-4 rounded-lg font-medium hover:from-red-500 hover:to-red-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {stats.investment <= 0 ? 'No Investment Available' : 'Withdraw from Investment'}
-                </button>
+                <div className="grid md:grid-cols-3 gap-4">
+                  {investmentPlans.map((plan) => (
+                    <div key={plan.period} className="border-2 border-gray-200 hover:border-red-300 rounded-lg p-4 transition-colors cursor-pointer">
+                      <div className="text-center space-y-2">
+                        <h4 className="font-semibold">{plan.label}</h4>
+                        <div className={`text-3xl font-bold ${plan.color}`}>{plan.rate}%</div>
+                        <p className="text-sm text-gray-600">Returns in {plan.days} days</p>
+                        <div className="text-xs text-gray-500">
+                          KES 1,000 → KES {(1000 * (1 + plan.rate / 100)).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* My Investments */}
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">My Investments</h3>
+                {investments.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>No investments yet. Start your first investment today!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {investments.map((investment) => (
+                      <div key={investment.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{formatPeriod(investment.period)}</h4>
+                              <span className={`px-2 py-1 rounded-full text-xs text-white ${getStatusColor(investment.status, investment.isMatured)}`}>
+                                {getStatusText(investment.status, investment.isMatured)}
+                              </span>
+                              {investment.isMatured && investment.status === 'ACTIVE' && (
+                                <span className="px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                  <ArrowUpRight className="w-3 h-3 mr-1 inline" />
+                                  Ready!
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-600">Principal</p>
+                                <p className="font-semibold">{formatCurrency(investment.amount)}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Interest Rate</p>
+                                <p className="font-semibold">{(investment.interestRate * 100)}%</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Earned Interest</p>
+                                <p className="font-semibold text-green-600">
+                                  {formatCurrency(investment.currentEarnedInterest)}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Total Return</p>
+                                <p className="font-semibold">{formatCurrency(investment.totalReturn)}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-600">Status</p>
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span className="text-xs">
+                                    {investment.isMatured ? 'Matured' : `${investment.daysRemaining}d left`}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 text-xs text-gray-500">
+                              <span>Started: {new Date(investment.startDate).toLocaleDateString()}</span>
+                              <span>Ends: {new Date(investment.endDate).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="ml-4">
+                            {investment.canWithdraw && (
+                              <button 
+                                onClick={() => handleInvestmentWithdraw(investment.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-all"
+                              >
+                                <DollarSign className="w-4 h-4 mr-2 inline" />
+                                Withdraw
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -582,6 +813,113 @@ const WalletDashboard = () => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <DashboardMobileNav />
       </div>
+
+      {/* Investment Creation Modal */}
+      {showInvestmentModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl transform transition-all">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Create New Investment</h3>
+                <button 
+                  onClick={() => setShowInvestmentModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Investment Plan</label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {investmentPlans.map((plan) => (
+                      <div
+                        key={plan.period}
+                        className={`border rounded-lg p-3 cursor-pointer transition-colors ${
+                          selectedInvestmentPeriod === plan.period 
+                            ? 'border-red-500 bg-red-50' 
+                            : 'hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedInvestmentPeriod(plan.period)}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{plan.label}</p>
+                            <p className="text-sm text-gray-600">{plan.days} days</p>
+                          </div>
+                          <div className={`text-lg font-bold ${plan.color}`}>
+                            {plan.rate}%
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Investment Amount</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">KES</span>
+                    <input
+                      type="number"
+                      placeholder="Enter amount (minimum KES 100)"
+                      value={investmentAmount}
+                      onChange={(e) => setInvestmentAmount(e.target.value)}
+                      min="100"
+                      step="10"
+                      className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Available balance: {formatCurrency(stats?.balance || 0)}
+                  </p>
+                </div>
+
+                {selectedInvestmentPeriod && investmentAmount && parseFloat(investmentAmount) >= 100 && (
+                  <div className="bg-gray-50 p-3 rounded-lg text-sm">
+                    <p className="font-medium mb-1">Investment Summary:</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>Principal:</span>
+                        <span>{formatCurrency(parseFloat(investmentAmount))}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Interest ({investmentPlans.find(p => p.period === selectedInvestmentPeriod)?.rate}%):</span>
+                        <span className="text-green-600">
+                          {formatCurrency(parseFloat(investmentAmount) * (investmentPlans.find(p => p.period === selectedInvestmentPeriod)?.rate || 0) / 100)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t pt-1">
+                        <span>Total Return:</span>
+                        <span>
+                          {formatCurrency(parseFloat(investmentAmount) * (1 + (investmentPlans.find(p => p.period === selectedInvestmentPeriod)?.rate || 0) / 100))}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => setShowInvestmentModal(false)}
+                    className="flex-1 border border-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-50 transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleCreateInvestment}
+                    disabled={!selectedInvestmentPeriod || !investmentAmount || parseFloat(investmentAmount) < 100 || creatingInvestment}
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 text-white py-3 px-4 rounded-lg font-medium hover:from-red-600 hover:to-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {creatingInvestment ? "Creating..." : "Invest Now"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* PayHero Payment Modal */}
       <PayHeroPayment

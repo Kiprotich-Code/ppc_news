@@ -38,6 +38,7 @@ model User {
   lessonProgress LessonProgress[]
   courseReviews  CourseReview[]
   passwordResetTokens PasswordResetToken[]
+  investments    Investment[]
 }
 
 model Profile {
@@ -359,4 +360,34 @@ enum LessonType {
   VIDEO
   PDF
   QUIZ
+}
+
+model Investment {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  amount        Float          // Principal amount
+  period        InvestmentPeriod
+  interestRate  Float          // Interest rate (1%, 3%, 7%)
+  status        InvestmentStatus @default(ACTIVE)
+  startDate     DateTime       @default(now())
+  endDate       DateTime       // Calculated maturity date
+  earnedInterest Float         @default(0) // Calculated daily
+  totalReturn   Float          // Principal + interest
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("investments")
+}
+
+enum InvestmentPeriod {
+  ONE_WEEK
+  TWO_WEEKS
+  ONE_MONTH
+}
+
+enum InvestmentStatus {
+  ACTIVE
+  MATURED
+  WITHDRAWN
 }
