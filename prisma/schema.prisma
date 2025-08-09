@@ -37,6 +37,7 @@ model User {
   enrollments    CourseEnrollment[]
   lessonProgress LessonProgress[]
   courseReviews  CourseReview[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 model Profile {
@@ -173,6 +174,17 @@ model Transaction {
   mpesaTransactionId     String?
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
+}
+
+// Password reset tokens
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
 
 model CourseCategory {

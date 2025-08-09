@@ -50,10 +50,7 @@ export const authOptions: AuthOptions = {
           credentials.password,
           user.password
         );
-
-        if (!isPasswordValid) {
-          return null;
-        }
+        if (!isPasswordValid) return null;
 
         return {
           id: user.id,
