@@ -47,6 +47,17 @@ export async function POST(req: NextRequest) {
         }
       });
 
+      // Update the original withdrawal transaction status to FAILED
+      if (withdrawal.transactionId) {
+        await tx.transaction.update({
+          where: { id: withdrawal.transactionId },
+          data: {
+            status: 'FAILED',
+            description: `Withdrawal rejected - ${adminNote}`
+          }
+        });
+      }
+
       // Refund the amount back to user's wallet
       await tx.wallet.update({
         where: { userId: withdrawal.userId },

@@ -35,13 +35,27 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Update withdrawal status to APPROVED
-    await prisma.withdrawal.update({
-      where: { id: withdrawalId },
-      data: {
-        status: 'APPROVED',
-        processedAt: new Date(),
-        note: adminNote
+    // Use transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // Update withdrawal status to APPROVED
+      await tx.withdrawal.update({
+        where: { id: withdrawalId },
+        data: {
+          status: 'APPROVED',
+          processedAt: new Date(),
+          note: adminNote
+        }
+      });
+
+      // Update the original withdrawal transaction status to COMPLETED
+      if (withdrawal.transactionId) {
+        await tx.transaction.update({
+          where: { id: withdrawal.transactionId },
+          data: {
+            status: 'COMPLETED',
+            description: `Withdrawal approved - ${adminNote}`
+          }
+        });
       }
     });
 
