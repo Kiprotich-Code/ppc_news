@@ -2,15 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { Prisma } from "@prisma/client";
+import { Prisma, InvestmentPeriod } from "@prisma/client";
 
 const INVESTMENT_RATES = {
   ONE_WEEK: { rate: 0.01, days: 7 },
   TWO_WEEKS: { rate: 0.03, days: 14 },
   ONE_MONTH: { rate: 0.07, days: 30 },
 } as const;
-
-type InvestmentPeriod = keyof typeof INVESTMENT_RATES;
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,6 +36,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Cast period to InvestmentPeriod enum type
+    const validPeriod = period as InvestmentPeriod;
+
     // Fetch wallet
     const wallet = await prisma.wallet.findUnique({
       where: { userId: session.user.id },
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Calculate investment details
-    const config = INVESTMENT_RATES[period as InvestmentPeriod];
+    const config = INVESTMENT_RATES[validPeriod];
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + config.days);
 
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId: session.user.id,
           amount,
-          period,
+          period: validPeriod,
           interestRate: config.rate,
           endDate,
           totalReturn,
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
           userId: session.user.id,
           type: "INVESTMENT",
           amount: -amount,
-          description: `Investment: ${period.replace("_", " ").toLowerCase()} - ${config.rate * 100}%`,
+          description: `Investment: ${validPeriod.replace("_", " ").toLowerCase()} - ${config.rate * 100}%`,
           status: "COMPLETED",
           paymentMethod: "MPESA",
           reference: `INV_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`, // Add randomness to reduce collision risk
