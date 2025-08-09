@@ -85,23 +85,6 @@ export default function AdminPage() {
     }
   }
 
-  const handleArticleAction = async (articleId: string, action: "approve" | "reject") => {
-    try {
-      const response = await fetch(`/api/articles/${articleId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ action })
-      })
-      if (response.ok) {
-        fetchAdminData()
-      }
-    } catch (error) {
-      console.error("Error updating article:", error)
-    }
-  }
-
   if (status === "loading" || isLoading) {
     return (
       <div className="min-h-screen bg-red-50 flex">
@@ -252,22 +235,6 @@ export default function AdminPage() {
                         <span>•</span>
                         <span>{formatDate(new Date(article.createdAt))}</span>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleArticleAction(article.id, "approve")}
-                        className="flex items-center px-3 py-1 bg-green-600 text-white rounded-md text-xs hover:bg-green-700"
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Approve
-                      </button>
-                      <button
-                        onClick={() => handleArticleAction(article.id, "reject")}
-                        className="flex items-center px-3 py-1 bg-red-600 text-white rounded-md text-xs hover:bg-red-700"
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Reject
-                      </button>
                     </div>
                   </div>
                 </div>
