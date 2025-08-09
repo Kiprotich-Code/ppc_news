@@ -262,16 +262,6 @@ const AdminArticles = () => {
                   <tr>
                     <th 
                       scope="col" 
-                      className="w-1/4 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
-                      onClick={() => requestSort("title")}
-                    >
-                      <div className="flex items-center">
-                        Title
-                        {getSortIcon("title")}
-                      </div>
-                    </th>
-                    <th 
-                      scope="col" 
                       className="w-1/6 px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider cursor-pointer"
                       onClick={() => requestSort("author.name")}
                     >
@@ -329,11 +319,6 @@ const AdminArticles = () => {
                   {filteredArticles.length > 0 ? (
                     filteredArticles.map(article => (
                       <tr key={article.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900 overflow-hidden text-ellipsis whitespace-nowrap">
-                            {article.title}
-                          </div>
-                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="text-sm font-medium text-red-600 hover:underline">
@@ -370,13 +355,6 @@ const AdminArticles = () => {
                               title="View details"
                             >
                               <Eye className="h-5 w-5" />
-                            </button>
-                            <button
-                              onClick={() => router.push(`/admin/articles/${article.id}/edit`)}
-                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
-                              title="Edit"
-                            >
-                              <Edit className="h-5 w-5" />
                             </button>
                             <button
                               onClick={() => handleDelete(article.id)}

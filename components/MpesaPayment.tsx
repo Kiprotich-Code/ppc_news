@@ -46,10 +46,25 @@ export function MpesaPayment({
         endpoint = '/api/wallet/course-payment';
       }
 
+      // Convert 07 format to 254 format for backend
+      let phoneNumber = data.phoneNumber.replace(/\D/g, ''); // Remove non-digits
+      if (phoneNumber.startsWith('0')) {
+        phoneNumber = '254' + phoneNumber.substring(1);
+      }
+
+      console.log('Original phone number:', data.phoneNumber);
+      console.log('Converted phone number:', phoneNumber);
+      console.log('Phone number length:', phoneNumber.length);
+
+      // Validate converted phone number
+      if (!phoneNumber || phoneNumber.length !== 12 || !phoneNumber.startsWith('254')) {
+        throw new Error('Invalid phone number format');
+      }
+
       console.log('Submitting M-pesa payment:', {
         amount,
         type,
-        phoneNumber: data.phoneNumber,
+        phoneNumber,
         description
       });
 
@@ -62,7 +77,7 @@ export function MpesaPayment({
         body: JSON.stringify({
           amount,
           paymentMethod: 'MPESA',
-          phoneNumber: data.phoneNumber,
+          phoneNumber,
           description,
           type,
           ...(courseId && { courseId }) // Include courseId if provided
@@ -161,13 +176,13 @@ export function MpesaPayment({
     // Remove all non-digits
     const digits = value.replace(/\D/g, '');
     
-    // Format as +254 XXX XXX XXX
-    if (digits.startsWith('254')) {
-      const formatted = digits.replace(/^254(\d{3})(\d{3})(\d{3})$/, '+254 $1 $2 $3');
-      return formatted.length <= 13 ? formatted : value;
+    // Format as 0XXX XXX XXX for display
+    if (digits.startsWith('0') && digits.length <= 10) {
+      const formatted = digits.replace(/^0(\d{3})(\d{3})(\d{3})$/, '0$1 $2 $3');
+      return formatted.length <= 12 ? formatted : value;
     }
     
-    return digits.length <= 12 ? digits : value;
+    return digits.length <= 10 ? digits : value;
   };
 
   if (!isOpen) return null;
@@ -235,12 +250,12 @@ export function MpesaPayment({
                       className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all ${
                         errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
                       }`}
-                      placeholder="254712345678"
+                      placeholder="0712345678"
                       {...register("phoneNumber", {
                         required: "Phone number is required",
                         pattern: {
-                          value: /^254[0-9]{9}$/,
-                          message: "Enter a valid phone number starting with 254"
+                          value: /^0\d{3}\s?\d{3}\s?\d{3}$/,
+                          message: "Enter a valid phone number starting with 0"
                         }
                       })}
                       onChange={(e) => {

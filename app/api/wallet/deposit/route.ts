@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PayHeroService } from "@/lib/payhero";
 
@@ -6,12 +8,21 @@ export async function POST(req: Request) {
   try {
     console.log('=== PayHero Deposit Request Started ===');
     
-    // Expected body: { userId, amount, phoneNumber }
+    // Get user session
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      console.error('Unauthorized: No valid session');
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
+    const userId = session.user.id;
+    
+    // Expected body: { amount, phoneNumber }
     const body = await req.json();
     console.log('Request body:', body);
     
-    const { userId, amount, phoneNumber } = body;
-    if (!userId || !amount || amount <= 0 || !phoneNumber) {
+    const { amount, phoneNumber } = body;
+    if (!amount || amount <= 0 || !phoneNumber) {
       console.error('Invalid request parameters:', { userId, amount, phoneNumber });
       return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 });
     }
