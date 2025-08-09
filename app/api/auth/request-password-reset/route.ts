@@ -14,7 +14,6 @@ export async function POST(req: Request) {
     const user = await prisma.user.findUnique({ where: { email } });
 
     if (user) {
-      // Remove existing active tokens
       await prisma.passwordResetToken.deleteMany({
         where: { userId: user.id, used: false, expires: { gt: new Date() } }
       });
