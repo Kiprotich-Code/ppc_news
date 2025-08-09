@@ -191,12 +191,13 @@ export default function Dashboard() {
                 <div className="mb-4 md:mb-0">
                   <span className="font-semibold text-red-800">Your Referral Link:</span>
                   <div className="flex items-center mt-2">
-                    <Link
-                      href={`/auth/register?ref=${referral.referralCode}`}
-                      className="font-mono text-red-700 bg-red-100 px-2 py-1 rounded mr-2 hover:underline"
-                    >
-                      {`${window.location.origin}/auth/register?ref=${referral.referralCode}`}
-                    </Link>
+                      <Link
+                        href={`/auth/register?ref=${referral.referralCode}`}
+                        className="font-mono text-red-700 bg-red-100 px-2 py-1 rounded mr-2 hover:underline break-all max-w-full overflow-x-auto"
+                        style={{wordBreak: 'break-all'}}
+                      >
+                        {`${window.location.origin}/auth/register?ref=${referral.referralCode}`}
+                      </Link>
                     <button
                       onClick={handleCopyLink}
                       className="p-1 rounded hover:bg-red-200 focus:outline-none"

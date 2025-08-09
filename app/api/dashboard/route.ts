@@ -34,10 +34,19 @@ export async function GET(request: NextRequest) {
     // Calculate statistics
     const totalArticles = articles.length
     const totalViews = articles.reduce((sum, article) => sum + article.views.length, 0)
-    const totalEarnings = articles.reduce((sum, article) => {
+    const articleEarnings = articles.reduce((sum, article) => {
       return sum + article.earnings.reduce((earnSum, earning) => earnSum + earning.amount, 0)
     }, 0)
     const pendingArticles = articles.filter(article => article.status === "PENDING").length
+
+    // Get referral earnings from wallet
+    let referralEarnings = 0
+    const wallet = await prisma.wallet.findUnique({ where: { userId: session.user.id } })
+    if (wallet) {
+      referralEarnings = wallet.earnings - articleEarnings
+      if (referralEarnings < 0) referralEarnings = 0
+    }
+    const totalEarnings = articleEarnings + referralEarnings
 
     // Get recent articles (last 5) with author names
     const recentArticles = articles.slice(0, 5).map(article => ({

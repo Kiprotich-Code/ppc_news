@@ -69,7 +69,13 @@ export async function POST(request: NextRequest) {
     let referredById = null;
     if (ref) {
       const referrer = await prisma.user.findUnique({ where: { referralCode: ref } });
-      if (referrer) referredById = referrer.id;
+      if (referrer) {
+        referredById = referrer.id;
+        // Credit referral earnings to referrer's wallet
+        // Import creditEarnings dynamically to avoid circular imports
+        const { creditEarnings } = await import("@/lib/wallet");
+        await creditEarnings(referrer.id, 2, "Referral earning");
+      }
     }
 
     // Create user

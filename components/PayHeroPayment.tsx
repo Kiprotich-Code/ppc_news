@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { toast } from 'sonner';
-import { X, Smartphone, Loader2, CheckCircle, XCircle, Clock } from 'lucide-react';
+
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { X, Smartphone, Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 interface PayHeroPaymentProps {
   isOpen: boolean;
@@ -13,314 +14,392 @@ interface PayHeroPaymentProps {
   description: string;
 }
 
-type PaymentStatus = 'form' | 'processing' | 'waiting' | 'success' | 'failed';
+interface PaymentFormData {
+  phoneNumber: string;
+}
 
-export const PayHeroPayment: React.FC<PayHeroPaymentProps> = ({
+export function PayHeroPayment({
   isOpen,
   onClose,
   amount,
   onSuccess,
   type,
   description
-}) => {
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<PaymentStatus>('form');
-  const [checkoutRequestId, setCheckoutRequestId] = useState<string>('');
-  const [countdown, setCountdown] = useState(120); // 2 minutes timeout
-  const { data: session } = useSession();
+}: PayHeroPaymentProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<'form' | 'processing' | 'success' | 'failed'>('form');
+  const [transactionId, setTransactionId] = useState<string | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<PaymentFormData>();
 
-  // Countdown timer for payment timeout
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (status === 'waiting' && countdown > 0) {
-      interval = setInterval(() => {
-        setCountdown(prev => {
-          if (prev <= 1) {
-            setStatus('failed');
-            toast.error('Payment timeout. Please try again.');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [status, countdown]);
+  const phoneNumber = watch("phoneNumber");
 
-  // Poll payment status
-  useEffect(() => {
-    let pollInterval: NodeJS.Timeout;
-    if (status === 'waiting' && checkoutRequestId) {
-      pollInterval = setInterval(async () => {
-        try {
-          const response = await fetch(`/api/wallet/payment-status?checkoutRequestId=${checkoutRequestId}`);
-          const result = await response.json();
-          
-          if (result.status === 'COMPLETED') {
-            setStatus('success');
-            toast.success('Payment completed successfully!');
-            onSuccess();
-            setTimeout(() => onClose(), 2000); // Close after showing success
-          } else if (result.status === 'FAILED' || result.status === 'CANCELLED') {
-            setStatus('failed');
-            toast.error('Payment failed or was cancelled');
-          }
-        } catch (error) {
-          console.error('Error polling payment status:', error);
-        }
-      }, 3000); // Poll every 3 seconds
-    }
-    return () => clearInterval(pollInterval);
-  }, [status, checkoutRequestId, onSuccess, onClose]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phoneNumber || phoneNumber.length < 10) {
-      toast.error('Please enter a valid phone number');
-      return;
-    }
-    if (!session?.user?.id) {
-      toast.error('Please sign in to proceed');
-      return;
-    }
-    
-    setLoading(true);
-    setStatus('processing');
-    
+  const onSubmit = async (data: PaymentFormData) => {
     try {
-      const response = await fetch(`/api/wallet/${type}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          userId: session.user.id,
-          amount,
-          phoneNumber: phoneNumber.startsWith('254') ? phoneNumber : `254${phoneNumber.slice(-9)}`
-        })
-      });
+      setIsLoading(true);
+      setStep('processing');
       
+      const endpoint = `/api/wallet/${type}`;
+
+      console.log('Submitting M-pesa payment:', {
+        amount,
+        type,
+        phoneNumber: data.phoneNumber,
+        description
+      });
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount,
+          phoneNumber: data.phoneNumber,
+          description
+        }),
+      });
+
       const result = await response.json();
       
-      if (response.ok) {
-        if (type === 'deposit' && result.checkoutRequestId) {
-          // Deposit flow - wait for STK push completion
-          setCheckoutRequestId(result.checkoutRequestId);
-          setStatus('waiting');
-          setCountdown(120);
-          toast.success('STK push sent! Check your phone for M-Pesa prompt');
-        } else if (type === 'withdrawal' && result.success) {
-          // Withdrawal flow - manual processing
-          setStatus('success');
-          toast.success('Withdrawal request submitted successfully!');
-          onSuccess();
-          setTimeout(() => onClose(), 3000);
+      if (!response.ok) {
+        // Handle specific PayHero errors
+        if (result.error?.includes('PayHero account inactive') || result.accountStatus === 'inactive') {
+          throw new Error('Payment service temporarily unavailable. Please contact support.');
+        }
+        throw new Error(result.error || 'Payment failed');
+      }
+
+      if (type === 'deposit') {
+        // Store transaction ID and start polling for deposits
+        setTransactionId(result.transactionId || result.checkoutRequestId);
+        if (result.checkoutRequestId) {
+          startPolling(result.checkoutRequestId);
+          toast.success('Please check your phone to complete the payment');
         } else {
-          setStatus('failed');
-          toast.error(result.error || `${type} failed`);
+          setStep('success');
+          toast.success('Deposit request submitted successfully!');
+          setTimeout(() => {
+            onSuccess();
+            onClose();
+            resetForm();
+          }, 3000);
         }
       } else {
-        setStatus('failed');
-        toast.error(result.error || `${type} failed`);
+        // Withdrawal is processed manually
+        setStep('success');
+        toast.success('Withdrawal request submitted successfully!');
+        setTimeout(() => {
+          onSuccess();
+          onClose();
+          resetForm();
+        }, 3000);
       }
-    } catch (error) {
-      setStatus('failed');
-      toast.error(`${type} failed. Please try again.`);
+      
+    } catch (error: any) {
+      console.error('PayHero payment error:', error);
+      setStep('failed');
+      toast.error(error.message || 'Failed to initiate payment');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleClose = () => {
-    if (status === 'waiting') {
-      const confirm = window.confirm(
-        'Payment is still in progress. Are you sure you want to close? You may miss the M-Pesa prompt.'
-      );
-      if (!confirm) return;
-    }
-    setStatus('form');
-    setCheckoutRequestId('');
-    setCountdown(120);
-    onClose();
+  const startPolling = (checkoutId: string) => {
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/wallet/payment-status?checkoutRequestId=${checkoutId}`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const transaction = await response.json();
+          
+          if (transaction.status === 'COMPLETED') {
+            clearInterval(interval);
+            setPollingInterval(null);
+            setStep('success');
+            toast.success('Payment completed successfully!');
+            
+            // Auto close after 3 seconds
+            setTimeout(() => {
+              onSuccess();
+              onClose();
+              resetForm();
+            }, 3000);
+          } else if (transaction.status === 'FAILED') {
+            clearInterval(interval);
+            setPollingInterval(null);
+            setStep('failed');
+            toast.error('Payment failed. Please try again.');
+          }
+        }
+      } catch (error) {
+        console.error('Error polling transaction status:', error);
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    setPollingInterval(interval);
+    
+    // Stop polling after 5 minutes (100 attempts)
+    setTimeout(() => {
+      if (interval) {
+        clearInterval(interval);
+        setPollingInterval(null);
+        setStep('failed');
+        toast.error('Payment timeout. Please check your phone and try again.');
+      }
+    }, 300000);
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  const resetForm = () => {
+    setStep('form');
+    setTransactionId(null);
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+
+  const formatPhoneNumber = (value: string) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Format as +254 XXX XXX XXX
+    if (digits.startsWith('254')) {
+      const formatted = digits.replace(/^254(\d{3})(\d{3})(\d{3})$/, '+254 $1 $2 $3');
+      return formatted.length <= 13 ? formatted : value;
+    }
+    
+    return digits.length <= 12 ? digits : value;
   };
 
   if (!isOpen) return null;
 
-  const renderContent = () => {
-    switch (status) {
-      case 'form':
-      case 'processing':
-        return (
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Smartphone className="w-8 h-8 text-green-600" />
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl transform transition-all">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 rounded-t-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
+          
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                <Smartphone className="w-6 h-6 text-white" />
               </div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                KES {amount.toLocaleString()}
-              </h4>
-              <p className="text-sm text-gray-600">{description}</p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                M-Pesa Phone Number
-              </label>
-              <input
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="0712345678"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                required
-                disabled={status === 'processing'}
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Enter the phone number registered with M-Pesa
-              </p>
+              <div>
+                <h2 className="text-xl font-bold text-white">Make Payment</h2>
+                <p className="text-green-100 text-sm">Secure & Fast</p>
+              </div>
             </div>
             <button
-              type="submit"
-              disabled={loading || !phoneNumber || status === 'processing'}
-              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              onClick={() => {
+                if (pollingInterval) {
+                  clearInterval(pollingInterval);
+                  setPollingInterval(null);
+                }
+                onClose();
+                resetForm();
+              }}
+              className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
             >
-              {status === 'processing' ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Sending STK Push...
-                </>
-              ) : (
-                `${type === 'deposit' ? 'Pay' : 'Withdraw'} KES ${amount.toLocaleString()}`
-              )}
+              <X className="w-4 h-4 text-white" />
             </button>
-            <div className="text-center text-xs text-gray-500">
-              <p>Powered by PayHero • Secure & Fast</p>
-              {type === 'deposit' ? (
-                <p className="mt-1">You will receive an M-Pesa prompt on your phone</p>
-              ) : (
-                <p className="mt-1">Withdrawal will be processed within 24 hours</p>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {step === 'form' && (
+            <>
+              {/* Amount Display */}
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl mb-6 border border-green-100">
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-1">{description}</p>
+                  <p className="text-3xl font-bold text-green-600">
+                    KSh {amount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    M-Pesa Phone Number
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Smartphone className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
+                        errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      placeholder="254712345678"
+                      {...register("phoneNumber", {
+                        required: "Phone number is required",
+                        pattern: {
+                          value: /^254[0-9]{9}$/,
+                          message: "Enter a valid phone number starting with 254"
+                        }
+                      })}
+                      onChange={(e) => {
+                        const formatted = formatPhoneNumber(e.target.value);
+                        e.target.value = formatted;
+                      }}
+                    />
+                  </div>
+                  {errors.phoneNumber && (
+                    <div className="flex items-center space-x-2 text-red-600">
+                      <AlertCircle className="w-4 h-4" />
+                      <p className="text-sm">{errors.phoneNumber.message}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Security Notice */}
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800">Secure Payment</p>
+                      <p className="text-xs text-blue-600 mt-1">
+                        {type === 'deposit' 
+                          ? "Your payment is protected by PayHero security protocols. You'll receive an SMS prompt to complete the transaction."
+                          : "Your withdrawal request will be processed securely within 24 hours during business hours."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-3">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-lg"
+                  >
+                    {isLoading ? (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Processing...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center space-x-2">
+                        <Smartphone className="w-5 h-5" />
+                        <span>{type === 'deposit' ? 'Pay with Mpesa' : 'Request Withdrawal'}</span>
+                      </div>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (pollingInterval) {
+                        clearInterval(pollingInterval);
+                        setPollingInterval(null);
+                      }
+                      onClose();
+                      resetForm();
+                    }}
+                    className="w-full border-2 border-gray-200 hover:border-gray-300 text-gray-700 font-medium py-3 px-6 rounded-xl transition-all hover:bg-gray-50"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </>
+          )}
+
+          {step === 'processing' && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Loader2 className="w-8 h-8 text-green-600 animate-spin" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Waiting for Payment</h3>
+              <p className="text-gray-600 mb-4">
+                Please check your phone and complete the M-Pesa payment...
+              </p>
+              <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+                <p className="text-sm text-yellow-800">
+                  Enter your M-Pesa PIN when prompted. We'll automatically detect when the payment is completed.
+                </p>
+              </div>
+              {transactionId && (
+                <div className="mt-4 text-xs text-gray-500">
+                  Transaction ID: {transactionId}
+                </div>
               )}
             </div>
-          </form>
-        );
+          )}
 
-      case 'waiting':
-        return (
-          <div className="p-6 space-y-6 text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-              <Clock className="w-8 h-8 text-blue-600" />
-            </div>
-            <h4 className="text-lg font-medium text-gray-900">
-              Waiting for Payment
-            </h4>
-            <div className="space-y-3">
-              <p className="text-sm text-gray-600">
-                📱 Check your phone for the M-Pesa payment prompt
-              </p>
-              <p className="text-sm text-gray-600">
-                💰 Amount: <span className="font-semibold">KES {amount.toLocaleString()}</span>
-              </p>
-              <p className="text-sm text-gray-600">
-                📞 Phone: <span className="font-semibold">{phoneNumber}</span>
-              </p>
-            </div>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800 font-medium">
-                ⚠️ Do not close this window
-              </p>
-              <p className="text-xs text-yellow-700 mt-1">
-                Keep this window open until payment is complete
-              </p>
-              <p className="text-xs text-yellow-700 mt-2">
-                Time remaining: <span className="font-mono font-bold">{formatTime(countdown)}</span>
-              </p>
-            </div>
-            <div className="flex space-x-2">
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            </div>
-          </div>
-        );
-
-      case 'success':
-        return (
-          <div className="p-6 space-y-6 text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h4 className="text-lg font-medium text-green-900">
-              {type === 'deposit' ? 'Payment Successful!' : 'Withdrawal Request Submitted!'}
-            </h4>
-            <p className="text-sm text-gray-600">
-              {type === 'deposit' 
-                ? `KES ${amount.toLocaleString()} has been added to your wallet`
-                : `Your withdrawal request for KES ${amount.toLocaleString()} has been submitted and will be processed within 24 hours.`
-              }
-            </p>
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-800">
+          {step === 'success' && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                {type === 'deposit' ? 'Payment Completed!' : 'Withdrawal Submitted!'}
+              </h3>
+              <p className="text-gray-600 mb-4">
                 {type === 'deposit' 
-                  ? '✅ Transaction completed successfully'
-                  : '✅ Withdrawal request received - You will be notified once processed'
+                  ? 'Your payment has been processed successfully.'
+                  : 'Your withdrawal request has been submitted successfully.'
                 }
               </p>
+              <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                <p className="text-sm text-green-800">
+                  {type === 'deposit' 
+                    ? 'Your wallet has been updated with the payment amount.'
+                    : 'Your withdrawal will be processed within 24 hours during business hours.'
+                  }
+                </p>
+              </div>
             </div>
-          </div>
-        );
+          )}
 
-      case 'failed':
-        return (
-          <div className="p-6 space-y-6 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8 text-red-600" />
-            </div>
-            <h4 className="text-lg font-medium text-red-900">
-              Payment Failed
-            </h4>
-            <p className="text-sm text-gray-600">
-              The payment could not be completed. Please try again.
-            </p>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-800">
-                ❌ Transaction failed or was cancelled
+          {step === 'failed' && (
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Payment Failed</h3>
+              <p className="text-gray-600 mb-4">
+                The payment could not be completed.
               </p>
+              <div className="bg-red-50 p-4 rounded-xl border border-red-200">
+                <p className="text-sm text-red-800">
+                  Please check your phone and try again. If the problem persists, contact support.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  resetForm();
+                  setStep('form');
+                }}
+                className="mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
-            <button
-              onClick={() => setStatus('form')}
-              className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-all"
-            >
-              Try Again
-            </button>
-          </div>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-semibold text-gray-900">
-            {type === 'deposit' ? 'Deposit to Wallet' : 'Withdraw balance'}
-          </h3>
-          <button
-            onClick={handleClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            disabled={status === 'processing'}
-          >
-            <X className="w-5 h-5" />
-          </button>
+          )}
         </div>
-        {renderContent()}
       </div>
     </div>
   );
