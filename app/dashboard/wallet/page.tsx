@@ -49,9 +49,9 @@ const WalletDashboard = () => {
   
   // Investment plans configuration
   const investmentPlans = [
-    { period: "ONE_WEEK", label: "1 Week", rate: 1, days: 7, color: "text-green-600" },
-    { period: "TWO_WEEKS", label: "2 Weeks", rate: 3, days: 14, color: "text-blue-600" },
-    { period: "ONE_MONTH", label: "1 Month", rate: 7, days: 30, color: "text-purple-600" }
+    { period: "ONE_WEEK", label: "1 Week", rate: 4, days: 7, color: "text-green-600" },
+    { period: "TWO_WEEKS", label: "2 Weeks", rate: 8, days: 14, color: "text-blue-600" },
+    { period: "ONE_MONTH", label: "1 Month", rate: 16, days: 30, color: "text-purple-600" }
   ];
   
   // Fetch wallet data

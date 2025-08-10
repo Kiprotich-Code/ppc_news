@@ -5,9 +5,9 @@ import { prisma } from "@/lib/db";
 import { Prisma, InvestmentPeriod } from "@prisma/client";
 
 const INVESTMENT_RATES = {
-  ONE_WEEK: { rate: 0.01, days: 7 },
-  TWO_WEEKS: { rate: 0.03, days: 14 },
-  ONE_MONTH: { rate: 0.07, days: 30 },
+  ONE_WEEK: { rate: 0.04, days: 7 },
+  TWO_WEEKS: { rate: 0.08, days: 14 },
+  ONE_MONTH: { rate: 0.16, days: 30 },
 } as const;
 
 export async function POST(req: NextRequest) {
