@@ -10,19 +10,15 @@ import {
   Calendar, 
   Eye, 
   Clock, 
-  Share2, 
   Bookmark, 
   Heart, 
   MessageCircle, 
   User,
   ChevronUp,
-  Twitter,
-  Facebook,
-  Linkedin,
-  Copy,
   CheckCircle,
   FileText
 } from "lucide-react";
+import { ShareButton } from "@/components/ShareButton";
 import { tiptapToHtml } from "@/lib/utils";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -34,8 +30,6 @@ export default function ArticleDetail() {
   const [isLiked, setIsLiked] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [showShareMenu, setShowShareMenu] = useState(false);
-  const [copySuccess, setCopySuccess] = useState(false);
 
   const { data, error, isLoading } = useSWR(id ? `/api/public-article/${id}` : null, fetcher);
   const article = data?.article;
@@ -68,29 +62,6 @@ export default function ArticleDetail() {
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked);
     // TODO: API call to bookmark/unbookmark article
-  };
-
-  const handleShare = (platform: string) => {
-    const url = window.location.href;
-    const title = article?.title || '';
-    
-    switch (platform) {
-      case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`, '_blank');
-        break;
-      case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-        break;
-      case 'linkedin':
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
-        break;
-      case 'copy':
-        navigator.clipboard.writeText(url);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-        break;
-    }
-    setShowShareMenu(false);
   };
 
   const scrollToTop = () => {
@@ -235,60 +206,12 @@ export default function ArticleDetail() {
               </button>
             </div>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowShareMenu(!showShareMenu)}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200 transition-all duration-200 text-sm"
-              >
-                <Share2 className="w-3 h-3" />
-                <span className="text-xs font-medium">Share</span>
-              </button>
-
-              {/* Share Dropdown */}
-              {showShareMenu && (
-                <div className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
-                  <div className="py-1.5">
-                    <button
-                      onClick={() => handleShare('twitter')}
-                      className="flex items-center w-full px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
-                    >
-                      <Twitter className="w-3 h-3 mr-2 text-blue-400" />
-                      Share on Twitter
-                    </button>
-                    <button
-                      onClick={() => handleShare('facebook')}
-                      className="flex items-center w-full px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
-                    >
-                      <Facebook className="w-3 h-3 mr-2 text-blue-600" />
-                      Share on Facebook
-                    </button>
-                    <button
-                      onClick={() => handleShare('linkedin')}
-                      className="flex items-center w-full px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
-                    >
-                      <Linkedin className="w-3 h-3 mr-2 text-blue-700" />
-                      Share on LinkedIn
-                    </button>
-                    <button
-                      onClick={() => handleShare('copy')}
-                      className="flex items-center w-full px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-50"
-                    >
-                      {copySuccess ? (
-                        <>
-                          <CheckCircle className="w-3 h-3 mr-2 text-green-500" />
-                          Link Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3 mr-2 text-gray-500" />
-                          Copy Link
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ShareButton 
+              url={typeof window !== 'undefined' ? window.location.href : ''}
+              title={article?.title || ''}
+              size="sm"
+              variant="outline"
+            />
           </div>
         </header>
 
@@ -430,14 +353,6 @@ export default function ArticleDetail() {
         >
           <ChevronUp className="w-4 h-4" />
         </button>
-      )}
-
-      {/* Click outside to close share menu */}
-      {showShareMenu && (
-        <div 
-          className="fixed inset-0 z-0" 
-          onClick={() => setShowShareMenu(false)}
-        />
       )}
     </div>
   );
