@@ -7,7 +7,7 @@ import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
-import { MpesaPayment } from "@/components/MpesaPayment"
+import { PayHeroPayment } from "@/components/PayHeroPayment"
 import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText, User } from "lucide-react"
 import Link from "next/link"
 import { formatCurrency, formatDate } from "@/lib/utils"
@@ -55,8 +55,8 @@ export default function Academy() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [filter, setFilter] = useState<'all' | 'free' | 'premium'>('all')
 
-  // Mpesa Payment Modal State
-  const [isMpesaModalOpen, setIsMpesaModalOpen] = useState(false)
+  // Payment Modal State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function Academy() {
 
   const handleBuyCourse = (course: Course) => {
     setSelectedCourse(course)
-    setIsMpesaModalOpen(true)
+  setIsPaymentModalOpen(true)
   }
 
   const handlePaymentSuccess = () => {
@@ -322,12 +322,12 @@ export default function Academy() {
         <DashboardMobileNav />
       </div>
 
-      {/* Mpesa Payment Modal */}
+      {/* PayHero Course Payment Modal */}
       {selectedCourse && (
-        <MpesaPayment
-          isOpen={isMpesaModalOpen}
+        <PayHeroPayment
+          isOpen={isPaymentModalOpen}
           onClose={() => {
-            setIsMpesaModalOpen(false)
+            setIsPaymentModalOpen(false)
             setSelectedCourse(null)
           }}
           amount={selectedCourse.price}

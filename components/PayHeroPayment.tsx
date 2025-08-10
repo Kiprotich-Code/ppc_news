@@ -10,8 +10,11 @@ interface PayHeroPaymentProps {
   onClose: () => void;
   amount: number;
   onSuccess: () => void;
-  type: 'deposit' | 'withdrawal';
+  // Add course_payment for purchasing courses
+  type: 'deposit' | 'withdrawal' | 'course_payment';
   description: string;
+  // Optional courseId when type is course_payment
+  courseId?: string;
 }
 
 interface PaymentFormData {
@@ -24,7 +27,8 @@ export function PayHeroPayment({
   amount,
   onSuccess,
   type,
-  description
+  description,
+  courseId
 }: PayHeroPaymentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState<'form' | 'processing' | 'success' | 'failed'>('form');
@@ -39,7 +43,12 @@ export function PayHeroPayment({
       setIsLoading(true);
       setStep('processing');
       
-      const endpoint = `/api/wallet/${type}`;
+      // Determine the correct endpoint
+      let endpoint = `/api/wallet/${type}`;
+      if (type === 'course_payment') {
+        // Dedicated course payment route
+        endpoint = '/api/wallet/course-payment';
+      }
 
       // Convert 07 format to 254 format for backend
       let phoneNumber = data.phoneNumber.replace(/\D/g, ''); // Remove non-digits
@@ -56,12 +65,23 @@ export function PayHeroPayment({
         throw new Error('Invalid phone number format');
       }
 
-      console.log('Submitting M-pesa payment:', {
+      console.log('Submitting PayHero payment:', {
         amount,
         type,
         phoneNumber,
-        description
+        description,
+        courseId
       });
+
+      const body: Record<string, any> = {
+        amount,
+        phoneNumber,
+        description
+      };
+      if (type === 'course_payment') {
+        body.paymentMethod = 'MPESA'; // Align with backend expectation
+        if (courseId) body.courseId = courseId;
+      }
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -69,11 +89,7 @@ export function PayHeroPayment({
         headers: { 
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          amount,
-          phoneNumber,
-          description
-        }),
+        body: JSON.stringify(body),
       });
 
       const result = await response.json();
@@ -86,7 +102,7 @@ export function PayHeroPayment({
         throw new Error(result.error || 'Payment failed');
       }
 
-      if (type === 'deposit') {
+    if (type === 'deposit' || type === 'course_payment') {
         // Store transaction ID and start polling for deposits
         setTransactionId(result.transactionId || result.checkoutRequestId);
         if (result.checkoutRequestId) {
@@ -94,7 +110,7 @@ export function PayHeroPayment({
           toast.success('Please check your phone to complete the payment');
         } else {
           setStep('success');
-          toast.success('Deposit request submitted successfully!');
+      toast.success(type === 'course_payment' ? 'Course payment submitted successfully!' : 'Deposit request submitted successfully!');
           setTimeout(() => {
             onSuccess();
             onClose();
@@ -215,7 +231,7 @@ export function PayHeroPayment({
                 <Smartphone className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Make Payment</h2>
+                <h2 className="text-xl font-bold text-white">{type === 'course_payment' ? 'Course Payment' : 'Make Payment'}</h2>
                 <p className="text-green-100 text-sm">Secure & Fast</p>
               </div>
             </div>
@@ -317,7 +333,7 @@ export function PayHeroPayment({
                     ) : (
                       <div className="flex items-center justify-center space-x-2">
                         <Smartphone className="w-5 h-5" />
-                        <span>{type === 'deposit' ? 'Pay with Mpesa' : 'Request Withdrawal'}</span>
+                        <span>{type === 'deposit' || type === 'course_payment' ? 'Pay with Mpesa' : 'Request Withdrawal'}</span>
                       </div>
                     )}
                   </button>

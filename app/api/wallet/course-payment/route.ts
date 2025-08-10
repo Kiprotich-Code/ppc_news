@@ -1,11 +1,15 @@
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { mpesa } from "@/lib/mpesa";
+import { authOptions } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  const session = await getServerSession();
-  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  // Ensure we pass authOptions so session can be resolved in production
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { courseId, paymentMethod, phoneNumber } = await req.json();
   if (!courseId || !paymentMethod || !phoneNumber) {
