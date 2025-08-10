@@ -287,7 +287,6 @@ export default function Academy() {
                           <button
                             onClick={() => handleBuyCourse(course)}
                             className="bg-red-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-red-700 flex items-center whitespace-nowrap"
-                            disabled={course.isFree}
                           >
                             {course.isFree ? (
                               <>

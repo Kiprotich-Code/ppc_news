@@ -69,6 +69,14 @@ export async function POST(req: NextRequest) {
           { reference: CheckoutRequestID },
           { mpesaRequestId: CheckoutRequestID }
         ]
+      },
+      select: {
+        id: true,
+        userId: true,
+        amount: true,
+        type: true,
+        status: true,
+        metadata: true
       }
     });
 
@@ -112,6 +120,43 @@ export async function POST(req: NextRequest) {
       } else if (transaction.type === 'WITHDRAWAL') {
         // For withdrawals, just mark as completed (money already deducted)
         console.log(`Withdrawal successful: ${transaction.amount} withdrawn for user ${transaction.userId}`);
+      } else if (transaction.type === 'course_payment') {
+        // Handle course payment - grant course access
+        try {
+          const metadata = transaction.metadata ? JSON.parse(transaction.metadata) : null;
+          const courseId = metadata?.courseId;
+          
+          if (courseId) {
+            // Check if enrollment already exists
+            const existingEnrollment = await prisma.courseEnrollment.findUnique({
+              where: {
+                userId_courseId: {
+                  userId: transaction.userId,
+                  courseId: courseId
+                }
+              }
+            });
+
+            if (!existingEnrollment) {
+              // Create course enrollment
+              await prisma.courseEnrollment.create({
+                data: {
+                  userId: transaction.userId,
+                  courseId: courseId,
+                  enrolledAt: new Date(),
+                  progress: 0
+                }
+              });
+              console.log(`Course enrollment created: User ${transaction.userId} enrolled in course ${courseId}`);
+            } else {
+              console.log(`Course enrollment already exists: User ${transaction.userId} already enrolled in course ${courseId}`);
+            }
+          } else {
+            console.error('Course payment successful but no courseId found in metadata:', transaction.metadata);
+          }
+        } catch (error) {
+          console.error('Error processing course payment:', error);
+        }
       }
     } else {
       // Payment failed

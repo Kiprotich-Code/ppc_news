@@ -50,19 +50,23 @@ export function PayHeroPayment({
         endpoint = '/api/wallet/course-payment';
       }
 
-      // Convert 07 format to 254 format for backend
-      let phoneNumber = data.phoneNumber.replace(/\D/g, ''); // Remove non-digits
-      if (phoneNumber.startsWith('0')) {
-        phoneNumber = '254' + phoneNumber.substring(1);
-      }
+      // For free courses (amount = 0), we don't need phone number validation
+      let phoneNumber = '';
+      if (amount > 0) {
+        // Convert 07 format to 254 format for backend
+        phoneNumber = data.phoneNumber.replace(/\D/g, ''); // Remove non-digits
+        if (phoneNumber.startsWith('0')) {
+          phoneNumber = '254' + phoneNumber.substring(1);
+        }
 
-      console.log('Original phone number:', data.phoneNumber);
-      console.log('Converted phone number:', phoneNumber);
-      console.log('Phone number length:', phoneNumber.length);
+        console.log('Original phone number:', data.phoneNumber);
+        console.log('Converted phone number:', phoneNumber);
+        console.log('Phone number length:', phoneNumber.length);
 
-      // Validate converted phone number
-      if (!phoneNumber || phoneNumber.length !== 12 || !phoneNumber.startsWith('254')) {
-        throw new Error('Invalid phone number format');
+        // Validate converted phone number
+        if (!phoneNumber || phoneNumber.length !== 12 || !phoneNumber.startsWith('254')) {
+          throw new Error('Invalid phone number format');
+        }
       }
 
       console.log('Submitting PayHero payment:', {
@@ -75,9 +79,13 @@ export function PayHeroPayment({
 
       const body: Record<string, any> = {
         amount,
-        phoneNumber,
         description
       };
+      
+      if (phoneNumber) {
+        body.phoneNumber = phoneNumber;
+      }
+      
       if (type === 'course_payment') {
         body.paymentMethod = 'MPESA'; // Align with backend expectation
         if (courseId) body.courseId = courseId;
@@ -102,15 +110,24 @@ export function PayHeroPayment({
         throw new Error(result.error || 'Payment failed');
       }
 
-    if (type === 'deposit' || type === 'course_payment') {
-        // Store transaction ID and start polling for deposits
-        setTransactionId(result.transactionId || result.checkoutRequestId);
-        if (result.checkoutRequestId) {
+      if (type === 'deposit' || type === 'course_payment') {
+        // Handle free course enrollment or successful course payment
+        if (result.freeEnrollment || result.alreadyEnrolled) {
+          setStep('success');
+          toast.success(result.message || 'Course enrollment successful!');
+          setTimeout(() => {
+            onSuccess();
+            onClose();
+            resetForm();
+          }, 3000);
+        } else if (result.checkoutRequestId) {
+          // Store transaction ID and start polling for paid courses
+          setTransactionId(result.transactionId || result.checkoutRequestId);
           startPolling(result.checkoutRequestId);
           toast.success('Please check your phone to complete the payment');
         } else {
           setStep('success');
-      toast.success(type === 'course_payment' ? 'Course payment submitted successfully!' : 'Deposit request submitted successfully!');
+          toast.success(type === 'course_payment' ? 'Course payment submitted successfully!' : 'Deposit request submitted successfully!');
           setTimeout(() => {
             onSuccess();
             onClose();
@@ -267,56 +284,76 @@ export function PayHeroPayment({
 
               {/* Form */}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    M-Pesa Phone Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Smartphone className="h-5 w-5 text-gray-400" />
+                {amount > 0 && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      M-Pesa Phone Number
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Smartphone className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <input
+                        type="text"
+                        className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
+                          errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        placeholder="0712345678"
+                        {...register("phoneNumber", {
+                          required: amount > 0 ? "Phone number is required" : false,
+                          pattern: amount > 0 ? {
+                            value: /^0\d{3}\s?\d{3}\s?\d{3}$/,
+                            message: "Enter a valid phone number starting with 0"
+                          } : undefined
+                        })}
+                        onChange={(e) => {
+                          const formatted = formatPhoneNumber(e.target.value);
+                          e.target.value = formatted;
+                        }}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      className={`w-full pl-10 pr-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all ${
-                        errors.phoneNumber ? 'border-red-300 bg-red-50' : 'border-gray-200 hover:border-gray-300'
-                      }`}
-                      placeholder="0712345678"
-                      {...register("phoneNumber", {
-                        required: "Phone number is required",
-                        pattern: {
-                          value: /^0\d{3}\s?\d{3}\s?\d{3}$/,
-                          message: "Enter a valid phone number starting with 0"
-                        }
-                      })}
-                      onChange={(e) => {
-                        const formatted = formatPhoneNumber(e.target.value);
-                        e.target.value = formatted;
-                      }}
-                    />
+                    {errors.phoneNumber && (
+                      <div className="flex items-center space-x-2 text-red-600">
+                        <AlertCircle className="w-4 h-4" />
+                        <p className="text-sm">{errors.phoneNumber.message}</p>
+                      </div>
+                    )}
                   </div>
-                  {errors.phoneNumber && (
-                    <div className="flex items-center space-x-2 text-red-600">
-                      <AlertCircle className="w-4 h-4" />
-                      <p className="text-sm">{errors.phoneNumber.message}</p>
+                )}
+
+                {amount === 0 && (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <div className="flex items-start space-x-3">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Free Course Enrollment</p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          You will be automatically enrolled in this free course. No payment required.
+                        </p>
+                      </div>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 {/* Security Notice */}
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                  <div className="flex items-start space-x-3">
-                    <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-800">Secure Payment</p>
-                      <p className="text-xs text-blue-600 mt-1">
-                        {type === 'deposit' 
-                          ? "Your payment is protected by PayHero security protocols. You'll receive an SMS prompt to complete the transaction."
-                          : "Your withdrawal request will be processed securely within 24 hours during business hours."
-                        }
-                      </p>
+                {amount > 0 && (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <div className="flex items-start space-x-3">
+                      <Shield className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-800">Secure Payment</p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          {type === 'deposit' 
+                            ? "Your payment is protected by PayHero security protocols. You'll receive an SMS prompt to complete the transaction."
+                            : type === 'course_payment'
+                            ? "Your course payment is protected by PayHero security protocols. You'll receive an SMS prompt to complete the transaction."
+                            : "Your withdrawal request will be processed securely within 24 hours during business hours."
+                          }
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
@@ -332,8 +369,24 @@ export function PayHeroPayment({
                       </div>
                     ) : (
                       <div className="flex items-center justify-center space-x-2">
-                        <Smartphone className="w-5 h-5" />
-                        <span>{type === 'deposit' || type === 'course_payment' ? 'Pay with Mpesa' : 'Request Withdrawal'}</span>
+                        {amount === 0 ? (
+                          <>
+                            <CheckCircle className="w-5 h-5" />
+                            <span>Enroll Now (Free)</span>
+                          </>
+                        ) : (
+                          <>
+                            <Smartphone className="w-5 h-5" />
+                            <span>
+                              {type === 'deposit' 
+                                ? 'Pay with Mpesa' 
+                                : type === 'course_payment' 
+                                ? 'Pay with M-Pesa' 
+                                : 'Request Withdrawal'
+                              }
+                            </span>
+                          </>
+                        )}
                       </div>
                     )}
                   </button>

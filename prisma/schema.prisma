@@ -173,6 +173,7 @@ model Transaction {
   mpesaRequestId         String?
   mpesaMerchantRequestId String?
   mpesaTransactionId     String?
+  metadata               String?           // JSON string for additional data like courseId
   createdAt              DateTime          @default(now())
   updatedAt              DateTime          @updatedAt
 }
