@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar";
-import { Eye, Ban, Flag, Search, UserPlus, ChevronDown, ChevronUp, Loader2, Shield, FileText, Calendar, AlertCircle, RefreshCw, User } from "lucide-react";
+import { Eye, Ban, Flag, Search, UserPlus, ChevronDown, ChevronUp, Loader2, Shield, FileText, Calendar, AlertCircle, RefreshCw, User, Trash2, XCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import { AdminMobileNav } from "@/components/AdminMobileNav";
 
@@ -37,6 +37,12 @@ const AdminMembers = () => {
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Delete modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string>('');
 
   useEffect(() => {
     const checkScreen = () => {
@@ -76,6 +82,35 @@ const AdminMembers = () => {
       setError(e instanceof Error ? e.message : 'Action failed');
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleDeleteMember = async () => {
+    if (!memberToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      const res = await fetch(`/api/admin/members?id=${memberToDelete.id}`, {
+        method: 'DELETE',
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to delete member');
+      }
+      
+      const data = await res.json();
+      setSuccessMessage(`Member "${memberToDelete.name}" has been deleted successfully.`);
+      setShowDeleteModal(false);
+      setMemberToDelete(null);
+      await fetchMembers();
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to delete member');
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -208,6 +243,13 @@ const AdminMembers = () => {
     fetchMembers();
   }, []);
 
+  // Clear error when success message is shown
+  useEffect(() => {
+    if (successMessage) {
+      setError(null);
+    }
+  }, [successMessage]);
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-white">
       {/* Sidebar for md+ */}
@@ -248,6 +290,33 @@ const AdminMembers = () => {
           </div>
         </div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-800">{successMessage}</p>
+              </div>
+              <div className="ml-auto pl-3">
+                <div className="-mx-1.5 -my-1.5">
+                  <button
+                    onClick={() => setSuccessMessage('')}
+                    className="inline-flex bg-green-50 rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600"
+                  >
+                    <span className="sr-only">Dismiss</span>
+                    <XCircle className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
@@ -256,8 +325,8 @@ const AdminMembers = () => {
                 <p className="text-sm font-medium text-gray-600">Total Members</p>
                 <p className="text-2xl font-bold text-gray-900">{members.length}</p>
               </div>
-              <div className="bg-red-100 p-2 rounded-lg">
-                <UserPlus className="w-6 h-6 text-red-600" />
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <UserPlus className="w-6 h-6 text-blue-600" />
               </div>
             </div>
           </div>
@@ -279,13 +348,13 @@ const AdminMembers = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Writers</p>
+                <p className="text-sm font-medium text-gray-600">Flagged Users</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {members.filter(m => m.role === 'WRITER').length}
+                  {members.filter(m => m.role === 'FLAGGED').length}
                 </p>
               </div>
-              <div className="bg-red-100 p-2 rounded-lg">
-                <FileText className="w-6 h-6 text-red-600" />
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <Flag className="w-6 h-6 text-orange-600" />
               </div>
             </div>
           </div>
@@ -293,17 +362,13 @@ const AdminMembers = () => {
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">New Today</p>
+                <p className="text-sm font-medium text-gray-600">Suspended</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {members.filter(m => {
-                    const memberDate = new Date(m.createdAt);
-                    const today = new Date();
-                    return memberDate.setHours(0,0,0,0) === today.setHours(0,0,0,0);
-                  }).length}
+                  {members.filter(m => m.role === 'SUSPENDED').length}
                 </p>
               </div>
-              <div className="bg-red-100 p-2 rounded-lg">
-                <Calendar className="w-6 h-6 text-red-600" />
+              <div className="bg-yellow-100 p-2 rounded-lg">
+                <Ban className="w-6 h-6 text-yellow-600" />
               </div>
             </div>
           </div>
@@ -402,7 +467,9 @@ const AdminMembers = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                             member.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                            member.role === 'WRITER' ? 'bg-red-100 text-red-800' :
+                            member.role === 'WRITER' ? 'bg-blue-100 text-blue-800' :
+                            member.role === 'SUSPENDED' ? 'bg-yellow-100 text-yellow-800' :
+                            member.role === 'FLAGGED' ? 'bg-orange-100 text-orange-800' :
                             'bg-gray-100 text-gray-800'
                           }`}>
                             {member.role}
@@ -422,9 +489,13 @@ const AdminMembers = () => {
                             </button>
                             <button
                               onClick={() => handleAction(member.id, 'suspend')}
-                              disabled={actionLoading === member.id + 'suspend'}
-                              className="text-yellow-600 hover:text-yellow-900 p-1 rounded hover:bg-yellow-50 transition-colors disabled:opacity-50"
-                              title="Suspend"
+                              disabled={actionLoading === member.id + 'suspend' || member.role === 'SUSPENDED'}
+                              className={`p-1 rounded transition-colors disabled:opacity-50 ${
+                                member.role === 'SUSPENDED' 
+                                  ? 'text-yellow-300 cursor-not-allowed bg-yellow-50'
+                                  : 'text-yellow-600 hover:text-yellow-900 hover:bg-yellow-50'
+                              }`}
+                              title={member.role === 'SUSPENDED' ? 'Already suspended' : 'Suspend'}
                             >
                               {actionLoading === member.id + 'suspend' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -434,15 +505,29 @@ const AdminMembers = () => {
                             </button>
                             <button
                               onClick={() => handleAction(member.id, 'flag')}
-                              disabled={actionLoading === member.id + 'flag'}
-                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
-                              title="Flag"
+                              disabled={actionLoading === member.id + 'flag' || member.role === 'FLAGGED'}
+                              className={`p-1 rounded transition-colors disabled:opacity-50 ${
+                                member.role === 'FLAGGED' 
+                                  ? 'text-orange-300 cursor-not-allowed bg-orange-50'
+                                  : 'text-orange-600 hover:text-orange-900 hover:bg-orange-50'
+                              }`}
+                              title={member.role === 'FLAGGED' ? 'Already flagged' : 'Flag user'}
                             >
                               {actionLoading === member.id + 'flag' ? (
                                 <Loader2 className="h-5 w-5 animate-spin" />
                               ) : (
                                 <Flag className="h-5 w-5" />
                               )}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setMemberToDelete(member);
+                                setShowDeleteModal(true);
+                              }}
+                              className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
+                              title="Delete member"
+                            >
+                              <Trash2 className="h-5 w-5" />
                             </button>
                           </div>
                         </td>
@@ -461,6 +546,70 @@ const AdminMembers = () => {
             </div>
           )}
         </div>
+        
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && memberToDelete && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl border border-gray-200">
+              <div className="flex items-center mb-4">
+                <Trash2 className="w-6 h-6 text-red-600 mr-2" />
+                <h3 className="text-lg font-bold text-gray-900">Delete Member</h3>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-gray-700 mb-2">
+                  Are you sure you want to delete this member? This action cannot be undone.
+                </p>
+                <div className="bg-gray-50 rounded-lg p-3 border">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                      {memberToDelete.profileImage ? (
+                        <img className="h-10 w-10 rounded-full" src={memberToDelete.profileImage} alt="" />
+                      ) : (
+                        <User className="h-5 w-5 text-gray-500" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{memberToDelete.name}</div>
+                      <div className="text-sm text-gray-600">{memberToDelete.email}</div>
+                      <div className="text-xs text-gray-500">@{memberToDelete.username}</div>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-red-600 mt-2">
+                  ⚠️ This will permanently delete all user data, articles, and transaction history.
+                </p>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50 text-gray-800"
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setMemberToDelete(null);
+                  }}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+                  onClick={handleDeleteMember}
+                  disabled={deleteLoading}
+                >
+                  {deleteLoading ? (
+                    <span className="animate-spin">...</span>
+                  ) : (
+                    <>
+                      <Trash2 className="w-5 h-5 mr-2" />
+                      Delete Member
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Bottom nav for mobile */}
