@@ -51,6 +51,11 @@ export default function Transactions() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [typeFilter, setTypeFilter] = useState("All")
   const [statusFilter, setStatusFilter] = useState("All")
+  
+  // Pagination states
+  const [transactionPage, setTransactionPage] = useState(1)
+  const [walletPage, setWalletPage] = useState(1)
+  const itemsPerPage = 5
 
   useEffect(() => {
     if (status === "loading") return
@@ -60,6 +65,10 @@ export default function Transactions() {
       return
     }
 
+    // Reset pagination when filters change
+    setTransactionPage(1)
+    setWalletPage(1)
+    
     fetchTransactionData()
   }, [session, status, router, typeFilter, statusFilter])
 
@@ -85,6 +94,89 @@ export default function Transactions() {
       setIsLoading(false)
     }
   }
+
+  // Pagination helper functions
+  const getPaginatedData = (data: any[], page: number) => {
+    const startIndex = (page - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    return data.slice(startIndex, endIndex)
+  }
+
+  const getTotalPages = (data: any[]) => {
+    return Math.ceil(data.length / itemsPerPage)
+  }
+
+  const renderPagination = (currentPage: number, totalPages: number, onPageChange: (page: number) => void, totalItems: number) => {
+    if (totalPages <= 1) return null
+
+    const startItem = ((currentPage - 1) * itemsPerPage) + 1
+    const endItem = Math.min(currentPage * itemsPerPage, totalItems)
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-3 bg-gray-50 border-t border-gray-200 gap-4">
+        <div className="flex items-center text-sm text-gray-700">
+          Showing {startItem} to {endItem} of {totalItems} results
+        </div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+            className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+            }`}
+          >
+            Previous
+          </button>
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let page;
+              if (totalPages <= 5) {
+                page = i + 1;
+              } else if (currentPage <= 3) {
+                page = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + i;
+              } else {
+                page = currentPage - 2 + i;
+              }
+              return (
+                <button
+                  key={page}
+                  onClick={() => onPageChange(page)}
+                  className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+                    page === currentPage
+                      ? 'bg-red-600 text-white'
+                      : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === totalPages
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Get paginated data
+  const paginatedTransactions = getPaginatedData(transactions, transactionPage)
+  const paginatedWallets = getPaginatedData(wallets, walletPage)
+  const transactionTotalPages = getTotalPages(transactions)
+  const walletTotalPages = getTotalPages(wallets)
 
   if (status === "loading" || isLoading) {
     return (
@@ -196,8 +288,8 @@ export default function Transactions() {
               <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
             </div>
             <div className="divide-y divide-gray-200">
-              {transactions.length > 0 ? (
-                transactions.map((transaction) => (
+              {paginatedTransactions.length > 0 ? (
+                paginatedTransactions.map((transaction) => (
                   <div key={transaction.id} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -244,6 +336,7 @@ export default function Transactions() {
                 </div>
               )}
             </div>
+            {renderPagination(transactionPage, transactionTotalPages, setTransactionPage, transactions.length)}
           </div>
 
           {/* User Wallets Table */}
@@ -252,8 +345,8 @@ export default function Transactions() {
               <h2 className="text-lg font-semibold text-gray-900">User Wallets</h2>
             </div>
             <div className="divide-y divide-gray-200">
-              {wallets.length > 0 ? (
-                wallets.map((wallet) => (
+              {paginatedWallets.length > 0 ? (
+                paginatedWallets.map((wallet) => (
                   <div key={wallet.userId} className="px-6 py-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -272,12 +365,6 @@ export default function Transactions() {
                           <DollarSign className="h-4 w-4 text-red-600" />
                           <span>Earnings: {formatCurrency(wallet.earnings)}</span>
                         </div>
-                        <Link
-                          href={`/dashboard/wallets/${wallet.userId}`}
-                          className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700"
-                        >
-                          Manage
-                        </Link>
                       </div>
                     </div>
                   </div>
@@ -290,6 +377,7 @@ export default function Transactions() {
                 </div>
               )}
             </div>
+            {renderPagination(walletPage, walletTotalPages, setWalletPage, wallets.length)}
           </div>
         </div>
       </main>
