@@ -49,6 +49,10 @@ const WithdrawalAdminPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMdUp, setIsMdUp] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 3;
 
   const isAdmin = session?.user?.email === 'admin@ppcnews.com' || session?.user?.role === 'ADMIN';
 
@@ -235,6 +239,83 @@ const WithdrawalAdminPage = () => {
      withdrawal.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Pagination logic
+  const totalPages = Math.ceil(filteredWithdrawals.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedWithdrawals = filteredWithdrawals.slice(startIndex, endIndex);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchTerm]);
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const startItem = startIndex + 1;
+    const endItem = Math.min(endIndex, filteredWithdrawals.length);
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+        <div className="flex items-center text-sm text-gray-700">
+          Showing {startItem} to {endItem} of {filteredWithdrawals.length} results
+        </div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+            }`}
+          >
+            Previous
+          </button>
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let page;
+              if (totalPages <= 5) {
+                page = i + 1;
+              } else if (currentPage <= 3) {
+                page = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + i;
+              } else {
+                page = currentPage - 2 + i;
+              }
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+                    page === currentPage
+                      ? 'bg-red-600 text-white'
+                      : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === totalPages
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const totalPending = withdrawals.filter(w => w.status === 'PENDING').length;
   const totalAmount = withdrawals.reduce((sum, w) => sum + w.amount, 0);
   const pendingAmount = withdrawals.filter(w => w.status === 'PENDING').reduce((sum, w) => sum + w.amount, 0);
@@ -277,7 +358,7 @@ const WithdrawalAdminPage = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Withdrawal Management</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Withdrawals</h1>
             <p className="text-gray-600 text-sm mt-1">
               {withdrawals.length} {withdrawals.length === 1 ? 'request' : 'requests'} total
             </p>
@@ -414,7 +495,7 @@ const WithdrawalAdminPage = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredWithdrawals.map((withdrawal) => (
+                  {paginatedWithdrawals.map((withdrawal) => (
                     <tr key={withdrawal.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -474,6 +555,7 @@ const WithdrawalAdminPage = () => {
                   ))}
                 </tbody>
               </table>
+              {renderPagination()}
             </div>
           )}
         </div>

@@ -243,7 +243,7 @@ export default function Transactions() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Deposits</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalDeposits)}</p>
+                  <p className="text-1xl font-bold text-gray-900">{formatCurrency(stats.totalDeposits)}</p>
                 </div>
               </div>
             </div>
@@ -254,7 +254,7 @@ export default function Transactions() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Withdrawals</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalWithdrawals)}</p>
+                  <p className="text-1xl font-bold text-gray-900">{formatCurrency(stats.totalWithdrawals)}</p>
                 </div>
               </div>
             </div>
@@ -265,7 +265,7 @@ export default function Transactions() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+                  <p className="text-1xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
                 </div>
               </div>
             </div>
@@ -276,7 +276,7 @@ export default function Transactions() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm font-medium text-gray-600">Pending Amount</p>
-                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.pendingAmount)}</p>
+                  <p className="text-1xl font-bold text-gray-900">{formatCurrency(stats.pendingAmount)}</p>
                 </div>
               </div>
             </div>
