@@ -92,9 +92,17 @@ export default function CourseCategoriesPage() {
     e.preventDefault()
     
     if (!newCategory.name.trim()) {
-      toast.error("Category name is required")
+      toast.error("Category name is required", {
+        icon: '⚠️',
+        duration: 3000,
+      })
       return
     }
+
+    // Show loading toast
+    const loadingToast = toast.loading(`Creating "${newCategory.name}"...`, {
+      icon: '🚀',
+    })
 
     try {
       const response = await fetch("/api/admin/courses/categories", {
@@ -103,45 +111,108 @@ export default function CourseCategoriesPage() {
         body: JSON.stringify(newCategory)
       })
 
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+
       if (response.ok) {
-        toast.success("Category created successfully")
+        toast.success(`"${newCategory.name}" created successfully`, {
+          icon: '🎉',
+          duration: 4000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+        })
         setNewCategory({ name: "", description: "" })
         setIsCreating(false)
         fetchCategories()
       } else {
-        const error = await response.json()
-        toast.error(error.error || "Failed to create category")
+        let errorMessage = "Failed to create category"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(`Failed to create "${newCategory.name}": ${errorMessage}`, {
+          icon: '❌',
+          duration: 6000,
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+          },
+        })
       }
     } catch (error) {
+      toast.dismiss(loadingToast)
       console.error("Error creating category:", error)
-      toast.error("Failed to create category")
+      toast.error(`Failed to create "${newCategory.name}": Network error`, {
+        icon: '❌',
+        duration: 6000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      })
     }
   }
 
   const updateCategory = async (categoryId: string) => {
     if (!editCategory.name.trim()) {
-      toast.error("Category name is required")
+      toast.error("Category name is required", {
+        icon: '⚠️',
+        duration: 3000,
+      })
       return
     }
 
+    // Show loading toast
+    const loadingToast = toast.loading(`Updating "${editCategory.name}"...`, {
+      icon: '✏️',
+    })
+
     try {
-      const response = await fetch(`/api/admin/courses/categories`, {
+      const response = await fetch(`/api/admin/courses/categories/${categoryId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: categoryId,
-          ...editCategory
-        })
+        body: JSON.stringify(editCategory)
       })
 
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+
       if (response.ok) {
-        toast.success("Category updated successfully")
+        toast.success(`"${editCategory.name}" updated successfully`, {
+          icon: '✅',
+          duration: 4000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+        })
         setEditingId(null)
         setEditCategory({ name: "", description: "" })
         fetchCategories()
       } else {
-        const error = await response.json()
-        toast.error(error.error || "Failed to update category")
+        let errorMessage = "Failed to update category"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(`Failed to update "${editCategory.name}": ${errorMessage}`, {
+          icon: '❌',
+          duration: 6000,
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+          },
+        })
       }
     } catch (error) {
       console.error("Error updating category:", error)
@@ -150,23 +221,64 @@ export default function CourseCategoriesPage() {
   }
 
   const deleteCategory = async (categoryId: string) => {
-    if (!confirm("Are you sure you want to delete this category? This action cannot be undone.")) {
+    // Find the category to get its name for better messaging
+    const category = categories.find(c => c.id === categoryId)
+    const categoryName = category?.name || "category"
+    const courseCount = category?._count?.courses || 0
+    
+    // Custom confirmation with category details
+    const confirmMessage = courseCount > 0 
+      ? `Are you sure you want to delete "${categoryName}"?\n\nThis category has ${courseCount} course${courseCount === 1 ? '' : 's'} and cannot be deleted.`
+      : `Are you sure you want to delete "${categoryName}"?\n\nThis action cannot be undone.`
+    
+    if (!confirm(confirmMessage)) {
       return
     }
 
+    // Show loading toast
+    const loadingToast = toast.loading(`Deleting "${categoryName}"...`, {
+      icon: '🗑️',
+    })
+
     try {
-      const response = await fetch(`/api/admin/courses/categories`, {
+      const response = await fetch(`/api/admin/courses/categories/${categoryId}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: categoryId })
+        headers: { "Content-Type": "application/json" }
       })
 
+      // Dismiss loading toast
+      toast.dismiss(loadingToast)
+
       if (response.ok) {
-        toast.success("Category deleted successfully")
+        // Success toast with category name
+        toast.success(`"${categoryName}" deleted successfully`, {
+          icon: '✅',
+          duration: 4000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+        })
         fetchCategories()
       } else {
-        const error = await response.json()
-        toast.error(error.error || "Failed to delete category")
+        let errorMessage = "Failed to delete category"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        // Enhanced error toast
+        toast.error(`Failed to delete "${categoryName}": ${errorMessage}`, {
+          icon: '❌',
+          duration: 6000,
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+          },
+        })
       }
     } catch (error) {
       console.error("Error deleting category:", error)
