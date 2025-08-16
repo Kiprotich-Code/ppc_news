@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, FileText, Users, DollarSign, Settings, BookOpen } from "lucide-react"
+import { Home, FileText, Users, DollarSign, BookOpen } from "lucide-react"
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: Home },
@@ -10,7 +10,6 @@ const navItems = [
   { label: "Courses", href: "/admin/courses", icon: BookOpen },
   { label: "Members", href: "/admin/members", icon: Users },
   { label: "Transactions", href: "/admin/transactions", icon: DollarSign },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
 ]
 
 export function AdminMobileNav({ userName }: { userName?: string }) {

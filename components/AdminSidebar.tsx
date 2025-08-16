@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Pencil, BookOpen, DollarSign, User, MessageSquare, Menu, Settings, FileText, Users, Wallet } from "lucide-react"
+import { Home, Pencil, BookOpen, DollarSign, User, MessageSquare, Menu, FileText, Users, Wallet } from "lucide-react"
 import { LucideIcon } from "lucide-react"
 
 const iconMap: { [key: string]: LucideIcon } = {
@@ -14,7 +14,6 @@ const iconMap: { [key: string]: LucideIcon } = {
   user: User,
   "file-text": FileText,
   users: Users,
-  settings: Settings
 }
 import { useState } from "react"
 import Image from "next/image"
@@ -41,7 +40,6 @@ export function AdminSidebar({
     { label: "Members", href: "/admin/members", icon: "users" },
     { label: "Withdrawals", href: "/admin/withdrawals", icon: "wallet" },
     { label: "Transactions", href: "/admin/transactions", icon: "dollar-sign" },
-    { label: "Settings", href: "/admin/settings", icon: "settings" },
   ]
 }: { 
   open: boolean, 
