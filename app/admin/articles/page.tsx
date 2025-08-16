@@ -43,11 +43,27 @@ const AdminArticles = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
   const router = useRouter();
   const [isMdUp, setIsMdUp] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
+  // Delete confirmation states
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    isOpen: boolean;
+    articleId: string;
+    articleTitle: string;
+  }>({
+    isOpen: false,
+    articleId: "",
+    articleTitle: "",
+  });
 
   const fetchArticles = async () => {
     setLoading(true);
@@ -70,13 +86,42 @@ const AdminArticles = () => {
       const res = await fetch(`/api/admin/articles/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Failed to delete article");
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to delete article");
+      }
+      
+      const result = await res.json();
       await fetchArticles();
+      
+      // Clear any errors and close confirmation dialog
+      setError(null);
+      setDeleteConfirmation({ isOpen: false, articleId: "", articleTitle: "" });
+      
+      // Show success message
+      setSuccessMessage(`Article "${deleteConfirmation.articleTitle}" deleted successfully`);
+      setTimeout(() => setSuccessMessage(null), 5000); // Clear success message after 5 seconds
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to delete article");
+      console.error("Delete error:", e);
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const openDeleteConfirmation = (id: string, title: string) => {
+    setError(null); // Clear any previous errors
+    setSuccessMessage(null); // Clear any previous success messages
+    setDeleteConfirmation({
+      isOpen: true,
+      articleId: id,
+      articleTitle: title,
+    });
+  };
+
+  const closeDeleteConfirmation = () => {
+    setDeleteConfirmation({ isOpen: false, articleId: "", articleTitle: "" });
   };
 
   const requestSort = (key: string) => {
@@ -112,6 +157,90 @@ const AdminArticles = () => {
       );
     });
   }, [sortedArticles, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredArticles.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedArticles = filteredArticles.slice(startIndex, endIndex);
+
+  // Reset to first page when search term changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Adjust current page if it becomes invalid after data changes
+  React.useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const startItem = startIndex + 1;
+    const endItem = Math.min(endIndex, filteredArticles.length);
+
+    return (
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200 gap-4">
+        <div className="flex items-center text-sm text-gray-700">
+          Showing {startItem} to {endItem} of {filteredArticles.length} results
+        </div>
+        <div className="flex items-center space-x-1 sm:space-x-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === 1
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+            }`}
+          >
+            Previous
+          </button>
+          <div className="flex items-center space-x-1">
+            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+              let page;
+              if (totalPages <= 5) {
+                page = i + 1;
+              } else if (currentPage <= 3) {
+                page = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + i;
+              } else {
+                page = currentPage - 2 + i;
+              }
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+                    page === currentPage
+                      ? 'bg-red-600 text-white'
+                      : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`px-2 sm:px-3 py-1 rounded-md text-sm font-medium ${
+              currentPage === totalPages
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-gray-700 hover:text-red-600 hover:bg-gray-100'
+            }`}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   const getSortIcon = (key: string) => {
     if (!sortConfig || sortConfig.key !== key) return <ChevronDown className="w-4 h-4 ml-1 opacity-0" />;
@@ -181,6 +310,32 @@ const AdminArticles = () => {
             </button>
           </div>
         </div>
+
+        {/* Success Message */}
+        {successMessage && (
+          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
+              <p className="text-sm text-green-800">{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-3" />
+              <p className="text-sm text-red-800">{error}</p>
+              <button
+                onClick={() => setError(null)}
+                className="ml-auto text-red-600 hover:text-red-800"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200">
@@ -317,7 +472,7 @@ const AdminArticles = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredArticles.length > 0 ? (
-                    filteredArticles.map(article => (
+                    paginatedArticles.map(article => (
                       <tr key={article.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -357,7 +512,7 @@ const AdminArticles = () => {
                               <Eye className="h-5 w-5" />
                             </button>
                             <button
-                              onClick={() => handleDelete(article.id)}
+                              onClick={() => openDeleteConfirmation(article.id, article.title)}
                               disabled={actionLoading === article.id + "delete"}
                               className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors disabled:opacity-50"
                               title="Delete"
@@ -381,6 +536,7 @@ const AdminArticles = () => {
                   )}
                 </tbody>
               </table>
+              {renderPagination()}
             </div>
           )}
         </div>
@@ -389,6 +545,62 @@ const AdminArticles = () => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50">
         <AdminMobileNav userName={undefined} />
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-lg font-medium text-gray-900">Delete Article</h3>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the article "{deleteConfirmation.articleTitle}"? 
+                This action cannot be undone.
+              </p>
+            </div>
+
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+            
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                onClick={closeDeleteConfirmation}
+                disabled={actionLoading === deleteConfirmation.articleId + "delete"}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmation.articleId)}
+                disabled={actionLoading === deleteConfirmation.articleId + "delete"}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors disabled:opacity-50 flex items-center"
+              >
+                {actionLoading === deleteConfirmation.articleId + "delete" ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

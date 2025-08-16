@@ -191,28 +191,29 @@ const ArticleDetailPage = () => {
       </div>
       
       <main
-        className="flex-1 p-4 md:p-8 pb-20 transition-all duration-300"
+        className="flex-1 p-4 md:p-8 pb-20 transition-all duration-300 max-w-full overflow-hidden"
         style={isMdUp ? { marginLeft: sidebarOpen ? SIDEBAR_WIDTH_OPEN : SIDEBAR_WIDTH_CLOSED } : {}}
       >
-        <div className="mb-6">
-          <button
-            onClick={() => router.back()}
-            className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors font-medium"
-          >
-            <ArrowLeftIcon className="w-5 h-5 mr-1" />
-            Back to articles
-          </button>
-        </div>
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <button
+              onClick={() => router.back()}
+              className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors font-medium"
+            >
+              <ArrowLeftIcon className="w-5 h-5 mr-1" />
+              Back to articles
+            </button>
+          </div>
         
         <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6 border border-gray-200">
           {/* Article Header Section */}
           <div className="p-6 border-b border-gray-200">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 break-words">
               {article.title}
             </h1>
             
-            <div className="flex flex-col space-y-3 md:space-y-0 md:flex-row md:items-center md:space-x-6 text-sm text-gray-700">
-              <div className="flex items-center">
+            <div className="flex flex-col space-y-3 md:space-y-2 text-sm text-gray-700">
+              <div className="flex items-center flex-wrap">
                 <span className={`inline-block w-3 h-3 rounded-full mr-2 ${
                   article.status === "APPROVED" ? "bg-green-500" :
                   article.status === "REJECTED" ? "bg-red-500" : "bg-yellow-500"
@@ -220,27 +221,32 @@ const ArticleDetailPage = () => {
                 <span className="font-medium">Status: {article.status}</span>
               </div>
               
-              <div className="flex items-center">
-                <UserIcon className="w-4 h-4 mr-1 text-gray-600" />
+              <div className="flex items-center flex-wrap">
+                <UserIcon className="w-4 h-4 mr-1 text-gray-600 flex-shrink-0" />
                 <span className="font-medium">Author: </span>
                 <Link
                   href={`/admin/members/${article.authorId}`}
-                  className="ml-1 text-indigo-600 hover:text-indigo-800 transition-colors"
+                  className="ml-1 text-indigo-600 hover:text-indigo-800 transition-colors break-all"
                 >
                   {article.author?.name || "Unknown"}
                 </Link>
               </div>
               
-              <div className="flex items-center">
-                <ClockIcon className="w-4 h-4 mr-1 text-gray-600" />
-                <span>Created: {article.createdAt ? new Date(article.createdAt).toLocaleString() : "-"}</span>
+              <div className="flex items-center flex-wrap">
+                <ClockIcon className="w-4 h-4 mr-1 text-gray-600 flex-shrink-0" />
+                <span className="break-all">Created: {article.createdAt ? new Date(article.createdAt).toLocaleString() : "-"}</span>
               </div>
             </div>
           </div>
           
           {/* Article Content */}
-          <div className="p-6 prose prose-lg max-w-none text-gray-800">
-            <div dangerouslySetInnerHTML={{ __html: tiptapToHtml(article.content || "") }} />
+          <div className="p-6">
+            <div className="prose prose-lg max-w-none text-gray-800 overflow-hidden break-words">
+              <div 
+                className="break-words overflow-wrap-anywhere"
+                dangerouslySetInnerHTML={{ __html: tiptapToHtml(article.content || "") }} 
+              />
+            </div>
           </div>
         </div>
 
@@ -258,17 +264,17 @@ const ArticleDetailPage = () => {
         )}
 
         {/* Action Cards - Bottom Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* PPV Card */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-6">
               <div className="flex items-center mb-4">
-                <BadgeDollarSignIcon className="w-6 h-6 text-indigo-600 mr-2" />
+                <BadgeDollarSignIcon className="w-6 h-6 text-indigo-600 mr-2 flex-shrink-0" />
                 <h3 className="text-lg font-medium text-gray-900">Pay-Per-View Settings</h3>
               </div>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-gray-700 font-medium">Current Rate:</span>
                   <span className="font-mono bg-gray-100 px-3 py-1 rounded-md text-gray-800">
                     ${article.clickValue?.toFixed(2) || "0.00"}
@@ -277,8 +283,8 @@ const ArticleDetailPage = () => {
                 
                 {editingPPV ? (
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-gray-700 w-24 font-medium">New Rate:</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                      <span className="text-gray-700 sm:w-24 font-medium">New Rate:</span>
                       <div className="relative flex-1">
                         <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-600">
                           $
@@ -296,7 +302,7 @@ const ArticleDetailPage = () => {
                       </div>
                     </div>
                     
-                    <div className="flex justify-end space-x-2">
+                    <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                       <button
                         className="flex items-center justify-center bg-gray-200 px-3 py-2 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 text-gray-800"
                         onClick={() => {
@@ -341,12 +347,12 @@ const ArticleDetailPage = () => {
           <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
             <div className="p-6">
               <div className="flex items-center mb-4">
-                <ShieldAlertIcon className="w-6 h-6 text-purple-600 mr-2" />
+                <ShieldAlertIcon className="w-6 h-6 text-purple-600 mr-2 flex-shrink-0" />
                 <h3 className="text-lg font-medium text-gray-900">Article Moderation</h3>
               </div>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <span className="text-gray-700 font-medium">Current Status:</span>
                   <span className={`px-2 py-1 rounded-md text-sm font-medium ${
                     article.status === "APPROVED" ? "bg-green-100 text-green-800" :
@@ -446,6 +452,7 @@ const ArticleDetailPage = () => {
             </div>
           </div>
         )}
+        </div>
       </main>
       
       {/* Bottom nav for mobile */}
