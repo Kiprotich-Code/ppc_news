@@ -1,7 +1,7 @@
 "use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, use } from "react"
 import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { 
@@ -77,7 +77,24 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
   const [isMdUp, setIsMdUp] = useState(false)
-  const [courseId, setCourseId] = useState<string>("")
+  const { id: courseId } = use(params)
+  
+  // Inline editing states
+  const [isEditing, setIsEditing] = useState(false)
+  const [editForm, setEditForm] = useState({
+    title: '',
+    description: '',
+    shortDescription: '',
+    price: 0,
+    isFree: false,
+    isPremium: true,
+    difficulty: 'BEGINNER',
+    duration: '',
+    instructor: '',
+    categoryId: ''
+  })
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([])
+  const [updateLoading, setUpdateLoading] = useState(false)
 
   useEffect(() => {
     const checkScreen = () => {
@@ -87,13 +104,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     window.addEventListener('resize', checkScreen)
     return () => window.removeEventListener('resize', checkScreen)
   }, [])
-
-  useEffect(() => {
-    // Get the course ID from params Promise
-    params.then(({ id }) => {
-      setCourseId(id)
-    })
-  }, [params])
 
   useEffect(() => {
     if (status === "loading" || !courseId) return
@@ -116,6 +126,20 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         setCourse(data)
         // Expand all sections by default
         setExpandedSections(new Set(data.sections.map((s: Section) => s.id)))
+        
+        // Initialize edit form with course data
+        setEditForm({
+          title: data.title || '',
+          description: data.description || '',
+          shortDescription: data.shortDescription || '',
+          price: data.price || 0,
+          isFree: data.isFree || false,
+          isPremium: data.isPremium || true,
+          difficulty: data.difficulty || 'BEGINNER',
+          duration: data.duration || '',
+          instructor: data.instructor || '',
+          categoryId: data.category?.id || ''
+        })
       } else {
         toast.error("Failed to fetch course")
         router.push("/admin/courses")
@@ -126,6 +150,105 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
       router.push("/admin/courses")
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('/api/admin/courses/categories')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      }
+    } catch (error) {
+      console.error("Error fetching categories:", error)
+    }
+  }
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setUpdateLoading(true)
+
+    const loadingToast = toast.loading('Updating course...', {
+      icon: '✏️',
+    })
+
+    try {
+      const response = await fetch(`/api/admin/courses/${courseId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm)
+      })
+
+      toast.dismiss(loadingToast)
+
+      if (response.ok) {
+        toast.success(`"${editForm.title}" updated successfully`, {
+          icon: '✅',
+          duration: 4000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+        })
+        setIsEditing(false)
+        fetchCourse() // Refresh course data
+      } else {
+        let errorMessage = "Failed to update course"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(`Failed to update "${editForm.title}": ${errorMessage}`, {
+          icon: '❌',
+          duration: 6000,
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+          },
+        })
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast)
+      console.error("Error updating course:", error)
+      toast.error(`Failed to update "${editForm.title}": Network error`, {
+        icon: '❌',
+        duration: 6000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      })
+    } finally {
+      setUpdateLoading(false)
+    }
+  }
+
+  const startEditing = () => {
+    setIsEditing(true)
+    fetchCategories() // Fetch categories when starting to edit
+  }
+
+  const cancelEditing = () => {
+    setIsEditing(false)
+    if (course) {
+      // Reset form to original values
+      setEditForm({
+        title: course.title || '',
+        description: course.description || '',
+        shortDescription: course.shortDescription || '',
+        price: course.price || 0,
+        isFree: course.isFree || false,
+        isPremium: course.isPremium || true,
+        difficulty: course.difficulty || 'BEGINNER',
+        duration: course.duration || '',
+        instructor: course.instructor || '',
+        categoryId: course.category?.id || ''
+      })
     }
   }
 
@@ -158,6 +281,232 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     } catch (error) {
       console.error("Error updating course:", error)
       toast.error("Failed to update course")
+    }
+  }
+
+  const deleteSection = async (sectionId: string, sectionTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the section "${sectionTitle}"? This will also delete all lessons in this section. This action cannot be undone.`)) {
+      return
+    }
+
+    const loadingToast = toast.loading(`Deleting section "${sectionTitle}"...`, {
+      icon: '�️',
+      style: {
+        borderRadius: '12px',
+        background: '#374151',
+        color: '#fff',
+        fontWeight: '500',
+        border: '1px solid #6B7280',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      },
+    })
+
+    try {
+      const response = await fetch(`/api/admin/courses/${courseId}/sections/${sectionId}`, {
+        method: "DELETE"
+      })
+
+      toast.dismiss(loadingToast)
+
+      if (response.ok) {
+        const result = await response.json()
+        fetchCourse() // Refresh course data
+        
+        toast.success(
+          (t) => (
+            <div className="flex flex-col">
+              <div className="font-semibold text-green-800 mb-1">
+                🎯 Section Deleted Successfully!
+              </div>
+              <div className="text-sm text-green-700">
+                "{sectionTitle}" and {result.deletedLessons || 0} lesson{result.deletedLessons !== 1 ? 's' : ''} removed
+              </div>
+            </div>
+          ),
+          {
+            duration: 5000,
+            style: {
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #D1FAE5 0%, #A7F3D0 100%)',
+              border: '1px solid #10B981',
+              boxShadow: '0 10px 15px -3px rgba(16, 185, 129, 0.1), 0 4px 6px -2px rgba(16, 185, 129, 0.05)',
+              padding: '16px',
+              maxWidth: '400px',
+            },
+          }
+        )
+      } else {
+        let errorMessage = "Failed to delete section"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(
+          (t) => (
+            <div className="flex flex-col">
+              <div className="font-semibold text-red-800 mb-1">
+                ⚠️ Deletion Failed
+              </div>
+              <div className="text-sm text-red-700">
+                Couldn't delete "{sectionTitle}": {errorMessage}
+              </div>
+            </div>
+          ),
+          {
+            duration: 7000,
+            style: {
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
+              border: '1px solid #EF4444',
+              boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05)',
+              padding: '16px',
+              maxWidth: '400px',
+            },
+          }
+        )
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast)
+      console.error("Error deleting section:", error)
+      toast.error(
+        (t) => (
+          <div className="flex flex-col">
+            <div className="font-semibold text-red-800 mb-1">
+              🔌 Connection Error
+            </div>
+            <div className="text-sm text-red-700">
+              Failed to delete "{sectionTitle}": Network issue
+            </div>
+          </div>
+        ),
+        {
+          duration: 7000,
+          style: {
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
+            border: '1px solid #EF4444',
+            boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05)',
+            padding: '16px',
+            maxWidth: '400px',
+          },
+        }
+      )
+    }
+  }
+
+  const deleteLesson = async (sectionId: string, lessonId: string, lessonTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the lesson "${lessonTitle}"? This action cannot be undone.`)) {
+      return
+    }
+
+    const loadingToast = toast.loading(`Deleting lesson "${lessonTitle}"...`, {
+      icon: '�',
+      style: {
+        borderRadius: '12px',
+        background: '#374151',
+        color: '#fff',
+        fontWeight: '500',
+        border: '1px solid #6B7280',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+      },
+    })
+
+    try {
+      const response = await fetch(`/api/admin/courses/${courseId}/sections/${sectionId}/lessons/${lessonId}`, {
+        method: "DELETE"
+      })
+
+      toast.dismiss(loadingToast)
+
+      if (response.ok) {
+        fetchCourse() // Refresh course data
+        toast.success(
+          (t) => (
+            <div className="flex flex-col">
+              <div className="font-semibold text-blue-800 mb-1">
+                🎓 Lesson Deleted Successfully!
+              </div>
+              <div className="text-sm text-blue-700">
+                "{lessonTitle}" has been removed from the course
+              </div>
+            </div>
+          ),
+          {
+            duration: 4000,
+            style: {
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #DBEAFE 0%, #BFDBFE 100%)',
+              border: '1px solid #3B82F6',
+              boxShadow: '0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -2px rgba(59, 130, 246, 0.05)',
+              padding: '16px',
+              maxWidth: '400px',
+            },
+          }
+        )
+      } else {
+        let errorMessage = "Failed to delete lesson"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        
+        toast.error(
+          (t) => (
+            <div className="flex flex-col">
+              <div className="font-semibold text-red-800 mb-1">
+                ⚠️ Deletion Failed
+              </div>
+              <div className="text-sm text-red-700">
+                Couldn't delete "{lessonTitle}": {errorMessage}
+              </div>
+            </div>
+          ),
+          {
+            duration: 6000,
+            style: {
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
+              border: '1px solid #EF4444',
+              boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05)',
+              padding: '16px',
+              maxWidth: '400px',
+            },
+          }
+        )
+      }
+    } catch (error) {
+      toast.dismiss(loadingToast)
+      console.error("Error deleting lesson:", error)
+      toast.error(
+        (t) => (
+          <div className="flex flex-col">
+            <div className="font-semibold text-red-800 mb-1">
+              🔌 Connection Error
+            </div>
+            <div className="text-sm text-red-700">
+              Failed to delete "{lessonTitle}": Network issue
+            </div>
+          </div>
+        ),
+        {
+          duration: 6000,
+          style: {
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #FEE2E2 0%, #FECACA 100%)',
+            border: '1px solid #EF4444',
+            boxShadow: '0 10px 15px -3px rgba(239, 68, 68, 0.1), 0 4px 6px -2px rgba(239, 68, 68, 0.05)',
+            padding: '16px',
+            maxWidth: '400px',
+          },
+        }
+      )
     }
   }
 
@@ -249,13 +598,13 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                 {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 {course.isPublished ? 'Unpublish' : 'Publish'}
               </button>
-              <Link
-                href={`/admin/courses/${course.id}/edit`}
+              <button
+                onClick={startEditing}
                 className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
               >
                 <Edit className="w-4 h-4" />
                 Edit Course
-              </Link>
+              </button>
             </div>
           </div>
 
@@ -273,85 +622,258 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                 {course.isPublished ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 {course.isPublished ? 'Unpublish' : 'Publish'}
               </button>
-              <Link
-                href={`/admin/courses/${course.id}/edit`}
+              <button
+                onClick={startEditing}
                 className="flex-1 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm"
               >
                 <Edit className="w-4 h-4" />
                 Edit Course
-              </Link>
+              </button>
             </div>
           </div>
+
+          {/* Inline Edit Form */}
+          {isEditing && (
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-red-200 mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Edit Course</h3>
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Course Title
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.title}
+                      onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Instructor
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.instructor}
+                      onChange={(e) => setEditForm({...editForm, instructor: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={editForm.categoryId}
+                      onChange={(e) => setEditForm({...editForm, categoryId: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">Select category</option>
+                      {categories.map(category => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Difficulty
+                    </label>
+                    <select
+                      value={editForm.difficulty}
+                      onChange={(e) => setEditForm({...editForm, difficulty: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    >
+                      <option value="BEGINNER">Beginner</option>
+                      <option value="INTERMEDIATE">Intermediate</option>
+                      <option value="ADVANCED">Advanced</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Duration
+                    </label>
+                    <input
+                      type="text"
+                      value={editForm.duration}
+                      onChange={(e) => setEditForm({...editForm, duration: e.target.value})}
+                      placeholder="e.g., 5 hours"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Price ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={editForm.price}
+                      onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value) || 0})}
+                      min="0"
+                      step="0.01"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      disabled={editForm.isFree}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Short Description
+                  </label>
+                  <textarea
+                    value={editForm.shortDescription}
+                    onChange={(e) => setEditForm({...editForm, shortDescription: e.target.value})}
+                    rows={2}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Brief description for course listing"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Description
+                  </label>
+                  <textarea
+                    value={editForm.description}
+                    onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                    rows={4}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Detailed course description"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={editForm.isFree}
+                      onChange={(e) => setEditForm({...editForm, isFree: e.target.checked, price: e.target.checked ? 0 : editForm.price})}
+                      className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Free Course</span>
+                  </label>
+
+                  {!editForm.isFree && (
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={editForm.isPremium}
+                        onChange={(e) => setEditForm({...editForm, isPremium: e.target.checked})}
+                        className="rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Premium Course</span>
+                    </label>
+                  )}
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="submit"
+                    disabled={updateLoading}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2 text-sm disabled:opacity-50 min-w-[120px]"
+                  >
+                    {updateLoading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Changes'
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEditing}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors text-sm min-w-[80px]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
 
           {/* Course Info */}
-          <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-red-200 mb-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    course.isPublished 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {course.isPublished ? 'Published' : 'Draft'}
-                  </span>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    course.isFree 
-                      ? 'bg-blue-100 text-blue-800' 
-                      : 'bg-purple-100 text-purple-800'
-                  }`}>
-                    {course.isFree ? 'Free' : 'Premium'}
-                  </span>
-                  <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-                    {course.difficulty}
-                  </span>
-                </div>
-                
-                <p className="text-gray-600 mb-4">{course.shortDescription}</p>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-500">Category:</span>
-                    <div className="font-medium">{course.category.name}</div>
+          {!isEditing && (
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-red-200 mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      course.isPublished 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {course.isPublished ? 'Published' : 'Draft'}
+                    </span>
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      course.isFree 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-purple-100 text-purple-800'
+                    }`}>
+                      {course.isFree ? 'Free' : 'Premium'}
+                    </span>
+                    <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+                      {course.difficulty}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-gray-500">Price:</span>
-                    <div className="font-medium">
-                      {course.isFree ? 'Free' : formatCurrency(course.price)}
+                  
+                  <p className="text-gray-600 mb-4">{course.shortDescription}</p>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-500">Category:</span>
+                      <div className="font-medium">{course.category.name}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Price:</span>
+                      <div className="font-medium">
+                        {course.isFree ? 'Free' : formatCurrency(course.price)}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Duration:</span>
+                      <div className="font-medium">{course.duration || 'Not specified'}</div>
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Enrollments:</span>
+                      <div className="font-medium flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {course._count.enrollments}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <span className="text-gray-500">Duration:</span>
-                    <div className="font-medium">{course.duration || 'Not specified'}</div>
-                  </div>
-                  <div>
-                    <span className="text-gray-500">Enrollments:</span>
-                    <div className="font-medium flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {course._count.enrollments}
-                    </div>
-                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <div>
-                  <span className="text-gray-500 text-sm">Sections:</span>
-                  <div className="font-medium">{course.sections.length}</div>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-sm">Total Lessons:</span>
-                  <div className="font-medium">
-                    {course.sections.reduce((total, section) => total + section.lessons.length, 0)}
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-gray-500 text-sm">Sections:</span>
+                    <div className="font-medium">{course.sections.length}</div>
                   </div>
-                </div>
-                <div>
-                  <span className="text-gray-500 text-sm">Created:</span>
-                  <div className="font-medium">{formatDate(new Date(course.createdAt))}</div>
+                  <div>
+                    <span className="text-gray-500 text-sm">Total Lessons:</span>
+                    <div className="font-medium">
+                      {course.sections.reduce((total, section) => total + section.lessons.length, 0)}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-gray-500 text-sm">Created:</span>
+                    <div className="font-medium">{formatDate(new Date(course.createdAt))}</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Course Content */}
           <div className="bg-white rounded-lg shadow border">
@@ -431,7 +953,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
-                        <button className="p-2 text-gray-600 hover:text-red-600 transition-colors">
+                        <button 
+                          onClick={() => deleteSection(section.id, section.title)}
+                          className="p-2 text-gray-600 hover:text-red-600 transition-colors"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -494,7 +1019,10 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                                 >
                                   <Edit className="w-3 h-3" />
                                 </Link>
-                                <button className="p-1 text-gray-600 hover:text-red-600 transition-colors">
+                                <button 
+                                  onClick={() => deleteLesson(section.id, lesson.id, lesson.title)}
+                                  className="p-1 text-gray-600 hover:text-red-600 transition-colors"
+                                >
                                   <Trash2 className="w-3 h-3" />
                                 </button>
                               </div>
@@ -508,6 +1036,7 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
               )}
             </div>
           </div>
+          
         </main>
       </div>
 

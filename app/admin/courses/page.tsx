@@ -110,24 +110,63 @@ export default function AdminCoursesPage() {
   }
 
   const deleteCourse = async (courseId: string) => {
-    if (!confirm("Are you sure you want to delete this course? This action cannot be undone.")) {
+    const course = courses.find(c => c.id === courseId)
+    const courseTitle = course?.title || "Course"
+    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
       return
     }
+
+    // Show loading toast
+    const loadingToast = toast.loading(`Deleting "${courseTitle}"...`, {
+      icon: '🗑️',
+    })
 
     try {
       const response = await fetch(`/api/admin/courses/${courseId}`, {
         method: "DELETE"
       })
 
+      toast.dismiss(loadingToast)
+
       if (response.ok) {
         fetchCourses()
-        toast.success("Course deleted successfully")
+        toast.success(`"${courseTitle}" deleted successfully`, {
+          icon: '✅',
+          duration: 4000,
+          style: {
+            background: '#10B981',
+            color: '#fff',
+          },
+        })
       } else {
-        toast.error("Failed to delete course")
+        let errorMessage = "Failed to delete course"
+        try {
+          const error = await response.json()
+          errorMessage = error.error || errorMessage
+        } catch (jsonError) {
+          console.error("Error parsing JSON response:", jsonError)
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        }
+        toast.error(`Failed to delete "${courseTitle}": ${errorMessage}`, {
+          icon: '❌',
+          duration: 6000,
+          style: {
+            background: '#EF4444',
+            color: '#fff',
+          },
+        })
       }
     } catch (error) {
+      toast.dismiss(loadingToast)
       console.error("Error deleting course:", error)
-      toast.error("Failed to delete course")
+      toast.error(`Failed to delete "${courseTitle}": Network error`, {
+        icon: '❌',
+        duration: 6000,
+        style: {
+          background: '#EF4444',
+          color: '#fff',
+        },
+      })
     }
   }
 

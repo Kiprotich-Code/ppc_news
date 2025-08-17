@@ -351,8 +351,19 @@ export default function ProfilePage() {
                     </button>
                   )}
                   {step === 4 && editMode && (
-                    <button type="submit" disabled={isLoading} className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500/50 ml-auto">
-                      {isLoading ? (<span className="flex items-center gap-2"><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>Saving...</span>) : (<span>Save Changes</span>)}
+                    <button 
+                      type="submit" 
+                      disabled={isLoading} 
+                      className="px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-red-500/50 ml-auto min-w-[150px] flex items-center justify-center"
+                    >
+                      {isLoading ? (
+                        <span className="flex items-center gap-2">
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                          Saving...
+                        </span>
+                      ) : (
+                        <span>Save Changes</span>
+                      )}
                     </button>
                   )}
                 </div>

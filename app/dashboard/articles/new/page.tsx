@@ -652,15 +652,22 @@ export default function NewArticle() {
                   <button
                     type="button"
                     onClick={() => setShowConfirm('draft')}
-                    className="px-3 py-1 md:px-4 md:py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base"
+                    className="px-3 py-1 md:px-4 md:py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base min-w-[100px] md:min-w-[120px] flex items-center justify-center gap-2"
                     disabled={isLoading}
                   >
-                    {isLoading ? <Loader2 className="animate-spin w-4 h-4" /> : "Save Draft"}
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="animate-spin w-4 h-4" />
+                        <span className="hidden md:inline">Saving...</span>
+                      </>
+                    ) : (
+                      "Save Draft"
+                    )}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowConfirm('publish')}
-                    className="px-3 py-1 md:px-6 md:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 md:gap-2 text-sm md:text-base"
+                    className="px-3 py-1 md:px-6 md:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 md:gap-2 text-sm md:text-base min-w-[100px] md:min-w-[130px]"
                     disabled={isLoading}
                   >
                     {isLoading ? (

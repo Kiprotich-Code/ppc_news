@@ -276,10 +276,19 @@ export default function NewSectionPage({ params }: { params: Promise<{ id: strin
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 min-w-[160px]"
                 >
-                  {isSubmitting ? <LoadingSpinner /> : <Plus className="w-4 h-4" />}
-                  {isSubmitting ? "Creating..." : "Create Section"}
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="w-4 h-4" />
+                      Create Section
+                    </>
+                  )}
                 </button>
                 
                 <Link
