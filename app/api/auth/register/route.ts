@@ -88,6 +88,19 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // Credit referral earnings to the referrer if this is a referral signup
+    if (referredById) {
+      try {
+        // Import creditEarnings function
+        const { creditEarnings } = await import('@/lib/wallet');
+        await creditEarnings(referredById, 2.0, `Referral bonus from ${name} (${username})`);
+        console.log(`Credited 2 KES referral bonus to user ${referredById} for referral signup of ${username}`);
+      } catch (error) {
+        console.error('Failed to credit referral earnings:', error);
+        // Don't fail the registration if referral crediting fails
+      }
+    }
+
     // Create profile (if any profile fields provided)
     // await prisma.profile.create({
     //   data: {

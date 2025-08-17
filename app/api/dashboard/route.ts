@@ -39,13 +39,30 @@ export async function GET(request: NextRequest) {
     }, 0)
     const pendingArticles = articles.filter(article => article.status === "PENDING").length
 
-    // Get referral earnings from wallet
+    // Get referral earnings from wallet (wallet earnings that aren't from article views)
     let referralEarnings = 0
     const wallet = await prisma.wallet.findUnique({ where: { userId: session.user.id } })
+    
     if (wallet) {
-      referralEarnings = wallet.earnings - articleEarnings
-      if (referralEarnings < 0) referralEarnings = 0
+      // Calculate what's already been transferred from earnings
+      const transferredEarnings = await prisma.transaction.aggregate({
+        where: { 
+          userId: session.user.id,
+          type: 'transfer',
+          status: 'COMPLETED',
+          description: 'Transfer earnings to wallet'
+        },
+        _sum: { amount: true }
+      });
+      
+      const alreadyTransferred = transferredEarnings._sum.amount || 0;
+      const availableArticleEarnings = Math.max(0, articleEarnings - alreadyTransferred);
+      
+      // Referral earnings = remaining wallet earnings after accounting for article earnings
+      // After a transfer, wallet.earnings should be 0, so this will correctly show 0
+      referralEarnings = Math.max(0, wallet.earnings - availableArticleEarnings);
     }
+    
     const totalEarnings = articleEarnings + referralEarnings
 
     // Get recent articles (last 5) with author names
@@ -64,7 +81,8 @@ export async function GET(request: NextRequest) {
         totalArticles,
         totalViews,
         totalEarnings,
-        pendingArticles
+        pendingArticles,
+        referralEarnings // Add referral earnings to response
       },
       recentArticles
     })

@@ -61,7 +61,14 @@ export async function GET(req: Request) {
   // Available earnings = total article earnings - already transferred earnings
   const totalArticleEarnings = articleEarnings._sum.amount || 0;
   const alreadyTransferred = transferredEarnings._sum.amount || 0;
-  const availableEarnings = Math.max(0, totalArticleEarnings - alreadyTransferred);
+  const availableArticleEarnings = Math.max(0, totalArticleEarnings - alreadyTransferred);
+  
+  // Calculate referral earnings (wallet earnings that aren't from articles)
+  const totalWalletEarnings = currentWallet.earnings || 0;
+  const referralEarnings = Math.max(0, totalWalletEarnings - availableArticleEarnings);
+  
+  // Total available earnings = article earnings + referral earnings
+  const availableEarnings = availableArticleEarnings + referralEarnings;
 
   // Get recent transactions
   const transactions = await prisma.transaction.findMany({

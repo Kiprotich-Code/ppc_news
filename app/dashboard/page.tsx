@@ -25,6 +25,7 @@ interface DashboardStats {
   totalViews: number
   totalEarnings: number
   pendingArticles: number
+  referralEarnings: number
 }
 interface ReferralStats {
   referralCode: string
@@ -46,7 +47,8 @@ export default function Dashboard() {
     totalArticles: 0,
     totalViews: 0,
     totalEarnings: 0,
-    pendingArticles: 0
+    pendingArticles: 0,
+    referralEarnings: 0
   })
   const [recentArticles, setRecentArticles] = useState<Article[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -215,7 +217,14 @@ export default function Dashboard() {
                       <span className="ml-2 text-red-700">{referral.referralCount}</span>
                     </div>
                     <div className="text-sm text-green-700 bg-green-100 px-2 py-1 rounded">
-                      <span className="font-semibold">Earned: KSH {referral.referralCount * 2}</span>
+                      <span className="font-semibold">
+                        Current Earnings: KSH {stats.referralEarnings.toFixed(2)}
+                      </span>
+                      {stats.referralEarnings === 0 && referral.referralCount > 0 && (
+                        <span className="block text-xs text-gray-600 mt-1">
+                          (Total earned: KSH {(referral.referralCount * 2).toFixed(2)} - transferred to wallet)
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">

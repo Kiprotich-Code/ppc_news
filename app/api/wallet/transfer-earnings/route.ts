@@ -29,12 +29,22 @@ export async function POST(req: Request) {
       _sum: { amount: true }
     });
 
-    // Available earnings = total article earnings - already transferred earnings
+    // Get referral earnings from wallet (earnings not from articles)
+    const currentWallet = await prisma.wallet.findUnique({ where: { userId } });
+    const totalWalletEarnings = currentWallet?.earnings || 0;
+
+    // Available earnings = total article earnings - already transferred earnings + referral earnings
     const totalArticleEarnings = articleEarnings._sum.amount || 0;
     const alreadyTransferred = transferredEarnings._sum.amount || 0;
-    const availableEarnings = Math.max(0, totalArticleEarnings - alreadyTransferred);
+    const availableArticleEarnings = Math.max(0, totalArticleEarnings - alreadyTransferred);
+    
+    // Calculate referral earnings (wallet earnings that aren't from articles)
+    const referralEarnings = Math.max(0, totalWalletEarnings - availableArticleEarnings);
+    
+    // Total available earnings = article earnings + referral earnings
+    const totalAvailableEarnings = availableArticleEarnings + referralEarnings;
 
-    if (availableEarnings <= 0) {
+    if (totalAvailableEarnings <= 0) {
       return NextResponse.json({ error: "No earnings to transfer" }, { status: 400 });
     }
 
@@ -42,7 +52,8 @@ export async function POST(req: Request) {
     const wallet = await prisma.wallet.update({
       where: { userId },
       data: {
-        balance: { increment: availableEarnings }
+        balance: { increment: totalAvailableEarnings },
+        earnings: { decrement: totalWalletEarnings } // Reset wallet earnings to 0
       }
     });
 
@@ -50,7 +61,7 @@ export async function POST(req: Request) {
     await prisma.transaction.create({
       data: {
         userId,
-        amount: availableEarnings,
+        amount: totalAvailableEarnings,
         type: 'transfer',
         description: 'Transfer earnings to wallet',
         status: 'COMPLETED'
@@ -69,7 +80,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: `Transferred ${availableEarnings.toFixed(2)} KES to wallet`,
+      message: `Transferred ${totalAvailableEarnings.toFixed(2)} KES to wallet`,
       wallet: {
         balance: updatedWalletData[0].balance,
         earnings: 0, // Now zero since all transferred

@@ -40,6 +40,9 @@ const WalletDashboard = () => {
   const [walletData, setWalletData] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   
+  // Earnings breakdown state
+  const [earningsBreakdown, setEarningsBreakdown] = useState<any>(null);
+  
   // Investment related state
   const [investments, setInvestments] = useState<any[]>([]);
   const [showInvestmentModal, setShowInvestmentModal] = useState(false);
@@ -75,6 +78,21 @@ const WalletDashboard = () => {
     }
   };
 
+  // Fetch earnings breakdown
+  const fetchEarningsBreakdown = async () => {
+    try {
+      const response = await fetch('/api/wallet/earnings-breakdown', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        setEarningsBreakdown(data);
+      } else {
+        console.error('Failed to fetch earnings breakdown');
+      }
+    } catch (error) {
+      console.error('Error fetching earnings breakdown:', error);
+    }
+  };
+
   // Fetch investments
   const fetchInvestments = async () => {
     try {
@@ -94,13 +112,17 @@ const WalletDashboard = () => {
       router.push("/auth/signin");
     } else if (status === "authenticated") {
       fetchWalletData();
+      fetchEarningsBreakdown();
     }
   }, [status, router]);
 
   // Refresh data periodically
   useEffect(() => {
     if (session) {
-      const interval = setInterval(fetchWalletData, 30000); // Refresh every 30 seconds
+      const interval = setInterval(() => {
+        fetchWalletData();
+        fetchEarningsBreakdown();
+      }, 30000); // Refresh every 30 seconds
       return () => clearInterval(interval);
     }
   }, [session]);
@@ -226,6 +248,7 @@ const WalletDashboard = () => {
         toast.success("Investment successful!");
         setTransactionAmount("");
         fetchWalletData(); // Refresh data
+        fetchEarningsBreakdown(); // Refresh earnings breakdown
       } else {
         toast.error(result.error || "Investment failed");
       }
@@ -247,6 +270,7 @@ const WalletDashboard = () => {
       if (response.ok) {
         toast.success("Interest collected successfully!");
         fetchWalletData(); // Refresh data
+        fetchEarningsBreakdown(); // Refresh earnings breakdown
       } else {
         toast.error(result.error || "Failed to collect interest");
       }
@@ -271,8 +295,29 @@ const WalletDashboard = () => {
       const result = await response.json();
       
       if (response.ok) {
-        toast.success(`Successfully transferred ${formatCurrency(stats.earnings)} to wallet!`);
+        const transferAmount = stats.earnings;
+        const hasReferralEarnings = earningsBreakdown?.referralEarnings > 0;
+        
+        // Show enhanced success message
+        toast.success(
+          `Successfully transferred ${formatCurrency(transferAmount)} to wallet!${hasReferralEarnings ? ' Referral earnings have been reset.' : ''}`,
+          {
+            style: {
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '16px',
+              boxShadow: '0 10px 25px rgba(16, 185, 129, 0.3)',
+              fontSize: '14px',
+              fontWeight: '500'
+            },
+            duration: 5000
+          }
+        );
+        
         fetchWalletData(); // Refresh data
+        fetchEarningsBreakdown(); // Refresh earnings breakdown
       } else {
         toast.error(result.error || "Failed to transfer earnings");
       }
@@ -307,6 +352,7 @@ const WalletDashboard = () => {
         toast.success("Investment withdrawal successful!");
         setTransactionAmount("");
         fetchWalletData(); // Refresh data
+        fetchEarningsBreakdown(); // Refresh earnings breakdown
       } else {
         toast.error(result.error || "Investment withdrawal failed");
       }
@@ -449,14 +495,49 @@ const WalletDashboard = () => {
             </div>
 
             {/* Stats Overview */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* Article Earnings */}
               <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                    <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                   </div>
                   <div className="ml-2 sm:ml-3 min-w-0 flex-1">
-                    <p className="text-xs font-medium text-gray-600 truncate">Available Earnings</p>
+                    <p className="text-xs font-medium text-gray-600 truncate">Article Earnings</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
+                      {formatCurrency(earningsBreakdown?.articleEarnings || 0)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">From article views</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Referral Earnings */}
+              <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <Copy className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
+                  </div>
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Referral Earnings</p>
+                    <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
+                      {formatCurrency(earningsBreakdown?.referralEarnings || 0)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {earningsBreakdown?.referralCount || 0} referrals × KES 2
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Total Available Earnings */}
+              <div className="bg-white rounded-xl shadow-sm p-3 sm:p-4">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <ArrowUpCircle className="h-5 w-5 sm:h-6 sm:w-6 text-red-600" />
+                  </div>
+                  <div className="ml-2 sm:ml-3 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-gray-600 truncate">Total Available</p>
                     <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">
                       {formatCurrency(stats.earnings)}
                     </p>
@@ -468,7 +549,7 @@ const WalletDashboard = () => {
                         Transfer All
                       </button>
                     ) : (
-                      <p className="text-xs text-gray-500 mt-1">Earn by writing articles!</p>
+                      <p className="text-xs text-gray-500 mt-1">No earnings to transfer</p>
                     )}
                   </div>
                 </div>
