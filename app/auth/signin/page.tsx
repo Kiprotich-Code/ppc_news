@@ -142,14 +142,14 @@ export default function SignIn() {
               </div>
 
               {/* Forgot Password Link */}
-              <div className="flex justify-end animate-slide-in-up" style={{ animationDelay: '300ms' }}>
+              {/* <div className="flex justify-end animate-slide-in-up" style={{ animationDelay: '300ms' }}>
                 <Link
                   href="/auth/forgot-password"
                   className="text-sm text-red-600 hover:text-red-500 transition-colors duration-300 hover:underline"
                 >
                   Forgot your password?
                 </Link>
-              </div>
+              </div> */}
 
               {/* Submit Button */}
               <div className="animate-slide-in-up" style={{ animationDelay: '400ms' }}>
