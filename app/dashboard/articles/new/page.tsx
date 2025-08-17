@@ -284,6 +284,18 @@ export default function NewArticle() {
     }
   }, [editor])
 
+  // Helper function to count words in editor content
+  const getWordCount = (): number => {
+    if (!editor) return 0
+    
+    const text = editor.getText()
+    if (!text.trim()) return 0
+    
+    // Split by whitespace and filter out empty strings
+    const words = text.trim().split(/\s+/).filter(word => word.length > 0)
+    return words.length
+  }
+
   // SAVE HANDLER
   const handleSave = async (publishedStatus: 'DRAFT' | 'PUBLISHED') => {
     if (publishedStatus === 'PUBLISHED') {
@@ -299,6 +311,14 @@ export default function NewArticle() {
         toast.error("Content is required to publish.")
         return
       }
+      
+      // Check word count minimum
+      const wordCount = getWordCount()
+      if (wordCount < 150) {
+        toast.error(`Articles must have at least 150 words to publish. Current word count: ${wordCount}`)
+        return
+      }
+      
       if (!featuredImage) {
         toast.error("Featured image is required to publish.")
         return
@@ -645,6 +665,25 @@ export default function NewArticle() {
                 {/* Editor */}
                 <div className="border border-gray-300 rounded-lg min-h-[300px] p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
                   <EditorContent editor={editor} className="min-h-[200px] md:min-h-[300px]" />
+                </div>
+                
+                {/* Word Count Display */}
+                <div className="flex justify-between items-center text-sm text-gray-600 pt-2">
+                  <div>
+                    Word count: <span className={`font-medium ${getWordCount() < 150 ? 'text-red-600' : 'text-green-600'}`}>
+                      {getWordCount()}
+                    </span>
+                    {getWordCount() < 150 && (
+                      <span className="text-red-600 ml-1">
+                        (minimum 150 words required to publish)
+                      </span>
+                    )}
+                  </div>
+                  {getWordCount() >= 150 && (
+                    <span className="text-green-600 text-xs">
+                      ✓ Ready to publish
+                    </span>
+                  )}
                 </div>
                 
                 {/* Save/Publish Buttons */}

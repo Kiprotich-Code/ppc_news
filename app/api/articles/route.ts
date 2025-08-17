@@ -3,6 +3,41 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+// Helper function to count words from article content
+function getWordCount(content: string): number {
+  if (!content || typeof content !== 'string') return 0;
+  
+  try {
+    // Try to parse as JSON (TipTap editor format)
+    const parsedContent = JSON.parse(content);
+    if (parsedContent && parsedContent.content) {
+      let text = '';
+      
+      // Extract text from TipTap JSON structure
+      const extractText = (node: any): void => {
+        if (node.type === 'text' && node.text) {
+          text += node.text + ' ';
+        }
+        if (node.content) {
+          node.content.forEach(extractText);
+        }
+      };
+      
+      parsedContent.content.forEach(extractText);
+      
+      // Count words
+      const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+      return words.length;
+    }
+  } catch (e) {
+    // If not JSON, treat as plain text
+    const words = content.trim().split(/\s+/).filter(word => word.length > 0);
+    return words.length;
+  }
+  
+  return 0;
+}
+
 interface FormattedArticle {
   id: string;
   title: string;
@@ -74,6 +109,16 @@ export async function POST(request: NextRequest) {
 
     if (publishedStatus === 'PUBLISHED' && (!title || !content || !featuredImage)) {
       return NextResponse.json({ error: 'Title, content, and featured image are required to publish' }, { status: 400 });
+    }
+
+    // Check word count for published articles
+    if (publishedStatus === 'PUBLISHED' && content) {
+      const wordCount = getWordCount(content);
+      if (wordCount < 150) {
+        return NextResponse.json({ 
+          error: `Articles must have at least 150 words to publish. Current word count: ${wordCount}` 
+        }, { status: 400 });
+      }
     }
 
     if (publishedStatus === 'DRAFT' && !title && !content && !featuredImage) {
