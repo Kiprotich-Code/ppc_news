@@ -157,28 +157,6 @@ export default function PublicFeed() {
                       )}
                     </Link>
                   </div>
-
-                  {/* Engagement stats */}
-                  <div className="flex items-center gap-4 mt-3 pt-2 border-t border-gray-100">
-                    <div className="flex items-center gap-1 text-gray-500">
-                      <Eye className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        {formatNumber(article.views || 0)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-gray-500">
-                      <MessageCircle className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        {formatNumber(article.comments || 0)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-gray-500">
-                      <Share className="w-4 h-4" />
-                      <span className="text-sm font-medium">
-                        {formatNumber(article.shares || 0)}
-                      </span>
-                    </div>
-                  </div>
                 </div>
               </div>
             );
