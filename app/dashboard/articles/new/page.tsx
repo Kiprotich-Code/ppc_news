@@ -644,32 +644,15 @@ export default function NewArticle() {
                 </div>
                 
                 {/* Editor */}
-                <div className="border border-gray-300 rounded-lg min-h-[300px] p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
+                <div className="border border-gray-300 min-h-[300px] p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition">
                   <EditorContent editor={editor} className="min-h-[200px] md:min-h-[300px]" />
                 </div>
                 
                 {/* Word Count Display */}
-                <div className="flex justify-between items-center text-sm text-gray-600 pt-2">
-                  <div>
-                    Word count: <span className={`font-medium ${getWordCount() < 150 ? 'text-red-600' : 'text-green-600'}`}>
-                      {getWordCount()}
-                    </span>
-                    {getWordCount() < 150 && (
-                      <span className="text-red-600 ml-1">
-                        (minimum 150 words required to publish - {150 - getWordCount()} more needed)
-                      </span>
-                    )}
-                  </div>
-                  {getWordCount() >= 150 && (
-                    <span className="text-green-600 text-xs">
-                      ✓ Word count requirement met
-                    </span>
-                  )}
-                </div>
                 
                 {/* Publishing Requirements Checklist */}
                 {getWordCount() < 150 || !title.trim() || !category || !featuredImage || !editor?.getJSON().content?.length ? (
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-2">
+                  <div className="bg-orange-50 border border-orange-200 p-3 mt-2">
                     <h4 className="text-sm font-medium text-orange-800 mb-2">Publishing Requirements:</h4>
                     <div className="space-y-1 text-xs text-orange-700">
                       <div className={`flex items-center gap-2 ${title.trim() ? 'text-green-700' : ''}`}>
