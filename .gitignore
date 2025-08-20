@@ -42,7 +42,5 @@ next-env.d.ts
 
 # prisma 
 /prisma
-auto-fix-security.js
-SECURITY_ASSESSMENT.md
-SECURITY_FIXES.md
-security-audit.js
+/guides
+/tests

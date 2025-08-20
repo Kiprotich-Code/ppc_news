@@ -117,36 +117,44 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
 
     const { title, content, publishedStatus, status, featuredImage, category } = body;
 
-    // Ensure publishedStatus is valid
+    // Validate publishedStatus
     if (!['DRAFT', 'PUBLISHED'].includes(publishedStatus)) {
       return NextResponse.json({ error: "Invalid publishedStatus value" }, { status: 400 });
     }
 
-    // Ensure status is valid
+    // Validate status if provided
     if (status && !['PENDING', 'APPROVED', 'REJECTED'].includes(status)) {
       return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
     }
 
-    // Validate required fields
-    if (!title || title.trim() === '') {
-      return NextResponse.json({ error: "Title is required" }, { status: 400 });
-    }
+    // Validate required fields for published articles
+    if (publishedStatus === 'PUBLISHED') {
+      if (!title || title.trim() === '') {
+        return NextResponse.json({ error: "Title is required to publish" }, { status: 400 });
+      }
+      if (!content) {
+        return NextResponse.json({ error: "Content is required to publish" }, { status: 400 });
+      }
+      if (!featuredImage) {
+        return NextResponse.json({ error: "Featured image is required to publish" }, { status: 400 });
+      }
+      if (!category) {
+        return NextResponse.json({ error: "Category is required to publish" }, { status: 400 });
+      }
 
-    if (!content) {
-      return NextResponse.json({ error: "Content is required" }, { status: 400 });
-    }
-
-    if (publishedStatus === 'PUBLISHED' && !featuredImage) {
-      return NextResponse.json({ error: "Featured image is required for published articles" }, { status: 400 });
-    }
-
-    // Check word count for published articles
-    if (publishedStatus === 'PUBLISHED' && content) {
+      // Check word count for published articles
       const wordCount = getWordCount(content);
       if (wordCount < 150) {
         return NextResponse.json({ 
           error: `Articles must have at least 150 words to publish. Current word count: ${wordCount}` 
         }, { status: 400 });
+      }
+    }
+
+    // Validate draft requirements
+    if (publishedStatus === 'DRAFT') {
+      if (!title && !content && !featuredImage) {
+        return NextResponse.json({ error: 'At least one field is required to save a draft' }, { status: 400 });
       }
     }
 
@@ -176,8 +184,8 @@ export async function PUT(request: NextRequest, context: { params: Promise<{ id:
           id: (await params).id,
         },
         data: {
-          title: title.trim(),
-          content,
+          title: title ? title.trim() : '',
+          content: content || '',
           category: category || null,
           publishedStatus: publishedStatus, // Use publishedStatus instead of status for consistency
           featuredImage: featuredImage || null,

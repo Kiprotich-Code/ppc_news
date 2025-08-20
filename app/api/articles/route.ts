@@ -107,12 +107,27 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { title, content, publishedStatus, authorId, featuredImage, category } = body;
 
-    if (publishedStatus === 'PUBLISHED' && (!title || !content || !featuredImage)) {
-      return NextResponse.json({ error: 'Title, content, and featured image are required to publish' }, { status: 400 });
+    // Validate publishedStatus
+    if (!['DRAFT', 'PUBLISHED'].includes(publishedStatus)) {
+      return NextResponse.json({ error: 'Invalid publishedStatus' }, { status: 400 });
     }
 
-    // Check word count for published articles
-    if (publishedStatus === 'PUBLISHED' && content) {
+    // Validate required fields for published articles
+    if (publishedStatus === 'PUBLISHED') {
+      if (!title || !title.trim()) {
+        return NextResponse.json({ error: 'Title is required to publish' }, { status: 400 });
+      }
+      if (!content) {
+        return NextResponse.json({ error: 'Content is required to publish' }, { status: 400 });
+      }
+      if (!featuredImage) {
+        return NextResponse.json({ error: 'Featured image is required to publish' }, { status: 400 });
+      }
+      if (!category) {
+        return NextResponse.json({ error: 'Category is required to publish' }, { status: 400 });
+      }
+
+      // Check word count for published articles
       const wordCount = getWordCount(content);
       if (wordCount < 150) {
         return NextResponse.json({ 
@@ -121,13 +136,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (publishedStatus === 'DRAFT' && !title && !content && !featuredImage) {
-      return NextResponse.json({ error: 'At least one field is required to save a draft' }, { status: 400 });
-    }
-
-    // Validate publishedStatus
-    if (!['DRAFT', 'PUBLISHED'].includes(publishedStatus)) {
-      return NextResponse.json({ error: 'Invalid publishedStatus' }, { status: 400 });
+    // Validate draft requirements
+    if (publishedStatus === 'DRAFT') {
+      if (!title && !content && !featuredImage) {
+        return NextResponse.json({ error: 'At least one field is required to save a draft' }, { status: 400 });
+      }
     }
 
     // Only allow authorId to be the current user

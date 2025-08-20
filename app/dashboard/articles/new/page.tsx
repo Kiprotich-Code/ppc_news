@@ -298,39 +298,7 @@ export default function NewArticle() {
 
   // SAVE HANDLER
   const handleSave = async (publishedStatus: 'DRAFT' | 'PUBLISHED') => {
-    if (publishedStatus === 'PUBLISHED') {
-      if (!title.trim()) {
-        toast.error("Title is required to publish.")
-        return
-      }
-      if (!category) {
-        toast.error("Category is required to publish.")
-        return
-      }
-      if (!editor?.getJSON().content?.length) {
-        toast.error("Content is required to publish.")
-        return
-      }
-      
-      // Check word count minimum
-      const wordCount = getWordCount()
-      if (wordCount < 150) {
-        toast.error(`Articles must have at least 150 words to publish. Current word count: ${wordCount}`)
-        return
-      }
-      
-      if (!featuredImage) {
-        toast.error("Featured image is required to publish.")
-        return
-      }
-    } else {
-      // For draft, allow incomplete fields
-      if (!title.trim() && !editor?.getJSON().content?.length && !featuredImage) {
-        toast.error("Please enter at least one field to save a draft.")
-        return
-      }
-    }
-
+    // All validation is now done upfront in the onClick handlers
     setIsLoading(true)
 
     try {
@@ -370,6 +338,16 @@ export default function NewArticle() {
       
       if (!res.ok) {
         console.error('Failed to save article:', data.error || 'Unknown error');
+        
+        // If it's a word count or validation error, don't redirect - let user fix it
+        if (data.error && (
+          data.error.includes('150 words') || 
+          data.error.includes('required') || 
+          data.error.includes('validation')
+        )) {
+          throw new Error(data.error);
+        }
+        
         throw new Error(data.error || "Failed to save article");
       }
 
@@ -678,22 +656,53 @@ export default function NewArticle() {
                     </span>
                     {getWordCount() < 150 && (
                       <span className="text-red-600 ml-1">
-                        (minimum 150 words required to publish)
+                        (minimum 150 words required to publish - {150 - getWordCount()} more needed)
                       </span>
                     )}
                   </div>
                   {getWordCount() >= 150 && (
                     <span className="text-green-600 text-xs">
-                      ✓ Ready to publish
+                      ✓ Word count requirement met
                     </span>
                   )}
                 </div>
+                
+                {/* Publishing Requirements Checklist */}
+                {getWordCount() < 150 || !title.trim() || !category || !featuredImage || !editor?.getJSON().content?.length ? (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mt-2">
+                    <h4 className="text-sm font-medium text-orange-800 mb-2">Publishing Requirements:</h4>
+                    <div className="space-y-1 text-xs text-orange-700">
+                      <div className={`flex items-center gap-2 ${title.trim() ? 'text-green-700' : ''}`}>
+                        {title.trim() ? '✓' : '•'} Title {title.trim() ? '(completed)' : '(required)'}
+                      </div>
+                      <div className={`flex items-center gap-2 ${category ? 'text-green-700' : ''}`}>
+                        {category ? '✓' : '•'} Category {category ? '(completed)' : '(required)'}
+                      </div>
+                      <div className={`flex items-center gap-2 ${featuredImage ? 'text-green-700' : ''}`}>
+                        {featuredImage ? '✓' : '•'} Featured image {featuredImage ? '(completed)' : '(required)'}
+                      </div>
+                      <div className={`flex items-center gap-2 ${editor?.getJSON().content?.length ? 'text-green-700' : ''}`}>
+                        {editor?.getJSON().content?.length ? '✓' : '•'} Content {editor?.getJSON().content?.length ? '(completed)' : '(required)'}
+                      </div>
+                      <div className={`flex items-center gap-2 ${getWordCount() >= 150 ? 'text-green-700' : ''}`}>
+                        {getWordCount() >= 150 ? '✓' : '•'} Minimum 150 words {getWordCount() >= 150 ? '(completed)' : `(${getWordCount()}/150)`}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 
                 {/* Save/Publish Buttons */}
                 <div className="flex justify-end gap-2 md:gap-4 pt-4 border-t border-gray-300">
                   <button
                     type="button"
-                    onClick={() => setShowConfirm('draft')}
+                    onClick={() => {
+                      // Pre-validate for draft - ensure at least one field
+                      if (!title.trim() && !editor?.getJSON().content?.length && !featuredImage) {
+                        toast.error("Please enter at least one field to save a draft.")
+                        return
+                      }
+                      setShowConfirm('draft')
+                    }}
                     className="px-3 py-1 md:px-4 md:py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm md:text-base min-w-[100px] md:min-w-[120px] flex items-center justify-center gap-2"
                     disabled={isLoading}
                   >
@@ -708,9 +717,41 @@ export default function NewArticle() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setShowConfirm('publish')}
-                    className="px-3 py-1 md:px-6 md:py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 md:gap-2 text-sm md:text-base min-w-[100px] md:min-w-[130px]"
-                    disabled={isLoading}
+                    onClick={() => {
+                      // Pre-validate before showing confirmation dialog
+                      if (!title.trim()) {
+                        toast.error("Title is required to publish.")
+                        return
+                      }
+                      if (!category) {
+                        toast.error("Category is required to publish.")
+                        return
+                      }
+                      if (!editor?.getJSON().content?.length) {
+                        toast.error("Content is required to publish.")
+                        return
+                      }
+                      
+                      const wordCount = getWordCount()
+                      if (wordCount < 150) {
+                        toast.error(`Articles must have at least 150 words to publish. Current word count: ${wordCount}`)
+                        return
+                      }
+                      
+                      if (!featuredImage) {
+                        toast.error("Featured image is required to publish.")
+                        return
+                      }
+                      
+                      // All validations passed, show confirmation dialog
+                      setShowConfirm('publish')
+                    }}
+                    className={`px-3 py-1 md:px-6 md:py-2 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 md:gap-2 text-sm md:text-base min-w-[100px] md:min-w-[130px] ${
+                      getWordCount() >= 150 && title.trim() && category && featuredImage && editor?.getJSON().content?.length
+                        ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                        : 'bg-gray-400 text-white cursor-not-allowed hover:bg-gray-400'
+                    }`}
+                    disabled={isLoading || getWordCount() < 150 || !title.trim() || !category || !featuredImage || !editor?.getJSON().content?.length}
                   >
                     {isLoading ? (
                       <Loader2 className="animate-spin w-4 h-4" />
