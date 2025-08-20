@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { X, Smartphone, Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface MpesaPaymentProps {
   isOpen: boolean;
@@ -52,21 +53,16 @@ export function MpesaPayment({
         phoneNumber = '254' + phoneNumber.substring(1);
       }
 
-      console.log('Original phone number:', data.phoneNumber);
-      console.log('Converted phone number:', phoneNumber);
-      console.log('Phone number length:', phoneNumber.length);
+      logger.debug('Processing phone number');
+      logger.debug('Phone number processed');
+      logger.debug('Phone number validated');
 
       // Validate converted phone number
       if (!phoneNumber || phoneNumber.length !== 12 || !phoneNumber.startsWith('254')) {
         throw new Error('Invalid phone number format');
       }
 
-      console.log('Submitting M-pesa payment:', {
-        amount,
-        type,
-        phoneNumber,
-        description
-      });
+      logger.payment('Submitting payment request');
 
       const response = await fetch(endpoint, {
         method: 'POST',

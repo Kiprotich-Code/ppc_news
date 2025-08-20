@@ -3,15 +3,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PayHeroService } from "@/lib/payhero";
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
-    console.log('=== PayHero Deposit Request Started ===');
+    logger.info('PayHero operation started');
     
     // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.error('Unauthorized: No valid session');
+      logger.error('Unauthorized access attempt');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     
     // Expected body: { amount, phoneNumber }
     const body = await req.json();
-    console.log('Request body:', body);
+    logger.debug('Request received');
     
     const { amount, phoneNumber } = body;
     if (!amount || amount <= 0 || !phoneNumber) {
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid request parameters" }, { status: 400 });
     }
     
-    console.log('Initiating PayHero deposit:', { userId, amount, phoneNumber });
+    logger.payment('Initiating PayHero operation');
     
     // Generate unique reference
     const reference = `DEPOSIT_${Date.now()}_${userId}`;
@@ -54,11 +55,11 @@ export async function POST(req: Request) {
       description: 'Deposit to wallet'
     });
     
-    console.log('PayHero response received:', payResponse);
+    logger.debug('PayHero response received');
     
     // Check if PayHero returned an error
     if (payResponse.error) {
-      console.error('PayHero error:', payResponse);
+      logger.error('PayHero operation failed');
       return NextResponse.json({ 
         error: payResponse.error 
       }, { status: 500 });

@@ -3,15 +3,16 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PayHeroService } from "@/lib/payhero";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
-    console.log('=== PayHero Course Payment Request Started ===');
+    logger.info('PayHero course payment request started');
     
     // Get user session
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
-      console.error('Unauthorized: No valid session');
+      logger.error('Unauthorized course payment attempt');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
@@ -19,11 +20,11 @@ export async function POST(req: Request) {
     
     // Expected body: { courseId, paymentMethod, phoneNumber }
     const body = await req.json();
-    console.log('Request body:', body);
+    logger.debug('Course payment request received');
     
     const { courseId, paymentMethod, phoneNumber } = body;
     if (!courseId || !paymentMethod) {
-      console.error('Missing required fields:', { userId, courseId, paymentMethod, phoneNumber });
+      logger.error('Missing required fields for course payment');
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid course price" }, { status: 400 });
     }
     
-    console.log('Initiating PayHero course payment:', { userId, courseId, amount: course.price, phoneNumber });
+    logger.payment('Initiating PayHero operation');
     
     // Generate unique reference
     const reference = `COURSE_${Date.now()}_${userId}_${courseId}`;
@@ -120,11 +121,11 @@ export async function POST(req: Request) {
       description: `Payment for course: ${course.title}`
     });
     
-    console.log('PayHero response received:', payResponse);
+    logger.debug('PayHero response received');
     
     // Check if PayHero returned an error
     if (payResponse.error) {
-      console.error('PayHero error:', payResponse);
+      logger.error('PayHero operation failed');
       return NextResponse.json({ 
         error: payResponse.error 
       }, { status: 500 });

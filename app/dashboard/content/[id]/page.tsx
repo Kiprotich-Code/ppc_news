@@ -70,7 +70,9 @@ export default function ArticleDetailPage() {
   }, [showShareMenu]);
 
   useEffect(() => {
-    console.log("ID:", id, "Session:", session, "Status:", status);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Page loaded - ID:", id ? 'present' : 'missing', "Auth Status:", status);
+    }
     if (status === "loading") return;
     if (!session) {
       router.push("/auth/signin");
@@ -87,7 +89,9 @@ export default function ArticleDetailPage() {
 
   useEffect(() => {
     if (!article || isLoading || error) return;
-    console.log("Article loaded:", article);
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Article loaded successfully - ID:", article.id);
+    }
     if (article.status === "APPROVED") {
       fetch(`/api/articles/${article.id}/view`, { method: "POST" });
     }
@@ -109,12 +113,14 @@ export default function ArticleDetailPage() {
     try {
       const res = await fetch(`/api/articles/${id}`);
       const data = await res.json();
-      console.log("API response:", data);
+      if (process.env.NODE_ENV === 'development') {
+        console.log("API response received - success:", res.ok);
+      }
       if (!res.ok) throw new Error(data.error || "Failed to fetch article");
       if (!data.article) throw new Error("Article not found");
       setArticle(data.article);
     } catch (e: unknown) {
-      console.error("Fetch error:", e);
+      console.error("Fetch error:", e instanceof Error ? e.message : "Unknown error");
       setError(e instanceof Error ? e.message : "Unknown error");
       setArticle(null);
     } finally {

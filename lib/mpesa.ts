@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from './logger';
 
 interface MpesaConfig {
   consumerKey: string;
@@ -23,14 +24,14 @@ export class MpesaAPI {
     }
 
     try {
-      console.log('Getting M-pesa access token...');
+      logger.info('Getting M-pesa access token');
       
       const auth = Buffer.from(`${this.config.consumerKey}:${this.config.consumerSecret}`).toString('base64');
       const response = await axios.get('https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials', {
         headers: { Authorization: `Basic ${auth}` }
       });
 
-      console.log('Access token response:', response.data);
+      logger.debug('Access token response received');
 
       this.accessToken = response.data.access_token;
       this.tokenExpiry = Date.now() + (response.data.expires_in * 1000) - 60000; // Expire 1 minute early
@@ -41,19 +42,14 @@ export class MpesaAPI {
       
       return this.accessToken;
     } catch (error: any) {
-      console.error('Access token error:', error.response?.data || error.message);
+      logger.error('Access token error', error);
       throw new Error(`Failed to get M-pesa access token: ${error.response?.data?.errorMessage || error.message}`);
     }
   }
 
   async initiateSTKPush(phoneNumber: string, amount: number, reference: string): Promise<any> {
     try {
-      console.log('Initiating STK push with config:', {
-        shortCode: this.config.shortCode,
-        phoneNumber,
-        amount,
-        reference
-      });
+      logger.payment('Initiating STK push', reference);
 
       const token = await this.getAccessToken();
       const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
@@ -75,7 +71,7 @@ export class MpesaAPI {
         TransactionDesc: `Payment for ${reference}`
       };
 
-      console.log('STK push request body:', requestBody);
+      logger.debug('STK push request prepared');
 
       const response = await axios.post(
         'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
@@ -88,17 +84,17 @@ export class MpesaAPI {
         }
       );
 
-      console.log('STK push response:', response.data);
+      logger.apiCall('/mpesa/stkpush', 'POST', response.status);
       return response.data;
     } catch (error: any) {
-      console.error('STK push error:', error.response?.data || error.message);
+      logger.error('STK push error', error);
       throw new Error(`M-pesa STK push failed: ${error.response?.data?.errorMessage || error.message}`);
     }
   }
 }
 
 // Log M-pesa configuration for debugging
-const mpesaConfig = {
+const mpesaConfig: MpesaConfig = {
   consumerKey: process.env.MPESA_CONSUMER_KEY || '',
   consumerSecret: process.env.MPESA_CONSUMER_SECRET || '',
   passKey: process.env.MPESA_PASS_KEY || '',
@@ -106,7 +102,7 @@ const mpesaConfig = {
   callbackUrl: process.env.NEXT_PUBLIC_APP_URL || ''
 };
 
-console.log('M-pesa configuration:', {
+logger.debug('M-pesa configuration loaded', {
   consumerKey: mpesaConfig.consumerKey ? '***SET***' : '***MISSING***',
   consumerSecret: mpesaConfig.consumerSecret ? '***SET***' : '***MISSING***',
   passKey: mpesaConfig.passKey ? '***SET***' : '***MISSING***',

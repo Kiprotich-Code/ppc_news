@@ -1,30 +1,29 @@
 import { mpesa } from "@/lib/mpesa";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: Request) {
   try {
-    console.log('M-pesa callback received:', JSON.stringify(req.body, null, 2));
+    logger.info('M-pesa callback received');
     
     const body = await req.json();
-    console.log('Callback body:', body);
+    logger.debug('Processing M-pesa callback');
     
     const { transactionId, resultCode, resultDesc, callbackMetadata } = body.Body.stkCallback;
 
-    console.log('Processing callback for transaction:', transactionId);
-    console.log('Result code:', resultCode);
-    console.log('Result description:', resultDesc);
+    logger.payment('Processing M-pesa callback', transactionId);
 
     const transaction = await prisma.transaction.findFirst({
       where: { mpesaRequestId: transactionId }
     });
 
     if (!transaction) {
-      console.error('Transaction not found:', transactionId);
+      logger.error('Transaction not found', { transactionId });
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
 
-    console.log('Found transaction:', transaction);
+    logger.debug('Found transaction for callback');
 
     if (resultCode === 0) {
       // Payment successful
@@ -38,7 +37,7 @@ export async function POST(req: Request) {
         }
       }
       
-      console.log('Processing successful payment, amount:', amount);
+      logger.payment('Processing successful payment', transactionId);
 
       // Update transaction status
       await prisma.transaction.update({
@@ -69,16 +68,16 @@ export async function POST(req: Request) {
             data: { balance: { increment: amount } }
           });
         }
-        console.log(`Deposit completed for user ${transaction.userId}, amount: ${amount}`);
+        logger.info('Deposit completed successfully');
       } else if (transaction.type === 'WITHDRAWAL') {
         // For withdrawals, the amount was already deducted when transaction was created
-        console.log(`Withdrawal completed for user ${transaction.userId}, amount: ${amount}`);
+        logger.info('Withdrawal completed successfully');
       }
 
       return NextResponse.json({ success: true });
     } else {
       // Payment failed
-      console.log('Payment failed:', resultDesc);
+      logger.info('Payment failed', { resultDesc });
       
       await prisma.transaction.update({
         where: { id: transaction.id },
@@ -94,13 +93,13 @@ export async function POST(req: Request) {
           where: { userId: transaction.userId },
           data: { balance: { increment: transaction.amount } }
         });
-        console.log(`Refunded ${transaction.amount} to user ${transaction.userId} for failed withdrawal`);
+        logger.info('Refund processed for failed withdrawal');
       }
 
       return NextResponse.json({ success: false, error: resultDesc });
     }
   } catch (error) {
-    console.error('M-Pesa callback error:', error);
+    logger.error('M-Pesa callback error', error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

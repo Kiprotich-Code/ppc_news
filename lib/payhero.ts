@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { logger } from './logger';
 
 export class PayHeroService {
   private baseUrl: string;
@@ -21,18 +22,11 @@ export class PayHeroService {
     if (!this.apiKey) missingVars.push('PAYHERO_API_KEY');
     
     if (missingVars.length > 0) {
-      console.error('Missing PayHero environment variables:', missingVars);
+      logger.error('Missing PayHero environment variables', { missingVars });
       throw new Error(`Missing required PayHero environment variables: ${missingVars.join(', ')}`);
     }
     
-    // Debug logging
-    console.log('PayHero service initialized for production:');
-    console.log('- Base URL:', this.baseUrl);
-    console.log('- Channel ID:', this.channelId);
-    console.log('- Till Number:', this.tillNumber);
-    console.log('- API Key length:', this.apiKey?.length || 0);
-    console.log('- Has Webhook Secret:', !!this.webhookSecret);
-    console.log('- API Key starts with:', this.apiKey?.substring(0, 10) + '...');
+    logger.info('PayHero service initialized successfully');
   }
 
   // Initiate deposit to M-Pesa till
@@ -52,10 +46,7 @@ export class PayHeroService {
       callback_url: `${process.env.NEXTAUTH_URL}/api/webhooks/payhero`
     };
     
-    console.log('PayHero STK Push payload:', JSON.stringify(payload, null, 2));
-    console.log('PayHero API URL:', `${this.baseUrl}/payments`);
-    console.log('Using Channel ID:', this.channelId);
-    console.log('Using API Key authentication');
+    logger.payment('Initiating STK Push', reference);
     
     try {
       const response = await fetch(`${this.baseUrl}/payments`, {
@@ -68,13 +59,12 @@ export class PayHeroService {
       });
       
       const result = await response.json();
-      console.log('PayHero API response status:', response.status);
-      console.log('PayHero API response body:', JSON.stringify(result, null, 2));
+      logger.apiCall('/payments', 'POST', response.status);
       
       if (!response.ok) {
         // Handle specific account inactive error
         if (result.error_code === 'PERMISSION_DENIED' && result.error_message?.includes('Inactive')) {
-          console.error('PayHero account inactive - requires activation');
+          logger.error('PayHero account inactive - requires activation');
           return {
             error: 'PayHero merchant account is inactive. Please contact PayHero support to activate your account.',
             error_code: result.error_code,
@@ -82,10 +72,9 @@ export class PayHeroService {
           };
         }
         
-        console.error('PayHero API error details:', {
+        logger.error('PayHero API error', {
           status: response.status,
-          statusText: response.statusText,
-          result
+          statusText: response.statusText
         });
         return { 
           error: result.message || result.error_message || `HTTP ${response.status}: ${response.statusText}`,
@@ -95,7 +84,7 @@ export class PayHeroService {
       
       return result;
     } catch (error) {
-      console.error('PayHero API network error:', error);
+      logger.error('PayHero API network error', error);
       return { error: 'Network error connecting to PayHero' };
     }
   }
@@ -130,7 +119,7 @@ export class PayHeroService {
     reference: string;
     description: string;
   }) {
-    console.log('Using alternative withdrawal method - Manual processing required');
+    logger.payment('Alternative withdrawal method', reference);
     
     // For manual processing, we'll create a withdrawal request that requires admin approval
     // This is a fallback when PayHero doesn't support direct B2C withdrawals
@@ -158,7 +147,7 @@ export class PayHeroService {
       
       for (const endpoint of endpoints) {
         try {
-          console.log(`Trying balance endpoint: ${endpoint}`);
+          logger.debug('Trying balance endpoint', { endpoint });
           const response = await fetch(endpoint, {
             method: 'GET',
             headers: {
@@ -169,26 +158,25 @@ export class PayHeroService {
           
           if (response.ok) {
             const result = await response.json();
-            console.log('Balance endpoint found:', endpoint, result);
+            logger.info('Balance endpoint found', { endpoint });
             return result;
           } else {
-            const errorText = await response.text();
-            console.log(`Endpoint ${endpoint} failed with status ${response.status}:`, errorText);
+            logger.debug('Balance endpoint failed', { endpoint, status: response.status });
           }
         } catch (error) {
-          console.log(`Network error for endpoint ${endpoint}:`, error);
+          logger.debug('Network error for balance endpoint', { endpoint });
         }
       }
       
       // If all endpoints fail, return a warning but don't block
-      console.warn('No working balance endpoint found, skipping balance check');
+      logger.warn('No working balance endpoint found, skipping balance check');
       return { 
         warning: 'Balance check unavailable - PayHero may not provide balance API for basic accounts',
         available_balance: Number.MAX_SAFE_INTEGER // Allow transactions to proceed
       };
       
     } catch (error) {
-      console.error('Error fetching account balance:', error);
+      logger.error('Error fetching account balance', error);
       return { 
         warning: 'Balance check failed',
         available_balance: Number.MAX_SAFE_INTEGER // Allow transactions to proceed
@@ -200,7 +188,7 @@ export class PayHeroService {
   async validateWithdrawal(amount: number) {
     // For basic PayHero accounts, we skip balance validation
     // and rely on manual processing to ensure sufficient funds
-    console.log('Skipping balance validation for basic PayHero account');
+    logger.info('Skipping balance validation for basic PayHero account');
     return { 
       valid: true, 
       warning: 'Balance validation skipped - manual processing will verify funds',

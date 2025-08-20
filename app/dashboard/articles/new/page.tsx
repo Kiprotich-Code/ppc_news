@@ -341,14 +341,17 @@ export default function NewArticle() {
       const status = editMode ? 'PENDING' : 'PENDING'; // Default to 'PENDING' or adjust as needed
       const finalPublishedStatus = publishedStatus;
 
-      console.log('Sending article data:', {
-        title,
-        content: JSON.stringify(editor?.getJSON()),
-        publishedStatus: finalPublishedStatus,
-        status,
-        featuredImage,
-        category,
-      });
+      // Only log in development mode and sanitize data
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Saving article:', {
+          title: title ? title.substring(0, 50) + '...' : '',
+          hasContent: !!editor?.getJSON(),
+          publishedStatus: finalPublishedStatus,
+          status,
+          hasImage: !!featuredImage,
+          category,
+        });
+      }
 
       const res = await fetch(endpoint, {
         method,
@@ -366,7 +369,7 @@ export default function NewArticle() {
       const data = await res.json();
       
       if (!res.ok) {
-        console.error('Server response:', data);
+        console.error('Failed to save article:', data.error || 'Unknown error');
         throw new Error(data.error || "Failed to save article");
       }
 

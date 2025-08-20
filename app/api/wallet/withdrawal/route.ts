@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { PayHeroService } from "@/lib/payhero";
 import { authOptions } from "@/lib/auth";
+import { logger } from '@/lib/logger';
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    console.log('Processing withdrawal request:', { userId, amount, phoneNumber });
+    logger.payment('Processing withdrawal request');
 
     const wallet = await prisma.wallet.findUnique({ 
       where: { userId } 
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
       }
     });
 
-    console.log(`Manual withdrawal request created: ${amount} for user ${userId}, Reference: ${reference}`);
+    logger.info('Manual withdrawal request created');
 
     return NextResponse.json({
       success: true,

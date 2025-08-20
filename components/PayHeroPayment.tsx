@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { X, Smartphone, Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { logger } from '@/lib/logger';
 
 interface PayHeroPaymentProps {
   isOpen: boolean;
@@ -59,9 +60,9 @@ export function PayHeroPayment({
           phoneNumber = '254' + phoneNumber.substring(1);
         }
 
-        console.log('Original phone number:', data.phoneNumber);
-        console.log('Converted phone number:', phoneNumber);
-        console.log('Phone number length:', phoneNumber.length);
+        logger.debug('Processing phone number');
+        logger.debug('Phone number processed');
+        logger.debug('Phone number validated');
 
         // Validate converted phone number
         if (!phoneNumber || phoneNumber.length !== 12 || !phoneNumber.startsWith('254')) {
@@ -69,13 +70,7 @@ export function PayHeroPayment({
         }
       }
 
-      console.log('Submitting PayHero payment:', {
-        amount,
-        type,
-        phoneNumber,
-        description,
-        courseId
-      });
+      logger.payment('Submitting payment request');
 
       const body: Record<string, any> = {
         amount,
