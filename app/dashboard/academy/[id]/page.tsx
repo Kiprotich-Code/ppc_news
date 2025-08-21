@@ -7,6 +7,7 @@ import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
+import { tiptapToHtml, extractTextFromTipTap, isTipTapContent } from "@/lib/utils"
 import { 
   BookOpen, 
   Clock, 
@@ -248,7 +249,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                 <div className="space-y-6">
                   <div className="bg-white rounded-lg shadow-sm p-6">
                     <h2 className="text-xl font-semibold text-gray-900 mb-4">About this course</h2>
-                    <p className="text-gray-700 leading-relaxed">{course.description}</p>
+                    {course.description && isTipTapContent(course.description) ? (
+                      <div 
+                        className="text-gray-700" 
+                        dangerouslySetInnerHTML={{ __html: tiptapToHtml(course.description, "text-gray-700") }}
+                      />
+                    ) : (
+                      <p className="text-gray-700 leading-relaxed">{course.description}</p>
+                    )}
                   </div>
 
                   {course.whatYouWillLearn.length > 0 && (
@@ -288,7 +296,16 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                       <div className="p-4 border-b border-gray-200">
                         <h3 className="text-lg font-medium text-gray-900">{section.title}</h3>
                         {section.description && (
-                          <p className="text-gray-600 text-sm mt-1">{section.description}</p>
+                          <div className="text-gray-600 text-sm mt-1">
+                            {isTipTapContent(section.description) ? (
+                              <div 
+                                className="prose-sm" 
+                                dangerouslySetInnerHTML={{ __html: tiptapToHtml(section.description, "prose-sm") }}
+                              />
+                            ) : (
+                              <p>{section.description}</p>
+                            )}
+                          </div>
                         )}
                         <p className="text-gray-500 text-sm mt-2">
                           {section.lessons.length} lesson{section.lessons.length !== 1 ? 's' : ''}
@@ -305,7 +322,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                                 <div>
                                   <h4 className="text-sm font-medium text-gray-900">{lesson.title}</h4>
                                   {lesson.description && (
-                                    <p className="text-xs text-gray-600 mt-1">{lesson.description}</p>
+                                    <div className="text-xs text-gray-600 mt-1">
+                                      {isTipTapContent(lesson.description) ? (
+                                        <div className="prose prose-xs max-w-none">
+                                          {extractTextFromTipTap(lesson.description)}
+                                        </div>
+                                      ) : (
+                                        <p>{lesson.description}</p>
+                                      )}
+                                    </div>
                                   )}
                                 </div>
                               </div>

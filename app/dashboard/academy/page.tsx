@@ -8,9 +8,9 @@ import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import { PayHeroPayment } from "@/components/PayHeroPayment"
+import { formatDate, formatCurrency, tiptapToHtml, extractTextFromTipTap, isTipTapContent } from "@/lib/utils"
 import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText, User } from "lucide-react"
 import Link from "next/link"
-import { formatCurrency, formatDate } from "@/lib/utils"
 
 interface Course {
   id: string
@@ -253,7 +253,25 @@ export default function Academy() {
                             </span>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{course.shortDescription || course.description}</p>
+                        <div className="text-sm text-gray-600 mt-1">
+                          {course.shortDescription ? (
+                            isTipTapContent(course.shortDescription) ? (
+                              <div className="prose prose-sm max-w-none line-clamp-2">
+                                {extractTextFromTipTap(course.shortDescription)}
+                              </div>
+                            ) : (
+                              <p className="line-clamp-2">{course.shortDescription}</p>
+                            )
+                          ) : course.description ? (
+                            isTipTapContent(course.description) ? (
+                              <div className="prose prose-sm max-w-none line-clamp-2">
+                                {extractTextFromTipTap(course.description)}
+                              </div>
+                            ) : (
+                              <p className="line-clamp-2">{course.description}</p>
+                            )
+                          ) : null}
+                        </div>
                         <div className="flex flex-wrap items-center mt-2 text-xs text-gray-500 gap-x-4 gap-y-1">
                           <div className="flex items-center">
                             <Clock className="h-3 w-3 mr-1" />

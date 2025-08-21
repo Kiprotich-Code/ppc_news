@@ -1,19 +1,63 @@
 "use client"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { AdminSidebar, SIDEBAR_WIDTH_OPEN, SIDEBAR_WIDTH_CLOSED } from "@/components/AdminSidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { ArrowLeft, Save, X, Upload, Menu, Plus } from "lucide-react"
+import { ArrowLeft, Save, X, Upload, Menu, Plus, Bold, Italic, Heading1, Heading2, Heading3, List, ListOrdered, Minus, Image as ImageIcon, Video as VideoIcon } from "lucide-react"
 import Link from "next/link"
 import { AdminMobileNav } from "@/components/AdminMobileNav"
 import toast from "react-hot-toast"
 import { CourseCategory } from "@prisma/client"
+import { EditorContent, useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import Image from "@tiptap/extension-image"
+import Heading from "@tiptap/extension-heading"
+import TextAlign from "@tiptap/extension-text-align"
+import LinkExtension from "@tiptap/extension-link"
+import Placeholder from "@tiptap/extension-placeholder"
 
 interface Category {
   id: string
   name: string
 }
+
+// Custom Video extension using iframe embeds
+const VideoEmbed = Image.extend({
+  name: 'video',
+  group: 'block',
+  selectable: true,
+  draggable: true,
+  addAttributes() {
+    return {
+      src: {},
+      alt: { default: null },
+      title: { default: null },
+      caption: { default: null },
+    }
+  },
+  parseHTML() {
+    return [
+      {
+        tag: 'iframe[src]'
+      }
+    ]
+  },
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
+    return [
+      'div', { class: 'video-embed' },
+      ['iframe', {
+        src: HTMLAttributes.src,
+        title: HTMLAttributes.title || '',
+        allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+        allowfullscreen: 'true',
+        frameborder: '0',
+        style: 'width:100%;min-height:320px;',
+      }],
+      HTMLAttributes.caption ? ['div', { class: 'caption' }, HTMLAttributes.caption] : null
+    ]
+  },
+})
 
 
 interface FormData {
@@ -60,6 +104,49 @@ export default function NewCoursePage() {
   const [newRequirement, setNewRequirement] = useState("")
   const [newLearningOutcome, setNewLearningOutcome] = useState("")
 
+  // TipTap Editor for description
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            caption: { default: null },
+          }
+        },
+        renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
+          return [
+            'figure', { class: 'image-container' },
+            ['img', { ...HTMLAttributes, class: 'image-content' }],
+            HTMLAttributes.caption ? ['figcaption', { class: 'image-caption' }, HTMLAttributes.caption] : null
+          ]
+        },
+      }),
+      VideoEmbed,
+      Heading.configure({ levels: [1, 2, 3] }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      LinkExtension.configure({
+        openOnClick: false,
+      }),
+      Placeholder.configure({ 
+        placeholder: 'Write a detailed course description...',
+        emptyEditorClass: 'is-editor-empty'
+      }),
+    ],
+    content: '',
+    autofocus: 'end',
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      setFormData(prev => ({ ...prev, description: JSON.stringify(editor.getJSON()) }))
+    }
+  })
+
   useEffect(() => {
     if (status === "loading") return
     if (!session) {
@@ -72,6 +159,69 @@ export default function NewCoursePage() {
     }
     fetchCategories()
   }, [session, status, router])
+
+  // Insert image handler
+  const insertImage = useCallback(async (file: File) => {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error("Only PNG, JPG, and WebP images are allowed.")
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB.")
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("file", file)
+    
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Upload failed")
+      
+      const caption = prompt("Image caption (optional):") || ''
+      editor?.chain().focus().setImage({ src: data.url }).run()
+      
+      if (caption) {
+        const { state } = editor!
+        const { doc } = state
+        let pos = -1
+        
+        doc.descendants((node, position) => {
+          if (node.type.name === 'image' && node.attrs.src === data.url) {
+            pos = position
+          }
+        })
+
+        if (pos !== -1) {
+          editor?.commands.command(({ tr }) => {
+            tr.setNodeMarkup(pos, undefined, { src: data.url, caption })
+            return true
+          })
+        }
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Image upload failed")
+    }
+  }, [editor])
+
+  // Insert video handler
+  const insertVideo = useCallback(() => {
+    const handleEmbedUrl = () => {
+      const url = prompt("Paste video embed URL (YouTube, Vimeo, etc):")
+      if (!url) return
+      
+      const caption = prompt("Video caption (optional):") || ''
+      editor?.chain().focus().insertContent({
+        type: 'video',
+        attrs: { src: url, caption },
+      }).run()
+    }
+    handleEmbedUrl()
+  }, [editor])
 
   const fetchCategories = async () => {
     try {
@@ -327,16 +477,95 @@ export default function NewCoursePage() {
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Full Description
                 </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Detailed course description"
-                  rows={5}
-                />
+                
+                {/* Editor Toolbar */}
+                <div className="flex flex-wrap gap-1 md:gap-2 mb-2 p-2 bg-gray-50 rounded-lg">
+                  <button 
+                    type="button" 
+                    onClick={() => editor?.chain().focus().toggleBold().run()} 
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('bold') ? 'bg-gray-200' : ''}`}
+                    title="Bold"
+                  >
+                    <Bold className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => editor?.chain().focus().toggleItalic().run()} 
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('italic') ? 'bg-gray-200' : ''}`}
+                    title="Italic"
+                  >
+                    <Italic className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} 
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
+                    title="Heading 1"
+                  >
+                    <Heading1 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} 
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
+                    title="Heading 2"
+                  >
+                    <Heading2 className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => editor?.chain().focus().toggleBulletList().run()} 
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
+                    title="Bullet List"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => editor?.chain().focus().toggleOrderedList().run()} 
+                    className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${editor?.isActive('orderedList') ? 'bg-gray-200' : ''}`}
+                    title="Numbered List"
+                  >
+                    <ListOrdered className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const input = document.createElement('input')
+                      input.type = 'file'
+                      input.accept = 'image/*'
+                      input.onchange = e => {
+                        const file = (e.target as HTMLInputElement).files?.[0]
+                        if (file) insertImage(file)
+                      }
+                      input.click()
+                    }}
+                    className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
+                    title="Insert Image"
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={insertVideo}
+                    className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
+                    title="Insert Video"
+                  >
+                    <VideoIcon className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {/* Editor */}
+                <div className="border border-gray-300 min-h-[200px] p-4 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition rounded-lg">
+                  <EditorContent editor={editor} className="min-h-[150px]" />
+                </div>
+                
+                <p className="text-xs text-gray-500 mt-1">
+                  Rich description with formatting, images, and videos to showcase your course
+                </p>
               </div>
             </div>
 

@@ -23,7 +23,7 @@ export function formatCurrency(amount: number) {
 /**
  * Converts TipTap JSON content to HTML
  */
-export function tiptapToHtml(content: string): string {
+export function tiptapToHtml(content: string, className?: string): string {
   try {
     // Parse the JSON content
     const tiptapData = JSON.parse(content);
@@ -35,14 +35,16 @@ export function tiptapToHtml(content: string): string {
     
     // Convert TipTap JSON to HTML
     if (tiptapData.type === 'doc' && tiptapData.content) {
-      return convertTiptapNodeToHtml(tiptapData);
+      const htmlContent = convertTiptapNodeToHtml(tiptapData);
+      const wrapperClass = className ? ` ${className}` : '';
+      return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none${wrapperClass}">${htmlContent}</div>`;
     }
     
-    // If it's not valid TipTap JSON, return as plain text
-    return content;
+    // If it's not valid TipTap JSON, return as plain text wrapped in paragraph
+    return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none${className ? ` ${className}` : ''}"><p>${content}</p></div>`;
   } catch (error) {
-    // If parsing fails, return as plain text
-    return content;
+    // If parsing fails, return as plain text wrapped in paragraph
+    return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none${className ? ` ${className}` : ''}"><p>${content}</p></div>`;
   }
 }
 
@@ -76,10 +78,11 @@ function convertTiptapNodeToHtml(node: any): string {
             text = `<s>${text}</s>`;
             break;
           case 'link':
-            text = `<a href="${mark.attrs?.href || '#'}" target="_blank" rel="noopener noreferrer">${text}</a>`;
+            const href = mark.attrs?.href || '#';
+            text = `<a href="${href}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">${text}</a>`;
             break;
           case 'code':
-            text = `<code>${text}</code>`;
+            text = `<code class="bg-gray-100 px-1 py-0.5 rounded text-sm">${text}</code>`;
             break;
         }
       });
@@ -92,53 +95,99 @@ function convertTiptapNodeToHtml(node: any): string {
   let html = '';
   let tag = 'div';
   let attributes = '';
+  let cssClass = '';
   
   switch (node.type) {
+    case 'doc':
+      // Just process content for document nodes
+      if (node.content && Array.isArray(node.content)) {
+        return node.content.map((child: any) => convertTiptapNodeToHtml(child)).join('');
+      }
+      return '';
+      
     case 'paragraph':
       tag = 'p';
+      cssClass = 'mb-4';
       break;
+      
     case 'heading':
       const level = node.attrs?.level || 1;
       tag = `h${level}`;
+      cssClass = level === 1 ? 'text-3xl font-bold mb-6' :
+                 level === 2 ? 'text-2xl font-semibold mb-4' :
+                 'text-xl font-semibold mb-3';
       break;
+      
     case 'bulletList':
       tag = 'ul';
+      cssClass = 'list-disc pl-6 mb-4 space-y-2';
       break;
+      
     case 'orderedList':
       tag = 'ol';
+      cssClass = 'list-decimal pl-6 mb-4 space-y-2';
       break;
+      
     case 'listItem':
       tag = 'li';
+      cssClass = 'mb-1';
       break;
+      
     case 'blockquote':
       tag = 'blockquote';
+      cssClass = 'border-l-4 border-gray-300 pl-4 italic text-gray-700 my-4';
       break;
+      
     case 'codeBlock':
       tag = 'pre';
-      html = `<code>${node.content?.[0]?.text || ''}</code>`;
+      cssClass = 'bg-gray-100 p-4 rounded-lg overflow-x-auto mb-4';
+      const code = node.content?.[0]?.text || '';
+      html = `<code class="text-sm">${code}</code>`;
       break;
+      
     case 'horizontalRule':
-      return '<hr>';
+      return '<hr class="border-gray-300 my-6">';
+      
     case 'image':
       const src = node.attrs?.src || '';
       const alt = node.attrs?.alt || '';
       const caption = node.attrs?.caption || '';
-      html = `<figure class="image-container"><img src="${src}" alt="${alt}" class="image-content" />`;
+      html = `<figure class="image-container mb-4">
+        <img 
+          src="${src}" 
+          alt="${alt}" 
+          class="image-content rounded-lg max-w-full h-auto mx-auto" 
+          style="max-height: 400px; object-fit: contain;"
+        />`;
       if (caption) {
-        html += `<figcaption class="image-caption">${caption}</figcaption>`;
+        html += `<figcaption class="text-sm text-gray-600 mt-2 text-center italic">${caption}</figcaption>`;
       }
       html += '</figure>';
       return html;
+      
     case 'video':
       const videoSrc = node.attrs?.src || '';
       const videoTitle = node.attrs?.title || '';
       const videoCaption = node.attrs?.caption || '';
-      html = `<div class="video-embed"><iframe src="${videoSrc}" title="${videoTitle}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen="true" frameborder="0" style="width:100%;min-height:320px;"></iframe>`;
+      html = `<div class="video-embed mb-4">
+        <iframe 
+          src="${videoSrc}" 
+          title="${videoTitle}" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen="true" 
+          frameborder="0" 
+          style="width:100%;min-height:320px;border-radius:8px;"
+        ></iframe>`;
       if (videoCaption) {
-        html += `<div class="caption">${videoCaption}</div>`;
+        html += `<div class="text-sm text-gray-600 mt-2 text-center italic">${videoCaption}</div>`;
       }
       html += '</div>';
       return html;
+      
+    default:
+      // Handle unknown node types
+      tag = 'div';
+      break;
   }
   
   // Process child nodes
@@ -147,9 +196,64 @@ function convertTiptapNodeToHtml(node: any): string {
   }
   
   // Handle text alignment
+  let style = '';
   if (node.attrs?.textAlign) {
-    attributes += ` style="text-align: ${node.attrs.textAlign};"`;
+    style += `text-align: ${node.attrs.textAlign};`;
+  }
+  
+  // Build attributes string
+  if (cssClass) {
+    attributes += ` class="${cssClass}"`;
+  }
+  if (style) {
+    attributes += ` style="${style}"`;
   }
   
   return `<${tag}${attributes}>${html}</${tag}>`;
+}
+
+/**
+ * Utility function to extract plain text from TipTap content
+ */
+export function extractTextFromTipTap(content: string): string {
+  if (!content) return ""
+  
+  try {
+    const parsedContent = JSON.parse(content)
+    
+    function extractText(node: any): string {
+      if (node.type === 'text') {
+        return node.text || ''
+      }
+      
+      if (node.content) {
+        return node.content.map(extractText).join('')
+      }
+      
+      return ''
+    }
+    
+    if (parsedContent.content) {
+      return parsedContent.content.map(extractText).join(' ')
+    }
+    
+    return ''
+  } catch (e) {
+    // Return as-is if not JSON
+    return content
+  }
+}
+
+/**
+ * Utility function to check if content is TipTap JSON
+ */
+export function isTipTapContent(content: string): boolean {
+  if (!content) return false
+  
+  try {
+    const parsed = JSON.parse(content)
+    return parsed.type && parsed.content !== undefined
+  } catch (e) {
+    return false
+  }
 }
