@@ -15,12 +15,64 @@ import {
   Users,
   Eye,
   EyeOff,
-  Menu
+  Menu,
+  Bold,
+  Italic,
+  Heading1,
+  Heading2,
+  List,
+  ListOrdered,
+  Image as ImageIcon,
+  Video as VideoIcon
 } from "lucide-react"
 import Link from "next/link"
-import { formatCurrency, formatDate } from "@/lib/utils"
+import { formatCurrency, formatDate, tiptapToHtml, extractTextFromTipTap, isTipTapContent } from "@/lib/utils"
 import { AdminMobileNav } from "@/components/AdminMobileNav"
 import toast from "react-hot-toast"
+import { EditorContent, useEditor } from "@tiptap/react"
+import StarterKit from "@tiptap/starter-kit"
+import Image from "@tiptap/extension-image"
+import Heading from "@tiptap/extension-heading"
+import TextAlign from "@tiptap/extension-text-align"
+import LinkExtension from "@tiptap/extension-link"
+import Placeholder from "@tiptap/extension-placeholder"
+
+// Custom Video extension using iframe embeds
+const VideoEmbed = Image.extend({
+  name: 'video',
+  group: 'block',
+  selectable: true,
+  draggable: true,
+  addAttributes() {
+    return {
+      src: {},
+      alt: { default: null },
+      title: { default: null },
+      caption: { default: null },
+    }
+  },
+  parseHTML() {
+    return [
+      {
+        tag: 'iframe[src]'
+      }
+    ]
+  },
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
+    return [
+      'div', { class: 'video-embed' },
+      ['iframe', {
+        src: HTMLAttributes.src,
+        title: HTMLAttributes.title || '',
+        allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+        allowfullscreen: 'true',
+        frameborder: '0',
+        style: 'width:100%;min-height:320px;border-radius:8px;'
+      }],
+      HTMLAttributes.caption ? ['div', { class: 'video-caption' }, HTMLAttributes.caption] : null
+    ]
+  }
+})
 
 interface Lesson {
   id: string
@@ -96,6 +148,71 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   const [categories, setCategories] = useState<{id: string, name: string}[]>([])
   const [updateLoading, setUpdateLoading] = useState(false)
 
+  // TipTap Editor for description
+  const descriptionEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            caption: { default: null },
+          }
+        },
+        renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
+          return [
+            'figure', { class: 'image-container' },
+            ['img', { ...HTMLAttributes, class: 'image-content' }],
+            HTMLAttributes.caption ? ['figcaption', { class: 'image-caption' }, HTMLAttributes.caption] : null
+          ]
+        },
+      }),
+      VideoEmbed,
+      Heading.configure({ levels: [1, 2, 3] }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      LinkExtension.configure({
+        openOnClick: false,
+      }),
+      Placeholder.configure({ 
+        placeholder: 'Write a detailed course description...',
+        emptyEditorClass: 'is-editor-empty'
+      }),
+    ],
+    content: '',
+    autofocus: false,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none max-w-none',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      setEditForm(prev => ({ ...prev, description: JSON.stringify(editor.getJSON()) }))
+    }
+  })
+
+  // TipTap Editor for short description
+  const shortDescriptionEditor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({ 
+        placeholder: 'Brief description for course listing...',
+        emptyEditorClass: 'is-editor-empty'
+      }),
+    ],
+    content: '',
+    autofocus: false,
+    immediatelyRender: false,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm focus:outline-none max-w-none',
+      },
+    },
+    onUpdate: ({ editor }) => {
+      setEditForm(prev => ({ ...prev, shortDescription: JSON.stringify(editor.getJSON()) }))
+    }
+  })
+
   useEffect(() => {
     const checkScreen = () => {
       setIsMdUp(window.matchMedia('(min-width: 768px)').matches)
@@ -140,6 +257,31 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
           instructor: data.instructor || '',
           categoryId: data.category?.id || ''
         })
+
+        // Initialize TipTap editors with existing content
+        if (descriptionEditor && data.description) {
+          try {
+            const content = isTipTapContent(data.description) 
+              ? JSON.parse(data.description)
+              : { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: data.description }] }] }
+            descriptionEditor.commands.setContent(content)
+          } catch (e) {
+            console.error('Error setting description content:', e)
+            descriptionEditor.commands.setContent(data.description || '')
+          }
+        }
+
+        if (shortDescriptionEditor && data.shortDescription) {
+          try {
+            const content = isTipTapContent(data.shortDescription) 
+              ? JSON.parse(data.shortDescription)
+              : { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: data.shortDescription }] }] }
+            shortDescriptionEditor.commands.setContent(content)
+          } catch (e) {
+            console.error('Error setting short description content:', e)
+            shortDescriptionEditor.commands.setContent(data.shortDescription || '')
+          }
+        }
       } else {
         toast.error("Failed to fetch course")
         router.push("/admin/courses")
@@ -231,6 +373,33 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   const startEditing = () => {
     setIsEditing(true)
     fetchCategories() // Fetch categories when starting to edit
+
+    // Initialize TipTap editors with current content
+    if (course) {
+      if (descriptionEditor && course.description) {
+        try {
+          const content = isTipTapContent(course.description) 
+            ? JSON.parse(course.description)
+            : { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: course.description }] }] }
+          descriptionEditor.commands.setContent(content)
+        } catch (e) {
+          console.error('Error setting description content in startEditing:', e)
+          descriptionEditor.commands.setContent(course.description || '')
+        }
+      }
+
+      if (shortDescriptionEditor && course.shortDescription) {
+        try {
+          const content = isTipTapContent(course.shortDescription) 
+            ? JSON.parse(course.shortDescription)
+            : { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: course.shortDescription }] }] }
+          shortDescriptionEditor.commands.setContent(content)
+        } catch (e) {
+          console.error('Error setting short description content in startEditing:', e)
+          shortDescriptionEditor.commands.setContent(course.shortDescription || '')
+        }
+      }
+    }
   }
 
   const cancelEditing = () => {
@@ -249,7 +418,79 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         instructor: course.instructor || '',
         categoryId: course.category?.id || ''
       })
+
+      // Reset TipTap editors to original content
+      if (descriptionEditor && course.description) {
+        try {
+          const content = isTipTapContent(course.description) 
+            ? JSON.parse(course.description)
+            : { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: course.description }] }] }
+          descriptionEditor.commands.setContent(content)
+        } catch (e) {
+          console.error('Error resetting description content:', e)
+          descriptionEditor.commands.setContent(course.description || '')
+        }
+      }
+
+      if (shortDescriptionEditor && course.shortDescription) {
+        try {
+          const content = isTipTapContent(course.shortDescription) 
+            ? JSON.parse(course.shortDescription)
+            : { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: course.shortDescription }] }] }
+          shortDescriptionEditor.commands.setContent(content)
+        } catch (e) {
+          console.error('Error resetting short description content:', e)
+          shortDescriptionEditor.commands.setContent(course.shortDescription || '')
+        }
+      }
     }
+  }
+
+  // Helper functions for TipTap editors
+  const insertImage = async (file: File, editor: any) => {
+    if (!file) return
+
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        editor?.chain().focus().setImage({ src: data.url, alt: file.name }).run()
+        toast.success('Image uploaded successfully!')
+      } else {
+        toast.error('Failed to upload image')
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error)
+      toast.error('Failed to upload image')
+    }
+  }
+
+  const insertVideo = (editor: any) => {
+    const url = prompt('Enter video URL (YouTube, Vimeo, or direct video link):')
+    if (!url) return
+
+    let embedUrl = url
+    
+    // Convert YouTube URLs to embed format
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1]?.split('&')[0]
+      embedUrl = `https://www.youtube.com/embed/${videoId}`
+    } else if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0]
+      embedUrl = `https://www.youtube.com/embed/${videoId}`
+    } else if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1]?.split('/')[0]
+      embedUrl = `https://player.vimeo.com/video/${videoId}`
+    }
+
+    editor?.chain().focus().setImage({ src: embedUrl, alt: 'Video' }).run()
   }
 
   const toggleSectionExpanded = (sectionId: string) => {
@@ -532,7 +773,61 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <>
+      <style jsx global>{`
+        .ProseMirror {
+          outline: none;
+        }
+        
+        .ProseMirror.is-editor-empty:first-child::before {
+          color: #adb5bd;
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
+        }
+        
+        .ProseMirror p.is-editor-empty:first-child::before {
+          color: #adb5bd;
+          content: attr(data-placeholder);
+          float: left;
+          height: 0;
+          pointer-events: none;
+        }
+        
+        .image-container {
+          margin: 1rem 0;
+          text-align: center;
+        }
+        
+        .image-content {
+          max-width: 100%;
+          height: auto;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .image-caption, .video-caption {
+          font-size: 0.875rem;
+          color: #6b7280;
+          margin-top: 0.5rem;
+          font-style: italic;
+        }
+        
+        .video-embed {
+          margin: 1rem 0;
+          text-align: center;
+        }
+        
+        .video-embed iframe {
+          width: 100%;
+          min-height: 320px;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
+      
+      <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-between">
@@ -730,26 +1025,127 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Short Description
                   </label>
-                  <textarea
-                    value={editForm.shortDescription}
-                    onChange={(e) => setEditForm({...editForm, shortDescription: e.target.value})}
-                    rows={2}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    placeholder="Brief description for course listing"
-                  />
+                  
+                  {/* Editor Toolbar */}
+                  <div className="border border-gray-300 border-b-0 rounded-t-lg p-2 bg-gray-50 flex flex-wrap gap-1">
+                    <button 
+                      type="button" 
+                      onClick={() => shortDescriptionEditor?.chain().focus().toggleBold().run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${shortDescriptionEditor?.isActive('bold') ? 'bg-gray-200' : ''}`}
+                      title="Bold"
+                    >
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => shortDescriptionEditor?.chain().focus().toggleItalic().run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${shortDescriptionEditor?.isActive('italic') ? 'bg-gray-200' : ''}`}
+                      title="Italic"
+                    >
+                      <Italic className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Editor */}
+                  <div className="border border-gray-300 border-t-0 min-h-[80px] p-3 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-transparent transition rounded-b-lg">
+                    <EditorContent editor={shortDescriptionEditor} className="min-h-[50px]" />
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 mt-1">
+                    Brief description for course listing
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Full Description
                   </label>
-                  <textarea
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                    rows={4}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                    placeholder="Detailed course description"
-                  />
+                  
+                  {/* Editor Toolbar */}
+                  <div className="border border-gray-300 border-b-0 rounded-t-lg p-2 bg-gray-50 flex flex-wrap gap-1">
+                    <button 
+                      type="button" 
+                      onClick={() => descriptionEditor?.chain().focus().toggleBold().run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${descriptionEditor?.isActive('bold') ? 'bg-gray-200' : ''}`}
+                      title="Bold"
+                    >
+                      <Bold className="w-4 h-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => descriptionEditor?.chain().focus().toggleItalic().run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${descriptionEditor?.isActive('italic') ? 'bg-gray-200' : ''}`}
+                      title="Italic"
+                    >
+                      <Italic className="w-4 h-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => descriptionEditor?.chain().focus().toggleHeading({ level: 1 }).run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${descriptionEditor?.isActive('heading', { level: 1 }) ? 'bg-gray-200' : ''}`}
+                      title="Heading 1"
+                    >
+                      <Heading1 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => descriptionEditor?.chain().focus().toggleHeading({ level: 2 }).run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${descriptionEditor?.isActive('heading', { level: 2 }) ? 'bg-gray-200' : ''}`}
+                      title="Heading 2"
+                    >
+                      <Heading2 className="w-4 h-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => descriptionEditor?.chain().focus().toggleBulletList().run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${descriptionEditor?.isActive('bulletList') ? 'bg-gray-200' : ''}`}
+                      title="Bullet List"
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => descriptionEditor?.chain().focus().toggleOrderedList().run()} 
+                      className={`p-1 md:p-2 rounded hover:bg-gray-200 transition ${descriptionEditor?.isActive('orderedList') ? 'bg-gray-200' : ''}`}
+                      title="Numbered List"
+                    >
+                      <ListOrdered className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.createElement('input')
+                        input.type = 'file'
+                        input.accept = 'image/*'
+                        input.onchange = e => {
+                          const file = (e.target as HTMLInputElement).files?.[0]
+                          if (file) insertImage(file, descriptionEditor)
+                        }
+                        input.click()
+                      }}
+                      className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
+                      title="Insert Image"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => insertVideo(descriptionEditor)}
+                      className="p-1 md:p-2 rounded hover:bg-gray-200 transition"
+                      title="Insert Video"
+                    >
+                      <VideoIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                  
+                  {/* Editor */}
+                  <div className="border border-gray-300 border-t-0 min-h-[200px] p-4 focus-within:ring-2 focus-within:ring-red-500 focus-within:border-transparent transition rounded-b-lg">
+                    <EditorContent editor={descriptionEditor} className="min-h-[150px]" />
+                  </div>
+                  
+                  <p className="text-xs text-gray-500 mt-1">
+                    Rich description with formatting, images, and videos to showcase your course
+                  </p>
                 </div>
 
                 <div className="flex flex-wrap gap-4">
@@ -828,7 +1224,14 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                     </span>
                   </div>
                   
-                  <p className="text-gray-600 mb-4">{course.shortDescription}</p>
+                  <div 
+                    className="text-gray-600 mb-4"
+                    dangerouslySetInnerHTML={{ 
+                      __html: course.shortDescription && isTipTapContent(course.shortDescription) 
+                        ? tiptapToHtml(course.shortDescription, "custom")
+                        : `<p>${course.shortDescription || 'No short description available'}</p>`
+                    }}
+                  />
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
@@ -872,6 +1275,21 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Course Description */}
+          {!isEditing && course.description && (
+            <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-red-200 mb-6">
+              <h2 className="text-lg font-semibold mb-4">Course Description</h2>
+              <div 
+                className="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none"
+                dangerouslySetInnerHTML={{ 
+                  __html: isTipTapContent(course.description) 
+                    ? tiptapToHtml(course.description)
+                    : `<p>${course.description}</p>`
+                }}
+              />
             </div>
           )}
 
@@ -1045,5 +1463,6 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
         <AdminMobileNav />
       </div>
     </div>
+    </>
   )
 }

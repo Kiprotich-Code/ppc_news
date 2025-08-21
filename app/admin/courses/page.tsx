@@ -17,7 +17,7 @@ import {
   Menu
 } from "lucide-react"
 import Link from "next/link"
-import { formatCurrency, formatDate } from "@/lib/utils"
+import { formatCurrency, formatDate, extractTextFromTipTap, isTipTapContent } from "@/lib/utils"
 import { AdminMobileNav } from "@/components/AdminMobileNav"
 import toast from "react-hot-toast"
 
@@ -25,11 +25,17 @@ interface Course {
   id: string
   title: string
   description: string
+  shortDescription?: string
+  featuredImage?: string
   price: number
   isFree: boolean
   isPremium: boolean
   isPublished: boolean
   difficulty: string
+  duration?: string
+  instructor?: string
+  enrollmentCount?: number
+  rating?: number
   createdAt: string
   category: {
     id: string
@@ -112,12 +118,41 @@ export default function AdminCoursesPage() {
   const deleteCourse = async (courseId: string) => {
     const course = courses.find(c => c.id === courseId)
     const courseTitle = course?.title || "Course"
-    if (!confirm(`Are you sure you want to delete "${courseTitle}"? This action cannot be undone.`)) {
+    const enrollmentCount = course?._count?.enrollments || 0
+    
+    // Enhanced confirmation message for courses with enrollments
+    let confirmMessage = `Are you sure you want to delete "${courseTitle}"?`
+    
+    if (enrollmentCount > 0) {
+      confirmMessage = `⚠️ WARNING: "${courseTitle}" has ${enrollmentCount} enrolled student${enrollmentCount === 1 ? '' : 's'}.
+
+Deleting this course will:
+• Remove ALL student enrollments
+• Delete ALL course content (sections, lessons)
+• Remove ALL student progress data
+• Delete ALL course reviews
+
+This action CANNOT be undone!
+
+Are you absolutely sure you want to proceed?`
+    } else {
+      confirmMessage += `
+
+This will delete all course content and cannot be undone.
+
+Are you sure you want to proceed?`
+    }
+
+    if (!confirm(confirmMessage)) {
       return
     }
 
-    // Show loading toast
-    const loadingToast = toast.loading(`Deleting "${courseTitle}"...`, {
+    // Show loading toast with enrollment info
+    const loadingMessage = enrollmentCount > 0 
+      ? `Deleting "${courseTitle}" and ${enrollmentCount} enrollment${enrollmentCount === 1 ? '' : 's'}...`
+      : `Deleting "${courseTitle}"...`
+      
+    const loadingToast = toast.loading(loadingMessage, {
       icon: '🗑️',
     })
 
@@ -129,10 +164,18 @@ export default function AdminCoursesPage() {
       toast.dismiss(loadingToast)
 
       if (response.ok) {
+        const result = await response.json()
         fetchCourses()
-        toast.success(`"${courseTitle}" deleted successfully`, {
+        
+        // Enhanced success message
+        let successMessage = `"${courseTitle}" deleted successfully`
+        if (result.deletedEnrollments > 0) {
+          successMessage += ` (${result.deletedEnrollments} enrollment${result.deletedEnrollments === 1 ? '' : 's'} removed)`
+        }
+        
+        toast.success(successMessage, {
           icon: '✅',
-          duration: 4000,
+          duration: 6000,
           style: {
             background: '#10B981',
             color: '#fff',
@@ -170,10 +213,24 @@ export default function AdminCoursesPage() {
     }
   }
 
-  const filteredCourses = courses.filter(course =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    course.category.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filteredCourses = courses.filter(course => {
+    const searchLower = searchTerm.toLowerCase();
+    const titleMatch = course.title.toLowerCase().includes(searchLower);
+    const categoryMatch = course.category.name.toLowerCase().includes(searchLower);
+    const instructorMatch = course.instructor?.toLowerCase().includes(searchLower) || false;
+    
+    // Search in course description (extract text from TipTap if needed)
+    let descriptionMatch = false;
+    if (course.description || course.shortDescription) {
+      const searchableText = course.shortDescription || course.description;
+      const plainText = isTipTapContent(searchableText) 
+        ? extractTextFromTipTap(searchableText)
+        : searchableText;
+      descriptionMatch = plainText.toLowerCase().includes(searchLower);
+    }
+    
+    return titleMatch || categoryMatch || instructorMatch || descriptionMatch;
+  })
 
   if (status === "loading" || isLoading) {
     return (
@@ -287,7 +344,18 @@ export default function AdminCoursesPage() {
                 <div key={course.id} className="bg-white rounded-lg shadow-sm border border-red-200">
                   <div className="p-4">
                     <div className="flex flex-col space-y-3">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Course Image */}
+                        {course.featuredImage && (
+                          <div className="flex-shrink-0 w-20 h-16 md:w-24 md:h-18 rounded-lg overflow-hidden bg-gray-100">
+                            <img 
+                              src={course.featuredImage} 
+                              alt={course.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2 flex-wrap">
                             <h3 className="text-sm md:text-base font-semibold text-gray-900 truncate">{course.title}</h3>
@@ -305,24 +373,50 @@ export default function AdminCoursesPage() {
                             }`}>
                               {course.isFree ? 'Free' : 'Premium'}
                             </span>
+                            <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800 capitalize">
+                              {course.difficulty?.toLowerCase() || 'Beginner'}
+                            </span>
                           </div>
                           
-                          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{course.description}</p>
+                          <p className="text-gray-600 text-sm mb-2 line-clamp-2">
+                            {(() => {
+                              // Prefer shortDescription for list view, fallback to description
+                              const displayText = course.shortDescription || course.description;
+                              if (!displayText) return "No description available";
+                              
+                              return isTipTapContent(displayText) 
+                                ? extractTextFromTipTap(displayText)
+                                : displayText;
+                            })()}
+                          </p>
                           
                           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                             <span className="flex items-center gap-1">
                               <BookOpen className="w-3 h-3" />
                               {course.category.name}
                             </span>
-                            <span className="flex items-center gap-1">
+                            <span className={`flex items-center gap-1 ${
+                              course._count.enrollments > 0 
+                                ? 'text-blue-600 font-medium' 
+                                : 'text-gray-500'
+                            }`}>
                               <Users className="w-3 h-3" />
-                              {course._count.enrollments}
+                              {course._count.enrollments} enrolled
                             </span>
                             <span className="flex items-center gap-1">
                               <DollarSign className="w-3 h-3" />
                               {course.isFree ? 'Free' : formatCurrency(course.price)}
                             </span>
                             <span>{course._count.sections} sections</span>
+                            {course.duration && (
+                              <span>⏱️ {course.duration}</span>
+                            )}
+                            {course.instructor && (
+                              <span>👨‍🏫 {course.instructor}</span>
+                            )}
+                            {course.rating && (
+                              <span>⭐ {course.rating.toFixed(1)}</span>
+                            )}
                             <span className="hidden sm:inline">{formatDate(new Date(course.createdAt))}</span>
                           </div>
                         </div>
@@ -352,8 +446,16 @@ export default function AdminCoursesPage() {
                           
                           <button
                             onClick={() => deleteCourse(course.id)}
-                            className="p-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
-                            title="Delete Course"
+                            className={`p-1.5 rounded transition-colors ${
+                              course._count.enrollments > 0
+                                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            }`}
+                            title={
+                              course._count.enrollments > 0
+                                ? `Delete Course (Warning: ${course._count.enrollments} enrolled student${course._count.enrollments === 1 ? '' : 's'})`
+                                : 'Delete Course'
+                            }
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>

@@ -134,28 +134,71 @@ export async function DELETE(
 
     const { id } = await params
 
-    // Check if course has enrollments
-    const courseWithEnrollments = await prisma.course.findUnique({
+    // Check if course exists
+    const course = await prisma.course.findUnique({
       where: { id },
-      include: { _count: { select: { enrollments: true } } }
+      include: { 
+        _count: { 
+          select: { 
+            enrollments: true,
+            sections: true 
+          } 
+        } 
+      }
     })
 
-    if (!courseWithEnrollments) {
+    if (!course) {
       return NextResponse.json({ error: "Course not found" }, { status: 404 })
     }
 
-    if (courseWithEnrollments._count.enrollments > 0) {
-      return NextResponse.json({ 
-        error: "Cannot delete course with existing enrollments" 
-      }, { status: 400 })
-    }
+    // Start a transaction to safely delete all related data
+    await prisma.$transaction(async (tx) => {
+      // Delete lesson progress for all lessons in this course
+      await tx.lessonProgress.deleteMany({
+        where: {
+          lesson: {
+            section: {
+              courseId: id
+            }
+          }
+        }
+      })
 
-    // Delete course (sections and lessons will be deleted via cascade)
-    await prisma.course.delete({
-      where: { id }
+      // Delete course reviews
+      await tx.courseReview.deleteMany({
+        where: { courseId: id }
+      })
+
+      // Delete course enrollments
+      await tx.courseEnrollment.deleteMany({
+        where: { courseId: id }
+      })
+
+      // Delete lessons (will cascade to delete lesson progress)
+      await tx.lesson.deleteMany({
+        where: {
+          section: {
+            courseId: id
+          }
+        }
+      })
+
+      // Delete sections
+      await tx.courseSection.deleteMany({
+        where: { courseId: id }
+      })
+
+      // Finally delete the course
+      await tx.course.delete({
+        where: { id }
+      })
     })
 
-    return NextResponse.json({ message: "Course deleted successfully" })
+    return NextResponse.json({ 
+      message: "Course and all related data deleted successfully",
+      deletedEnrollments: course._count.enrollments,
+      deletedSections: course._count.sections
+    })
   } catch (error: any) {
     console.error('Error deleting course:', error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
