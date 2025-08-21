@@ -36,15 +36,33 @@ export function tiptapToHtml(content: string, className?: string): string {
     // Convert TipTap JSON to HTML
     if (tiptapData.type === 'doc' && tiptapData.content) {
       const htmlContent = convertTiptapNodeToHtml(tiptapData);
-      const wrapperClass = className ? ` ${className}` : '';
-      return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none${wrapperClass}">${htmlContent}</div>`;
+      
+      // Only wrap with prose if no className is provided (for full content rendering)
+      if (!className) {
+        return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none">${htmlContent}</div>`;
+      }
+      
+      // For custom className, just return the content
+      return htmlContent;
     }
     
-    // If it's not valid TipTap JSON, return as plain text wrapped in paragraph
-    return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none${className ? ` ${className}` : ''}"><p>${content}</p></div>`;
+    // If it's not valid TipTap JSON, return as plain text
+    const fallbackContent = `<p>${content}</p>`;
+    
+    if (!className) {
+      return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none">${fallbackContent}</div>`;
+    }
+    
+    return fallbackContent;
   } catch (error) {
-    // If parsing fails, return as plain text wrapped in paragraph
-    return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none${className ? ` ${className}` : ''}"><p>${content}</p></div>`;
+    // If parsing fails, return as plain text
+    const fallbackContent = `<p>${content}</p>`;
+    
+    if (!className) {
+      return `<div class="prose prose-sm sm:prose lg:prose-lg xl:prose-xl max-w-none">${fallbackContent}</div>`;
+    }
+    
+    return fallbackContent;
   }
 }
 
@@ -226,21 +244,26 @@ export function extractTextFromTipTap(content: string): string {
         return node.text || ''
       }
       
-      if (node.content) {
+      if (node.content && Array.isArray(node.content)) {
         return node.content.map(extractText).join('')
+      }
+      
+      // Add space after block elements for better readability
+      if (node.type === 'paragraph' || node.type === 'heading') {
+        return node.content ? node.content.map(extractText).join('') + ' ' : ''
       }
       
       return ''
     }
     
-    if (parsedContent.content) {
-      return parsedContent.content.map(extractText).join(' ')
+    if (parsedContent.content && Array.isArray(parsedContent.content)) {
+      return parsedContent.content.map(extractText).join('').trim()
     }
     
     return ''
   } catch (e) {
-    // Return as-is if not JSON
-    return content
+    // Return as-is if not JSON, but clean up any HTML tags
+    return content.replace(/<[^>]*>/g, '').trim()
   }
 }
 

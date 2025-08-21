@@ -217,8 +217,8 @@ export default function LessonViewPage({
                   <h2 className="text-lg font-semibold text-gray-900 mb-3">About this lesson</h2>
                   {isTipTapContent(lesson.description) ? (
                     <div 
-                      className="text-gray-700" 
-                      dangerouslySetInnerHTML={{ __html: tiptapToHtml(lesson.description, "text-gray-700") }}
+                      className="text-gray-700 prose prose-sm max-w-none" 
+                      dangerouslySetInnerHTML={{ __html: tiptapToHtml(lesson.description, "custom") }}
                     />
                   ) : (
                     <p className="text-gray-700 leading-relaxed">{lesson.description}</p>
@@ -227,7 +227,7 @@ export default function LessonViewPage({
               )}
 
               {lesson.type === 'ARTICLE' && lesson.content && (
-                <div className="prose max-w-none">
+                <div className="prose prose-lg max-w-none">
                   {isTipTapContent(lesson.content) ? (
                     <div dangerouslySetInnerHTML={{ __html: tiptapToHtml(lesson.content) }} />
                   ) : (

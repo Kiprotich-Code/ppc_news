@@ -251,8 +251,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                     <h2 className="text-xl font-semibold text-gray-900 mb-4">About this course</h2>
                     {course.description && isTipTapContent(course.description) ? (
                       <div 
-                        className="text-gray-700" 
-                        dangerouslySetInnerHTML={{ __html: tiptapToHtml(course.description, "text-gray-700") }}
+                        className="text-gray-700 prose prose-sm max-w-none" 
+                        dangerouslySetInnerHTML={{ __html: tiptapToHtml(course.description, "custom") }}
                       />
                     ) : (
                       <p className="text-gray-700 leading-relaxed">{course.description}</p>
@@ -299,8 +299,8 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
                           <div className="text-gray-600 text-sm mt-1">
                             {isTipTapContent(section.description) ? (
                               <div 
-                                className="prose-sm" 
-                                dangerouslySetInnerHTML={{ __html: tiptapToHtml(section.description, "prose-sm") }}
+                                className="prose prose-sm text-gray-600 max-w-none" 
+                                dangerouslySetInnerHTML={{ __html: tiptapToHtml(section.description, "custom") }}
                               />
                             ) : (
                               <p>{section.description}</p>
