@@ -11,6 +11,7 @@ import { PayHeroPayment } from "@/components/PayHeroPayment"
 import { formatDate, formatCurrency, tiptapToHtml, extractTextFromTipTap, isTipTapContent } from "@/lib/utils"
 import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText, User } from "lucide-react"
 import Link from "next/link"
+import { toast } from "sonner"
 
 interface Course {
   id: string
@@ -52,6 +53,7 @@ export default function Academy() {
   })
   const [courses, setCourses] = useState<Course[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isEnrolling, setIsEnrolling] = useState<string | null>(null) // Track which course is being enrolled
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [filter, setFilter] = useState<'all' | 'free' | 'premium'>('all')
 
@@ -92,9 +94,52 @@ export default function Academy() {
     }
   }
 
-  const handleBuyCourse = (course: Course) => {
-    setSelectedCourse(course)
-  setIsPaymentModalOpen(true)
+  const handleBuyCourse = async (course: Course) => {
+    // For free courses, enroll directly without payment modal
+    if (course.isFree || course.price === 0) {
+      setIsEnrolling(course.id); // Set loading state
+      try {
+        const response = await fetch('/api/wallet/course-payment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            courseId: course.id,
+            paymentMethod: 'MPESA', // Required by API even for free courses
+          }),
+        });
+
+        const result = await response.json();
+        
+        if (response.ok) {
+          if (result.alreadyEnrolled) {
+            // User is already enrolled, redirect to course
+            toast.info('You are already enrolled in this course');
+            window.location.href = `/dashboard/academy/${course.id}`;
+          } else {
+            // Successful enrollment
+            toast.success('Successfully enrolled in the course!');
+            await fetchAcademyData(); // Refresh the courses data
+            // Redirect to course
+            window.location.href = `/dashboard/academy/${course.id}`;
+          }
+        } else {
+          console.error('Free course enrollment failed:', result.error);
+          toast.error('Failed to enroll in the course. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error enrolling in free course:', error);
+        toast.error('Something went wrong. Please try again.');
+      } finally {
+        setIsEnrolling(null); // Clear loading state
+      }
+      return;
+    }
+
+    // For paid courses, open payment modal
+    setSelectedCourse(course);
+    setIsPaymentModalOpen(true);
   }
 
   const handlePaymentSuccess = () => {
@@ -304,12 +349,18 @@ export default function Academy() {
                         ) : (
                           <button
                             onClick={() => handleBuyCourse(course)}
-                            className="bg-red-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-red-700 flex items-center whitespace-nowrap"
+                            disabled={isEnrolling === course.id}
+                            className="bg-red-600 text-white px-3 py-2 rounded-md text-xs font-medium hover:bg-red-700 flex items-center whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            {course.isFree ? (
+                            {isEnrolling === course.id ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                                Enrolling...
+                              </>
+                            ) : course.isFree ? (
                               <>
                                 <CheckCircle className="h-3 w-3 mr-1" />
-                                Enroll Free
+                                Enroll Now
                               </>
                             ) : (
                               <>

@@ -434,11 +434,15 @@ export function PayHeroPayment({
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                {type === 'deposit' ? 'Payment Completed!' : 'Withdrawal Submitted!'}
+                {type === 'deposit' ? 'Payment Completed!' : 
+                 type === 'course_payment' ? 'Course Enrollment Successful!' : 
+                 'Withdrawal Submitted!'}
               </h3>
               <p className="text-gray-600 mb-4">
                 {type === 'deposit' 
                   ? 'Your payment has been processed successfully.'
+                  : type === 'course_payment'
+                  ? 'You have been successfully enrolled in the course.'
                   : 'Your withdrawal request has been submitted successfully.'
                 }
               </p>
@@ -446,6 +450,8 @@ export function PayHeroPayment({
                 <p className="text-sm text-green-800">
                   {type === 'deposit' 
                     ? 'Your wallet has been updated with the payment amount.'
+                    : type === 'course_payment'
+                    ? 'You can now access all course materials and start learning immediately.'
                     : 'Your withdrawal will be processed within 24 hours during business hours.'
                   }
                 </p>
