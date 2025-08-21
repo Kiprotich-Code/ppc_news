@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: { createdAt: "desc" },
-      take: 10
+      take: 1000
     })
 
     const formattedPendingArticles = pendingArticlesData.map((article: { id: any; title: any; author: { name: any }; createdAt: { toISOString: () => any } }) => ({

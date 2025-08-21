@@ -55,7 +55,7 @@ export default function Transactions() {
   // Pagination states
   const [transactionPage, setTransactionPage] = useState(1)
   const [walletPage, setWalletPage] = useState(1)
-  const itemsPerPage = 5
+  const itemsPerPage = 1000
 
   useEffect(() => {
     if (status === "loading") return

@@ -52,7 +52,7 @@ const AdminArticles = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 1000;
   
   // Delete confirmation states
   const [deleteConfirmation, setDeleteConfirmation] = useState<{

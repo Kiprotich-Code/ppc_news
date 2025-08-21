@@ -52,7 +52,7 @@ const WithdrawalAdminPage = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
+  const itemsPerPage = 1000;
 
   const isAdmin = session?.user?.email === 'admin@ppcnews.com' || session?.user?.role === 'ADMIN';
 

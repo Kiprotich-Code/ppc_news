@@ -36,7 +36,7 @@ const AdminMembers = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const itemsPerPage = 1000;
 
   // Delete modal states
   const [showDeleteModal, setShowDeleteModal] = useState(false);

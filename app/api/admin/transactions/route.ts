@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         }
       },
       orderBy: { createdAt: "desc" },
-      take: 100
+      take: 1000
     })
 
     // Fetch all wallets with user information
