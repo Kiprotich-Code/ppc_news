@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import { tiptapToHtml, isTipTapContent } from "@/lib/utils"
+import { withUserAccess } from "@/components/withRoleAccess"
 import { 
   BookOpen, 
   Clock, 
@@ -49,7 +50,7 @@ interface NavigationLesson {
   sectionTitle: string
 }
 
-export default function LessonViewPage({ 
+function LessonViewPage({ 
   params 
 }: { 
   params: Promise<{ id: string; lessonId: string }> 
@@ -302,3 +303,5 @@ export default function LessonViewPage({
     </div>
   )
 }
+
+export default withUserAccess(LessonViewPage);

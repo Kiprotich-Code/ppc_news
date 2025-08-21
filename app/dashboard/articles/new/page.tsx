@@ -13,6 +13,7 @@ import { EditorContent, useEditor } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Image from "@tiptap/extension-image"
 import Heading from "@tiptap/extension-heading"
+import { withUserAccess } from "@/components/withRoleAccess"
 import TextAlign from "@tiptap/extension-text-align"
 import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
@@ -56,7 +57,7 @@ const Video = Image.extend({
   },
 })
 
-export default function NewArticle() {
+function NewArticle() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
@@ -774,3 +775,5 @@ export default function NewArticle() {
     </div>
   )
 }
+
+export default withUserAccess(NewArticle);

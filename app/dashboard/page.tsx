@@ -5,6 +5,7 @@ import { useEffect, useState } from "react"
 import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { withUserAccess } from "@/components/withRoleAccess"
 import { 
   FileText, 
   TrendingUp, 
@@ -40,7 +41,7 @@ interface Article {
   earnings: number
   authorName: string
 }
-export default function Dashboard() {
+function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState<DashboardStats>({
@@ -414,3 +415,6 @@ export default function Dashboard() {
     </div>
   )
 }
+
+// Apply user access control
+export default withUserAccess(Dashboard)

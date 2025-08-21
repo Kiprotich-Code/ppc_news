@@ -12,6 +12,7 @@ import { formatDate, formatCurrency, tiptapToHtml, extractTextFromTipTap, isTipT
 import { BookOpen, Clock, CheckCircle, Lock, DollarSign, FileText, User } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
+import { withUserAccess } from "@/components/withRoleAccess"
 
 interface Course {
   id: string
@@ -42,7 +43,7 @@ interface AcademyStats {
   totalHours: number
 }
 
-export default function Academy() {
+function Academy() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [stats, setStats] = useState<AcademyStats>({
@@ -408,3 +409,6 @@ export default function Academy() {
     </div>
   )
 }
+
+// Apply user access control
+export default withUserAccess(Academy);

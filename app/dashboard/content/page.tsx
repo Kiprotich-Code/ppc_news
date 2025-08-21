@@ -8,6 +8,7 @@ import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useRouter } from "next/navigation"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
+import { withUserAccess } from "@/components/withRoleAccess"
 import { formatCurrency } from "@/lib/utils"
 import { Toast } from "@/components/Toast"
 
@@ -23,7 +24,7 @@ interface Article {
   featuredImage?: string;
 }
 
-export default function ContentPage() {
+function ContentPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
   const [articles, setArticles] = useState<Article[]>([])
@@ -386,3 +387,5 @@ export default function ContentPage() {
     </div>
   )
 }
+
+export default withUserAccess(ContentPage);

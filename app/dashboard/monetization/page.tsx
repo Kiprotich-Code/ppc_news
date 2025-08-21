@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { useRouter } from "next/navigation"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
+import { withUserAccess } from "@/components/withRoleAccess"
 
 interface DashboardStats {
   totalArticles: number
@@ -15,7 +16,7 @@ interface DashboardStats {
   pendingArticles: number
 }
 
-export default function MonetizationPage() {
+function MonetizationPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
@@ -124,3 +125,5 @@ export default function MonetizationPage() {
     </div>
   )
 } 
+
+export default withUserAccess(MonetizationPage);

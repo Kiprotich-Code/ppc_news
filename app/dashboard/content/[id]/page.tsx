@@ -11,6 +11,7 @@ import { DashboardMobileNav } from "@/components/DashboardMobileNav";
 import { useEditor, EditorContent } from "@tiptap/react"; // TipTap React components
 import StarterKit from "@tiptap/starter-kit"; // Basic extensions
 import { Share2, Copy, CheckCircle } from "lucide-react";
+import { withUserAccess } from "@/components/withRoleAccess";
 
 interface Article {
   id: string;
@@ -26,7 +27,7 @@ interface Article {
   publishedAt?: string;
 }
 
-export default function ArticleDetailPage() {
+function ArticleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -403,3 +404,5 @@ export default function ArticleDetailPage() {
     </div>
   );
 }
+
+export default withUserAccess(ArticleDetailPage);

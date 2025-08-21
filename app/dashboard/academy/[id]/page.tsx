@@ -8,6 +8,7 @@ import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
 import { tiptapToHtml, extractTextFromTipTap, isTipTapContent } from "@/lib/utils"
+import { withUserAccess } from "@/components/withRoleAccess"
 import { 
   BookOpen, 
   Clock, 
@@ -69,7 +70,7 @@ interface Course {
   createdAt: string
 }
 
-export default function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
@@ -434,3 +435,5 @@ export default function CourseDetailPage({ params }: { params: Promise<{ id: str
     </div>
   )
 }
+
+export default withUserAccess(CourseDetailPage);

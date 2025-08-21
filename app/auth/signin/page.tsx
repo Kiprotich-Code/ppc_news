@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { signIn, getSession } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Navigation } from "@/components/Navigation"
-import { Eye, EyeOff, Mail, Lock, ArrowRight, LogIn } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, ArrowRight, LogIn, AlertCircle } from "lucide-react"
 import toast from "react-hot-toast"
 
 export default function SignIn() {
@@ -15,6 +15,19 @@ export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false)
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Get error message from URL params
+  const error = searchParams.get('error')
+  const message = searchParams.get('message')
+  const errorMessage = error === 'access_denied' && message ? message : null
+
+  // Handle error messages from middleware
+  useEffect(() => {
+    if (error === 'access_denied' && message) {
+      toast.error(message, { duration: 5000 })
+    }
+  }, [error, message])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +74,14 @@ export default function SignIn() {
               <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-red-800 to-red-900 bg-clip-text text-transparent animate-gradient">
                 Welcome Back
               </h2>
+              
+              {/* Error Message */}
+              {errorMessage && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  {errorMessage}
+                </div>
+              )}
+              
               <p className="text-gray-600">
                 Don't have an account?{" "}
                 <Link

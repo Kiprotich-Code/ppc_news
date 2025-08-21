@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Eye, EyeOff, Mail, Lock, User, Phone, MapPin, Tag, Image as ImageIcon, IdCard, Home, CreditCard, Sparkles } from "lucide-react"
 import { DashboardMobileNav } from "@/components/DashboardMobileNav"
+import { withUserAccess } from "@/components/withRoleAccess"
 
 type Profile = {
   username: string
@@ -45,7 +46,7 @@ const emptyProfile: Profile = {
   role: "",
 }
 
-export default function ProfilePage() {
+function ProfilePage() {
   const [step, setStep] = useState(1)
   const [profile, setProfile] = useState(emptyProfile)
   const [form, setForm] = useState(emptyProfile)
@@ -386,3 +387,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+export default withUserAccess(ProfilePage);

@@ -8,6 +8,7 @@ import { Navigation } from "@/components/Navigation";
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardMobileNav } from "@/components/DashboardMobileNav";
 import { PayHeroPayment } from "@/components/PayHeroPayment";
+import { withUserAccess } from "@/components/withRoleAccess";
 import { formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { 
@@ -1020,4 +1021,4 @@ const WalletDashboard = () => {
   );
 };
 
-export default WalletDashboard;
+export default withUserAccess(WalletDashboard);
