@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { signIn, getSession } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
@@ -8,7 +8,7 @@ import { Navigation } from "@/components/Navigation"
 import { Eye, EyeOff, Mail, Lock, ArrowRight, LogIn, AlertCircle } from "lucide-react"
 import toast from "react-hot-toast"
 
-export default function SignIn() {
+function SignInForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -280,5 +280,43 @@ export default function SignIn() {
         }
       `}</style>
     </div>
+  )
+}
+
+// Loading component for Suspense fallback
+function SignInLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50">      
+      <div className="flex min-h-screen items-center justify-center p-6">
+        <div className="w-full max-w-lg">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
+            <div className="text-center space-y-4 mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-600 to-red-800 rounded-2xl">
+                <LogIn className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 via-red-800 to-red-900 bg-clip-text text-transparent">
+                Loading...
+              </h2>
+            </div>
+            <div className="space-y-6">
+              <div className="animate-pulse space-y-5">
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
+                <div className="h-12 bg-gray-200 rounded-xl"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Main component with Suspense boundary
+export default function SignIn() {
+  return (
+    <Suspense fallback={<SignInLoading />}>
+      <SignInForm />
+    </Suspense>
   )
 }
