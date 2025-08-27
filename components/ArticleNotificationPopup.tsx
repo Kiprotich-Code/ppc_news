@@ -27,9 +27,16 @@ export const ArticleNotificationPopup: React.FC<ArticleNotificationPopupProps> =
   const [isVisible, setIsVisible] = useState(false);
   const [currentNotification, setCurrentNotification] = useState<ArticleNotification | null>(null);
   const [lastChecked, setLastChecked] = useState<string>('');
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before running effects
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Function to check for new articles
   const checkForNewArticles = async () => {
+    if (!mounted) return;
     try {
       const response = await fetch('/api/recent-articles');
       if (response.ok) {
@@ -57,21 +64,23 @@ export const ArticleNotificationPopup: React.FC<ArticleNotificationPopupProps> =
 
   // Show notifications one by one
   const showNextNotification = (notificationList: ArticleNotification[]) => {
-    if (notificationList.length > 0) {
-      setCurrentNotification(notificationList[0]);
-      setIsVisible(true);
-      
-      // Auto-hide after 6 seconds
-      setTimeout(() => {
-        hideCurrentNotification();
-        // Show next notification if any
-        if (notificationList.length > 1) {
-          setTimeout(() => {
-            showNextNotification(notificationList.slice(1));
-          }, 1000);
-        }
-      }, 6000);
-    }
+    if (!mounted || notificationList.length === 0) return;
+    
+    setCurrentNotification(notificationList[0]);
+    setIsVisible(true);
+    
+    // Auto-hide after 6 seconds
+    const hideTimer = setTimeout(() => {
+      hideCurrentNotification();
+      // Show next notification if any
+      if (notificationList.length > 1) {
+        setTimeout(() => {
+          showNextNotification(notificationList.slice(1));
+        }, 1000);
+      }
+    }, 6000);
+
+    return () => clearTimeout(hideTimer);
   };
 
   const hideCurrentNotification = () => {
@@ -96,8 +105,10 @@ export const ArticleNotificationPopup: React.FC<ArticleNotificationPopupProps> =
     return `${diffInDays}d ago`;
   };
 
-  // Check for new articles every 2 minutes
+  // Check for new articles every 2 minutes, only when mounted
   useEffect(() => {
+    if (!mounted) return;
+    
     checkForNewArticles();
     
     const interval = setInterval(() => {
@@ -105,9 +116,10 @@ export const ArticleNotificationPopup: React.FC<ArticleNotificationPopupProps> =
     }, 2 * 60 * 1000); // 2 minutes
 
     return () => clearInterval(interval);
-  }, [lastChecked]);
+  }, [mounted, lastChecked]);
 
-  if (!isVisible || !currentNotification) return null;
+  // Don't render anything during SSR or before mount
+  if (!mounted || !isVisible || !currentNotification) return null;
 
   return (
     <div className={`fixed top-4 right-4 z-50 ${className}`}>

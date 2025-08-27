@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, X, Smartphone, ArrowRight } from 'lucide-react';
 
 interface FloatingDownloadButtonProps {
@@ -12,8 +12,15 @@ export const FloatingDownloadButton: React.FC<FloatingDownloadButtonProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
-  if (!isVisible) return null;
+  // Ensure component is mounted before rendering
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Don't render during SSR
+  if (!mounted || !isVisible) return null;
 
   return (
     <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
