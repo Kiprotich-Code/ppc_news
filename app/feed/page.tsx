@@ -7,6 +7,8 @@ import { User, Eye, Clock, ArrowRight, MessageCircle, Share, FileText, X } from 
 import useSWR from "swr";
 import { Navigation } from "@/components/Navigation";
 import { ShareButton } from "@/components/ShareButton";
+import { FloatingDownloadButton } from "@/components/FloatingDownloadButton";
+import { ArticleNotificationPopup } from "@/components/ArticleNotificationPopup";
 import { getCategoryConfig } from "@/lib/categories";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
@@ -64,6 +66,8 @@ export default function PublicFeed() {
   return (
     <>
       <Navigation />
+      <ArticleNotificationPopup />
+      <FloatingDownloadButton />
       <section className="max-w-2xl mx-auto px-4 py-6">
 
         {/* Page Title */}

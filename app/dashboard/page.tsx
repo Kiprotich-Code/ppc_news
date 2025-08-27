@@ -5,6 +5,8 @@ import { useEffect, useState } from "react"
 import { Navigation } from "@/components/Navigation"
 import { Sidebar } from "@/components/Sidebar"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
+import { FloatingDownloadButton } from "@/components/FloatingDownloadButton"
+import { ArticleNotificationPopup } from "@/components/ArticleNotificationPopup"
 import { withUserAccess } from "@/components/withRoleAccess"
 import { 
   FileText, 
@@ -149,6 +151,8 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-red-50 flex flex-col md:flex-row">
+      <ArticleNotificationPopup />
+      <FloatingDownloadButton />
       {/* Sidebar for md+ */}
       <div className="hidden md:block">
         <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
