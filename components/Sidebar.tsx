@@ -34,6 +34,7 @@ export function Sidebar({
     { label: "Home", href: "/dashboard", icon: "home" },
     { label: "Create", href: "/dashboard/articles/new", icon: "pencil" },
     { label: "Content Library", href: "/dashboard/content", icon: "book-open" },
+    { label: "Watch & Earn", href: "/dashboard/watch-earn", icon: "dollar-sign" },
     { label: "Monetization", href: "/dashboard/monetization", icon: "dollar-sign" },
     { label: "Wallet", href: "/dashboard/wallet", icon: "dollar-sign" },
     { label: "Content Academy", href: "/dashboard/academy", icon: "book-open" },
