@@ -3,11 +3,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Home, Pencil, BookOpen, DollarSign, User, Menu } from "lucide-react"
+import { Home, Pencil, BookOpen, DollarSign, User, Menu, Play } from "lucide-react"
 
 const navItems = [
   { label: "Home", href: "/dashboard", icon: Home },
   { label: "Create", href: "/dashboard/articles/new", icon: Pencil },
+  { label: "Watch", href: "/dashboard/watch-earn", icon: Play },
   { label: "Academy", href: "/dashboard/academy", icon: BookOpen },
   { label: "Wallet", href: "/dashboard/wallet", icon: DollarSign },
   { label: "Account", href: "/dashboard/profile", icon: User },

@@ -1,12 +1,5 @@
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
-  // React 19 specific configuration
-  experimental: {
-    reactCompiler: process.env.REACT_COMPILER === 'true', // Only enable if using React 19
-    // Other experimental features if needed
-  },
-
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // Production optimizations
   compiler: {
     styledComponents: true,
@@ -51,4 +44,4 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default nextConfig
+module.exports = nextConfig

@@ -42,17 +42,10 @@ function SignInForm() {
 
       if (result?.error) {
         toast.error("Invalid email or password")
-        console.log(result.error)
       } else {
         toast.success("Signed in successfully!")
-        const session = await getSession()
-        if (session?.user) {
-          if (session.user.role === "ADMIN") {
-            router.push("/admin")
-          } else {
-            router.push("/dashboard")
-          }
-        }
+        // Immediate redirect after successful login
+        window.location.href = "/dashboard"
       }
     } catch (error) {
       toast.error("An error occurred. Please try again.")
