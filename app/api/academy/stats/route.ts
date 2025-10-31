@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/db"
+import { PrismaClient } from "@prisma/client"
+
+const prisma = new PrismaClient()
 
 export async function GET(request: Request) {
   try {
@@ -36,18 +38,18 @@ export async function GET(request: Request) {
 
     // Calculate statistics
     const enrolledCourses = enrollments.length
-    const completedCourses = enrollments.filter((e: { completedAt: null }) => e.completedAt !== null).length
+    const completedCourses = enrollments.filter(e => e.completedAt !== null).length
     
-    const totalLessons = enrollments.reduce((acc: any, enrollment: { course: { sections: any[] } }) => {
+    const totalLessons = enrollments.reduce((acc, enrollment) => {
       const courseLessons = enrollment.course.sections.reduce((sectionAcc, section) => 
         sectionAcc + section.lessons.length, 0
       )
       return acc + courseLessons
     }, 0)
 
-    const totalHours = enrollments.reduce((acc: any, enrollment: { course: { sections: any[] } }) => {
-      const courseDuration = enrollment.course.sections.reduce((sectionAcc: any, section: { lessons: any[] }) => 
-        sectionAcc + section.lessons.reduce((lessonAcc: any, lesson: { duration: any }) => 
+    const totalHours = enrollments.reduce((acc, enrollment) => {
+      const courseDuration = enrollment.course.sections.reduce((sectionAcc, section) => 
+        sectionAcc + section.lessons.reduce((lessonAcc, lesson) => 
           lessonAcc + (lesson.duration || 0), 0
         ), 0
       )
