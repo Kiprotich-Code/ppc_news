@@ -6,6 +6,10 @@ const nextConfig = {
     reactRemoveProperties: process.env.NODE_ENV === 'production',
   },
 
+  experimental: {
+    isrMemoryCacheSize: 0,
+  },
+
   // Environment-aware settings
   eslint: {
     ignoreDuringBuilds: !!process.env.SKIP_LINT,

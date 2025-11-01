@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
+
 // Admin: Boost articles (toggle/set level/expiry)
 export async function POST(req: NextRequest) {
   const body = await req.json();

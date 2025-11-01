@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
-// Force dynamic rendering
+
 export const dynamic = 'force-dynamic';
 
 // GET /api/admin/articles/[id] - fetch single article
