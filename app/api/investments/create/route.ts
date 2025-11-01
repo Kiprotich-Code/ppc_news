@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { Prisma, InvestmentPeriod } from "@prisma/client";
+import { InvestmentPeriod } from "@prisma/client";
 
 const INVESTMENT_RATES = {
   ONE_WEEK: { rate: 0.04, days: 7 },
@@ -63,16 +63,15 @@ export async function POST(req: NextRequest) {
 
     const totalReturn = amount * (1 + config.rate);
 
-    // Perform transaction
-    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      // Update wallet balance
-      await tx.wallet.update({
+    try {
+      // Update wallet balance first
+      await prisma.wallet.update({
         where: { userId: session.user.id },
         data: { balance: { decrement: amount } },
       });
 
       // Create investment
-      await tx.investment.create({
+      const investment = await prisma.investment.create({
         data: {
           userId: session.user.id,
           amount,
@@ -84,7 +83,7 @@ export async function POST(req: NextRequest) {
       });
 
       // Create transaction record
-      await tx.transaction.create({
+      await prisma.transaction.create({
         data: {
           userId: session.user.id,
           type: "INVESTMENT",
@@ -92,33 +91,36 @@ export async function POST(req: NextRequest) {
           description: `Investment: ${validPeriod.replace("_", " ").toLowerCase()} - ${config.rate * 100}%`,
           status: "COMPLETED",
           paymentMethod: "MPESA",
-          reference: `INV_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`, // Add randomness to reduce collision risk
+          reference: `INV_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
         },
       });
-    });
 
-    return NextResponse.json({
-      success: true,
-      message: "Investment created successfully",
-    });
-  } catch (error) {
-    // Log specific error details
-    console.error("Investment creation error:", error);
+      return NextResponse.json({
+        success: true,
+        data: {
+          investment,
+          endDate,
+          expectedReturn: totalReturn,
+        },
+      });
 
-    // Handle specific Prisma errors
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // Handle specific Prisma errors
-      if (error instanceof Error && 'code' in error) {
-        const prismaError = error as any;
-        if (prismaError.code === "P2002") {
-        return NextResponse.json(
-          { error: "A unique constraint was violated. Please try again." },
-          { status: 400 }
-        );
+    } catch (error) {
+      // If any operation fails, attempt to rollback the wallet update
+      if (wallet) {
+        try {
+          await prisma.wallet.update({
+            where: { userId: session.user.id },
+            data: { balance: wallet.balance }, // Restore original balance
+          });
+        } catch (rollbackError) {
+          console.error("Failed to rollback wallet balance:", rollbackError);
         }
       }
+      console.error("Create investment error:", error);
+      return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-
+  } catch (error) {
+    console.error("Create investment error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
