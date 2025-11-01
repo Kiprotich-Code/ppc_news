@@ -3,13 +3,16 @@ import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/db";
 import { authOptions } from "@/lib/auth";
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 // GET /api/admin/articles/[id] - fetch single article
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // Updated type
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params; // Await params
+    const params = await context.params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user || session.user.role !== "ADMIN") {
@@ -17,7 +20,7 @@ export async function GET(
     }
 
     const article = await prisma.article.findUnique({
-      where: { id: params.id }, // Use params.id
+      where: { id: params.id },
       include: {
         author: { select: { name: true, email: true } },
       },
@@ -45,69 +48,13 @@ export async function GET(
   }
 }
 
-// POST /api/admin/articles/[id] - update article status
-export async function POST(
-  request: NextRequest,
-  context: { params: Promise<{ id: string }> } // Updated type
-) {
-  try {
-    const params = await context.params; // Await params
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (session.user.role !== "ADMIN") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
-
-    const { action } = await request.json();
-    const articleId = params.id; // Use params.id
-
-    if (!action || !["approve", "reject"].includes(action)) {
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
-    }
-
-    const article = await prisma.article.findUnique({
-      where: { id: articleId },
-    });
-
-    if (!article) {
-      return NextResponse.json({ error: "Article not found" }, { status: 404 });
-    }
-
-    const newStatus = action === "approve" ? "APPROVED" : "REJECTED";
-    const publishedAt = action === "approve" ? new Date() : null;
-
-    const updatedArticle = await prisma.article.update({
-      where: { id: articleId },
-      data: {
-        status: newStatus,
-        publishedAt,
-      },
-    });
-
-    return NextResponse.json({
-      article: {
-        id: updatedArticle.id,
-        title: updatedArticle.title,
-        status: updatedArticle.status,
-      },
-    });
-  } catch (error) {
-    console.error("Article update error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
-}
-
 // PATCH /api/admin/articles/[id] - update article status
 export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // Updated type
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const params = await context.params; // Await params
+    const params = await context.params;
     const session = await getServerSession(authOptions);
 
     if (!session?.user) {
@@ -119,7 +66,7 @@ export async function PATCH(
     }
 
     const { action } = await request.json();
-    const articleId = params.id; // Use params.id
+    const articleId = params.id;
 
     if (!action || !["approve", "reject"].includes(action)) {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
@@ -184,7 +131,6 @@ export async function DELETE(
       return NextResponse.json({ error: "Article not found" }, { status: 404 });
     }
 
-    // Delete the article
     await prisma.article.delete({
       where: { id: articleId },
     });
