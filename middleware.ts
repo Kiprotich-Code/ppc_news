@@ -7,7 +7,6 @@ export async function middleware(request: NextRequest) {
   
   const { pathname } = request.nextUrl
 
-  // Public routes that don't need authentication
   const publicRoutes = [
     '/',
     '/auth/signin',
@@ -22,7 +21,6 @@ export async function middleware(request: NextRequest) {
     '/api/public-feed'
   ]
 
-  // Check if the route is public or API route
   const isPublicRoute = publicRoutes.some(route => 
     pathname === route || 
     pathname.startsWith(route + '/') ||
@@ -32,12 +30,10 @@ export async function middleware(request: NextRequest) {
     pathname.includes('.')
   )
 
-  // If it's a public route, allow access
   if (isPublicRoute) {
     return NextResponse.next()
   }
 
-  // If no token (not authenticated), redirect to signin
   if (!token) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/signin'
@@ -47,10 +43,8 @@ export async function middleware(request: NextRequest) {
 
   const userRole = token.role as string
 
-  // Admin/SuperAdmin route protection
   if (pathname.startsWith('/admin')) {
     if (userRole !== 'ADMIN' && userRole !== 'SUPERADMIN') {
-      // Non-admin users trying to access admin routes
       const url = request.nextUrl.clone()
       url.pathname = '/auth/signin'
       url.searchParams.set('error', 'access_denied')
@@ -59,21 +53,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Dashboard route protection (prevent admins from accessing user dashboard)
   if (pathname.startsWith('/dashboard')) {
     if (userRole === 'ADMIN' || userRole === 'SUPERADMIN') {
-      // Admin users trying to access dashboard routes - redirect to admin
       const url = request.nextUrl.clone()
       url.pathname = '/admin'
       return NextResponse.redirect(url)
     }
   }
 
-  // Allow access if all checks pass
   return NextResponse.next()
 }
 
-// This configures routes to be dynamic by default and handles authentication
 export const config = {
   matcher: [
     '/api/:path*',

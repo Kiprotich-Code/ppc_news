@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { PrismaClient } from '@prisma/client';
 import { saveUploadedFile, validateVideoFile, validateImageFile, getVideoDuration } from '@/lib/upload';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 export async function GET() {

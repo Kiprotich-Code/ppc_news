@@ -4,6 +4,8 @@ import { PrismaClient } from '@prisma/client';
 import { deleteFile } from '@/lib/upload';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+
 const prisma = new PrismaClient();
 
 export async function GET(

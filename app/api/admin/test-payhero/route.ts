@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { PayHeroService } from "@/lib/payhero";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const service = new PayHeroService();
