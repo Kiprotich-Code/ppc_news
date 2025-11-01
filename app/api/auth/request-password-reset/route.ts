@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import crypto from "crypto";
 
+
+export const dynamic = 'force-dynamic';
+
 const EXPIRY_MINUTES = 30;
 
 export async function POST(req: Request) {
