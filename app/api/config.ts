@@ -1,9 +1,10 @@
-// This configuration applies to all API routes
 export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 export const revalidate = 0
+export const runtime = 'nodejs'
+export const preferredRegion = 'auto'
+export const maxDuration = 60
 
-// Disable static generation for API routes
 export const generateStaticParams = () => {
   return []
 }

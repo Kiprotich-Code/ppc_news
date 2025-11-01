@@ -1,6 +1,5 @@
-import { dynamic } from './config'
+export const dynamic = 'force-dynamic';
 
-// This layout ensures all API routes inherit dynamic configuration
 export default function ApiLayout({
   children,
 }: {
@@ -9,5 +8,4 @@ export default function ApiLayout({
   return children
 }
 
-// Export dynamic configuration
-export { dynamic }
+export * from './config'
