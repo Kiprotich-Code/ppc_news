@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+export const dynamic = 'force-dynamic';
+
 // Helper function to count words from article content
 function getWordCount(content: string): number {
   if (!content || typeof content !== 'string') return 0;
